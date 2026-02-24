@@ -1,0 +1,2713 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Timeline</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <style>
+    :root {
+      /* ── Primitives ──────────────────────────────────────────────── */
+      /* Neutral */
+      --_N0: #FFFFFF;
+      --_N100: #F7F8F9;
+      --_N200: #F1F2F4;
+      --_N300: #DCDFE4;
+      --_N400: #B3B9C4;
+      --_N500: #8590A2;
+      --_N600: #758195;
+      --_N700: #626F86;
+      --_N800: #44546F;
+      --_N900: #2C3E5D;
+      --_N1000: #172B4D;
+      --_N1100: #091E42;
+      /* Blue */
+      --_B100: #E9F2FF;
+      --_B200: #CCE0FF;
+      --_B300: #85B8FF;
+      --_B400: #579DFF;
+      --_B500: #388BFF;
+      --_B600: #1D7AFC;
+      --_B700: #0C66E4;
+      --_B800: #0055CC;
+      --_B900: #003366;
+      /* Red */
+      --_R100: #FFECEB;
+      --_R200: #FFD5D2;
+      --_R300: #FF9C8F;
+      --_R400: #F87462;
+      --_R500: #EF5C48;
+      --_R600: #E34935;
+      --_R700: #CA3521;
+      --_R800: #AE2E24;
+      --_R900: #5D1F1A;
+      /* Orange */
+      --_O100: #FFF4EC;
+      --_O200: #FEDEC8;
+      --_O300: #FEC195;
+      --_O400: #FAA53D;
+      --_O500: #F18D13;
+      --_O600: #C25100;
+      --_O700: #A54800;
+      --_O800: #702E00;
+      /* Lime/Green */
+      --_L100: #DCFFF1;
+      --_L200: #BAF3DB;
+      --_L300: #7EE2B8;
+      --_L400: #4BCE97;
+      --_L500: #2ABB7F;
+      --_L600: #22A06B;
+      --_L700: #1F845A;
+      --_L800: #216E4E;
+      /* Purple */
+      --_P100: #F3F0FF;
+      --_P200: #DFD8FD;
+      --_P300: #B8ACF6;
+      --_P400: #9F8FEF;
+      --_P500: #8F7EE7;
+      --_P600: #8270DB;
+      --_P700: #6E5DC6;
+      --_P800: #5E4DB2;
+      --_P900: #352C63;
+      /* Teal */
+      --_T100: #E3FAFC;
+      --_T200: #C1F0F5;
+      --_T300: #8BDBE5;
+      --_T400: #60C6D2;
+      --_T500: #42B2C2;
+      --_T600: #2898AA;
+      --_T700: #227D90;
+      --_T800: #206B74;
+      /* Yellow */
+      --_Y100: #FFF7D6;
+      --_Y200: #F8E6A0;
+      --_Y300: #F5CD47;
+      --_Y400: #E2B203;
+      --_Y500: #CF9F02;
+      --_Y600: #B38600;
+      --_Y700: #946F00;
+      --_Y800: #7F5F01;
+      /* Magenta */
+      --_M100: #FFECF8;
+      --_M200: #FDD0EC;
+      --_M300: #F797D2;
+      --_M400: #E774BB;
+      --_M500: #DA62AC;
+      --_M600: #CD519D;
+      --_M700: #AE4787;
+      --_M800: #943D73;
+
+      /* ── Semantic: Text ──────────────────────────────────────────── */
+      --color-text: #000000;
+      --color-text-subtle: var(--eq-text-secondary);
+      --color-text-subtlest: var(--_N700);
+      --color-text-disabled: rgba(9, 30, 66, 0.31);
+      --color-text-inverse: var(--_N0);
+      --color-text-brand: var(--eq-purple);
+      --color-text-selected: var(--eq-purple);
+      --color-text-danger: var(--_R800);
+      --color-text-warning: var(--_O800);
+      --color-text-success: var(--_L700);
+      --color-text-discovery: var(--eq-purple);
+      --color-text-information: var(--_B800);
+
+      /* ── Semantic: Icon ──────────────────────────────────────────── */
+      --color-icon: var(--_N1000);
+      --color-icon-subtle: var(--_N800);
+      --color-icon-subtlest: var(--_N700);
+      --color-icon-disabled: rgba(9, 30, 66, 0.31);
+      --color-icon-inverse: var(--_N0);
+      --color-icon-brand: var(--eq-purple);
+      --color-icon-selected: var(--eq-purple);
+      --color-icon-danger: var(--_R700);
+      --color-icon-warning: var(--_O600);
+      --color-icon-success: var(--_L600);
+      --color-icon-discovery: var(--eq-purple);
+      --color-icon-information: var(--_B600);
+
+      /* ── Semantic: Border ────────────────────────────────────────── */
+      --color-border: #d0d0d0;
+      --color-border-bold: var(--_N600);
+      --color-border-input: var(--_N500);
+      --color-border-disabled: rgba(9, 30, 66, 0.14);
+      --color-border-focused: var(--eq-purple);
+      --color-border-selected: var(--eq-purple);
+      --color-border-brand: var(--eq-purple);
+      --color-border-danger: var(--_R600);
+      --color-border-warning: var(--_O600);
+      --color-border-success: var(--_L600);
+      --color-border-discovery: var(--eq-purple);
+      --color-border-information: var(--_B600);
+
+      /* ── Semantic: Background ────────────────────────────────────── */
+      --color-bg-neutral: rgba(9, 30, 66, 0.06);
+      --color-bg-neutral-hovered: rgba(9, 30, 66, 0.14);
+      --color-bg-neutral-pressed: rgba(9, 30, 66, 0.23);
+      --color-bg-neutral-subtle: transparent;
+      --color-bg-neutral-subtle-hovered: rgba(9, 30, 66, 0.06);
+      --color-bg-neutral-bold: var(--_N1000);
+      --color-bg-input: var(--_N0);
+      --color-bg-input-hovered: var(--_N100);
+      --color-bg-disabled: rgba(9, 30, 66, 0.04);
+      --color-bg-selected: var(--eq-purple-light);
+      --color-bg-selected-hovered: #ebe8fe;
+      --color-bg-selected-bold: var(--eq-purple);
+      --color-bg-brand-subtlest: var(--eq-purple-light);
+      --color-bg-brand-bold: var(--eq-purple);
+      --color-bg-danger: var(--_R100);
+      --color-bg-danger-bold: var(--_R700);
+      --color-bg-warning: var(--_O100);
+      --color-bg-warning-bold: var(--_O300);
+      --color-bg-success: var(--_L100);
+      --color-bg-success-bold: var(--_L700);
+      --color-bg-discovery: var(--eq-purple-light);
+      --color-bg-discovery-bold: var(--eq-purple);
+      --color-bg-information: var(--_B100);
+      --color-bg-information-bold: var(--_B700);
+      --color-blanket: rgba(9, 30, 66, 0.54);
+      --color-blanket-selected: rgba(81, 59, 252, 0.08);
+      --color-blanket-danger: rgba(227, 73, 53, 0.08);
+
+      /* ── Elevation: Surface ──────────────────────────────────────── */
+      --elevation-surface: var(--_N0);
+      --elevation-surface-sunken: var(--eq-cream);
+      --elevation-surface-raised: var(--_N0);
+      --elevation-surface-raised-hovered: var(--_N200);
+      --elevation-surface-overlay: var(--_N0);
+      --elevation-surface-overlay-hovered: var(--_N200);
+
+      /* ── Elevation: Shadow ───────────────────────────────────────── */
+      --elevation-shadow-raised: 0px 1px 1px rgba(30, 31, 33, 0.25), 0px 0px 1px rgba(30, 31, 33, 0.31);
+      --elevation-shadow-overlay: 0px 8px 12px rgba(30, 31, 33, 0.15), 0px 0px 1px rgba(30, 31, 33, 0.31);
+      --elevation-shadow-overflow: 0px 0px 8px rgba(30, 31, 33, 0.16), 0px 0px 1px rgba(30, 31, 33, 0.12);
+
+      /* ── Border width ────────────────────────────────────────────── */
+      --border-width: 1px;
+      --border-width-selected: 2px;
+      --border-width-focused: 2px;
+
+      /* ── Radius ──────────────────────────────────────────────────── */
+      --radius-xsmall: 2px;
+      --radius-small: 4px;
+      --radius-medium: 6px;
+      --radius-large: 8px;
+      --radius-xlarge: 12px;
+      --radius-xxlarge: 16px;
+      --radius-full: 9999px;
+
+      /* ── Space ───────────────────────────────────────────────────── */
+      --space-0: 0px;
+      --space-025: 2px;
+      --space-050: 4px;
+      --space-075: 6px;
+      --space-100: 8px;
+      --space-150: 12px;
+      --space-200: 16px;
+      --space-250: 20px;
+      --space-300: 24px;
+      --space-400: 32px;
+      --space-500: 40px;
+      --space-600: 48px;
+      --space-800: 64px;
+      --space-1000: 80px;
+      --space-negative-025: -2px;
+      --space-negative-050: -4px;
+      --space-negative-075: -6px;
+      --space-negative-100: -8px;
+      --space-negative-150: -12px;
+      --space-negative-200: -16px;
+      --space-negative-300: -24px;
+      --space-negative-400: -32px;
+
+      /* ── Font ────────────────────────────────────────────────────── */
+      --font-family-body: 'Inter', ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      --font-family-heading: 'Inter', ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      --font-family-code: ui-monospace, 'SF Mono', 'Cascadia Code', Menlo, Consolas, monospace;
+      --font-weight-regular: 400;
+      --font-weight-medium: 500;
+      --font-weight-semibold: 600;
+      --font-weight-bold: 700;
+      --font-size-code: 12px;
+      --font-size-body-small: 12px;
+      --font-size-body: 14px;
+      --font-size-body-large: 16px;
+      --font-size-heading-xxsmall: 11px;
+      --font-size-heading-xsmall: 12px;
+      --font-size-heading-small: 14px;
+      --font-size-heading-medium: 20px;
+      --font-size-heading-large: 24px;
+      --font-size-heading-xlarge: 29px;
+      --font-size-heading-xxlarge: 35px;
+
+      /* ── Opacity ─────────────────────────────────────────────────── */
+      --opacity-disabled: 0.4;
+      --opacity-loading: 0.2;
+
+      /* ── Extra font sizes (off-scale) ──────────────────────────── */
+      --font-size-body-medium: 13px;
+      --font-size-heading-title: 36px;
+      --font-size-heading-lane: 17px;
+
+      /* ── Shadow: Component-specific ────────────────────────────── */
+      --shadow-neutral-sm: 0 1px 3px rgba(9, 30, 66, 0.15);
+      --shadow-neutral-md: 0 2px 8px rgba(9, 30, 66, 0.22);
+      --shadow-gold-sm: var(--shadow-neutral-sm);
+      --shadow-gold-md: var(--shadow-neutral-md);
+      --shadow-purple-sm: var(--shadow-neutral-sm);
+      --shadow-purple-md: var(--shadow-neutral-md);
+      --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.08);
+      --shadow-item: 0 1px 3px rgba(9, 30, 66, 0.12);
+      --shadow-item-hover: 0 3px 12px rgba(9, 30, 66, 0.18);
+      --shadow-item-selected: 0 2px 8px rgba(9, 30, 66, 0.15);
+      --shadow-btn-teal-sm: var(--shadow-neutral-sm);
+      --shadow-btn-teal-md: var(--shadow-neutral-md);
+
+      /* ── Overlay colors (white/black alpha) ────────────────────── */
+      --color-overlay-dark: rgba(0, 0, 0, 0.3);
+      --color-overlay-light-00: rgba(255, 255, 255, 0);
+      --color-overlay-light-30: rgba(255, 255, 255, 0.3);
+      --color-overlay-light-40: rgba(255, 255, 255, 0.4);
+      --color-overlay-light-50: rgba(255, 255, 255, 0.5);
+      --color-overlay-light-60: rgba(255, 255, 255, 0.6);
+      --color-overlay-light-90: rgba(255, 255, 255, 0.9);
+
+      /* ── Row stripe palette ──────────────────────────────────────── */
+      --canvas-row-even: var(--_N100);
+      --canvas-row-odd: var(--_N200);
+      /* ── EQ Bank brand accent ────────────────────────────────────── */
+      --eq-gold: #ffcb31;
+      --eq-purple: #513bfc;
+      --eq-purple-hover: #4030d9;
+      --eq-cream: #fbf8f3;
+      --eq-purple-light: #f5f3ff;
+      --eq-gold-light: #fff8e6;
+      --eq-dark: #333333;
+      --eq-text-secondary: #444444;
+      --eq-border: #d0d0d0;
+      --eq-selection: #3297fd;
+
+      /* ── Initiative palette (500-level primitives, Blue → Magenta) ── */
+      --palette-0: var(--_B500);
+      /* Blue    */
+      --palette-1: var(--_T500);
+      /* Teal    */
+      --palette-2: var(--_L500);
+      /* Green   */
+      --palette-3: var(--_Y500);
+      /* Yellow  */
+      --palette-4: var(--_O500);
+      /* Orange  */
+      --palette-5: var(--_R500);
+      /* Red     */
+      --palette-6: var(--_P500);
+      /* Purple  */
+      --palette-7: var(--_M500);
+      /* Magenta */
+
+      /* ── Layout (JS-driven values injected at init) ────────────── */
+      --sidebar-width: 180px;
+      --header-height: 164px;
+      --toolbar-height: 44px;
+      --swatch-size: 18px;
+      --slide-pad: 48px;
+      --item-bar-height: 35px;
+      --track-gap: 8px;
+      --lane-padding: 16px;
+      --title-row-height: 104px;
+      --quarter-row-height: 32px;
+      --month-row-height: 28px;
+      --ease: cubic-bezier(0.25, 1, 0.5, 1);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: var(--font-family-body);
+      font-size: var(--font-size-body);
+      color: var(--color-text);
+      background: var(--eq-cream);
+      overflow: hidden;
+      height: 100vh;
+      display: flex;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    /* App container */
+    .app-container {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      height: 100vh;
+    }
+
+    /* Control Ribbon */
+    .control-ribbon {
+      width: 100%;
+      background: var(--eq-dark);
+      border-bottom: none;
+      display: flex;
+      flex-direction: row;
+      align-items: stretch;
+      padding: var(--space-200) var(--space-300);
+      gap: var(--space-300);
+      flex-shrink: 0;
+      overflow-x: auto;
+    }
+
+    .control-section {
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      gap: var(--space-100);
+    }
+
+    .control-ribbon h3 {
+      font-size: var(--font-size-heading-xxsmall);
+      font-weight: var(--font-weight-semibold);
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: rgba(255, 255, 255, 0.5);
+      margin: 0;
+    }
+
+    .section-content {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      gap: var(--space-100);
+      flex: 1;
+    }
+
+    .control-ribbon button {
+      min-width: 80px;
+      height: 32px;
+      padding: 0 var(--space-200);
+      border: var(--border-width) solid rgba(255, 255, 255, 0.15);
+      border-radius: var(--radius-medium);
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--_N0);
+      cursor: pointer;
+      font-family: var(--font-family-body);
+      font-size: var(--font-size-body-medium);
+      font-weight: var(--font-weight-medium);
+      transition: all 150ms var(--ease);
+      white-space: nowrap;
+    }
+
+    .control-ribbon button:hover {
+      border-color: rgba(255, 255, 255, 0.25);
+      background: rgba(255, 255, 255, 0.15);
+    }
+
+    .control-ribbon .btn-primary {
+      background: var(--eq-purple);
+      color: var(--_N0);
+      border-color: var(--eq-purple);
+      font-weight: var(--font-weight-semibold);
+      box-shadow: var(--shadow-purple-sm);
+    }
+
+    .control-ribbon .btn-primary:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+
+    .control-ribbon .btn-primary:hover:not(:disabled) {
+      background: var(--eq-purple-hover);
+      border-color: var(--eq-purple-hover);
+      box-shadow: var(--shadow-purple-md);
+      transform: translateY(-1px);
+    }
+
+    .control-ribbon .btn-secondary {
+      background: var(--eq-gold);
+      color: #000000;
+      border-color: var(--eq-gold);
+      font-weight: var(--font-weight-semibold);
+      box-shadow: var(--shadow-gold-sm);
+    }
+
+    .control-ribbon .btn-secondary:hover:not(:disabled) {
+      filter: brightness(0.92);
+      box-shadow: var(--shadow-gold-md);
+      transform: translateY(-1px);
+    }
+
+    .control-ribbon .btn-danger {
+      background: var(--color-bg-danger-bold);
+      color: var(--color-text-inverse);
+      border-color: var(--color-bg-danger-bold);
+      font-weight: var(--font-weight-semibold);
+      box-shadow: var(--shadow-neutral-sm);
+    }
+
+    .control-ribbon .btn-danger:hover:not(:disabled) {
+      filter: brightness(0.9);
+      box-shadow: var(--shadow-neutral-md);
+      transform: translateY(-1px);
+    }
+
+    .control-ribbon .btn-warning {
+      background: var(--_Y500);
+      color: var(--_N900);
+      border-color: var(--_Y500);
+      font-weight: var(--font-weight-semibold);
+      box-shadow: var(--shadow-neutral-sm);
+    }
+
+    .control-ribbon .btn-warning:hover:not(:disabled) {
+      filter: brightness(0.9);
+      box-shadow: var(--shadow-neutral-md);
+      transform: translateY(-1px);
+    }
+
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .control-section-divider {
+      width: var(--border-width);
+      background: rgba(255, 255, 255, 0.15);
+      margin: 0 var(--space-100);
+    }
+
+    /* Slide viewport */
+    .slide-viewport {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      min-width: 0;
+      min-height: 0;
+      padding: var(--space-500);
+      background: #f0ece5;
+    }
+
+    .slide {
+      width: 1920px;
+      height: 1080px;
+      box-sizing: border-box;
+      background: var(--eq-cream);
+      transform-origin: center center;
+      box-shadow: var(--shadow-card);
+      border-radius: var(--radius-small);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      flex-shrink: 0;
+      padding: var(--space-600);
+    }
+
+    /* Main layout */
+    .main {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+      border-radius: var(--radius-large);
+      border: var(--border-width) solid var(--color-border);
+      background: var(--elevation-surface);
+      box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.06), inset 0 0 2px rgba(0, 0, 0, 0.04);
+    }
+
+    /* Sidebar */
+    .sidebar {
+      width: var(--sidebar-width);
+      min-width: var(--sidebar-width);
+      border-right: var(--border-width) solid var(--color-border);
+      display: flex;
+      flex-direction: column;
+      background: var(--elevation-surface);
+      z-index: 10;
+    }
+
+    .sidebar-header {
+      height: var(--header-height);
+      border-bottom: var(--border-width) solid var(--color-border);
+      display: flex;
+      align-items: flex-end;
+      padding: 0 var(--space-200) var(--space-100) var(--space-200);
+      font-weight: var(--font-weight-semibold);
+      font-size: var(--font-size-body);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--color-text-subtlest);
+      background: var(--elevation-surface);
+    }
+
+    .sidebar-rows {
+      flex: 1;
+      overflow: hidden;
+    }
+
+    .sidebar-row {
+      height: var(--row-height, 56px);
+      display: flex;
+      align-items: center;
+      padding: 0 var(--space-200);
+      border-bottom: var(--border-width) solid var(--color-border-disabled);
+      cursor: default;
+      position: relative;
+      transition: background 150ms var(--ease);
+    }
+
+    .sidebar-row:hover {
+      background: var(--color-bg-neutral-hovered);
+    }
+
+    .sidebar-row .lane-name {
+      flex: 1;
+      font-size: var(--font-size-heading-lane);
+      font-weight: var(--font-weight-medium);
+      white-space: normal;
+      overflow-wrap: break-word;
+      cursor: text;
+      padding: var(--space-050) var(--space-400) var(--space-050) var(--space-100);
+      /* Extra right padding for the icon */
+      border-radius: var(--radius-small);
+      position: relative;
+      border: 1px solid transparent;
+      transition: all 150ms var(--ease);
+      margin-right: var(--space-100);
+    }
+
+    .sidebar-row .lane-name:hover {
+      background: transparent;
+      border-color: transparent;
+    }
+
+    .sidebar-row .lane-name::after {
+      content: '✎';
+      position: absolute;
+      right: var(--space-100);
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: var(--font-size-body-small);
+      color: var(--color-icon-subtlest);
+      opacity: 0.5;
+      transition: opacity 150ms var(--ease);
+      pointer-events: none;
+    }
+
+    .sidebar-row .lane-name:hover::after {
+      opacity: 0;
+    }
+
+    .sidebar-row .lane-name input {
+      font-family: inherit;
+      font-size: inherit;
+      font-weight: inherit;
+      border: none;
+      border-bottom: 2px solid var(--_N600);
+      border-radius: 0;
+      outline: none;
+      padding: 0;
+      margin: 0;
+      width: 100%;
+      background: transparent;
+      color: inherit;
+    }
+
+    .sidebar-row .lane-actions {
+      display: none;
+      gap: var(--space-025);
+    }
+
+    .sidebar-row:hover .lane-actions {
+      display: flex;
+    }
+
+    .lane-actions button {
+      width: 22px;
+      height: 22px;
+      border: none;
+      background: none;
+      cursor: pointer;
+      border-radius: var(--radius-small);
+      font-size: var(--font-size-body);
+      color: var(--color-text-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .lane-actions button:hover {
+      background: var(--elevation-surface-sunken);
+      color: var(--color-icon-danger);
+    }
+
+    /* Drag-over indicator for sidebar rows */
+    .sidebar-row.drag-over-above {
+      box-shadow: inset 0 2px 0 var(--_N700);
+    }
+
+    .sidebar-row.drag-over-below {
+      box-shadow: inset 0 -2px 0 var(--_N700);
+    }
+
+    /* Timeline area */
+    .timeline-area {
+      flex: 1;
+      overflow: hidden;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .timeline-header {
+      height: var(--header-height);
+      flex-shrink: 0;
+      position: sticky;
+      top: 0;
+      z-index: 5;
+      background: var(--elevation-surface);
+      border-bottom: var(--border-width) solid var(--color-border);
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+    }
+
+    .timeline-header-row {
+      display: flex;
+      width: 100%;
+      border-bottom: var(--border-width) solid var(--color-border-disabled);
+    }
+
+    .timeline-header-row:last-child {
+      border-bottom: none;
+    }
+
+    .timeline-title-row {
+      background: var(--elevation-surface);
+      padding: 0 var(--space-200);
+      display: flex;
+      align-items: center;
+    }
+
+    .slide-logo {
+      margin-left: auto;
+      padding: var(--space-200) 0;
+      height: 100%;
+      width: auto;
+      object-fit: contain;
+      pointer-events: none;
+      flex-shrink: 0;
+      box-sizing: border-box;
+    }
+
+    .timeline-title {
+      font-size: var(--font-size-heading-title);
+      font-weight: var(--font-weight-semibold);
+      color: var(--color-text);
+      cursor: text;
+      padding: var(--space-100) var(--space-500) var(--space-100) var(--space-200);
+      /* Extra right padding for the icon */
+      border-radius: var(--radius-small);
+      letter-spacing: -0.01em;
+      position: relative;
+      display: inline-block;
+      border: 1px solid transparent;
+      background: transparent;
+      transition: all 150ms var(--ease);
+      margin-right: var(--space-300);
+    }
+
+    .timeline-title:hover {
+      background: transparent;
+      border-color: transparent;
+    }
+
+    .timeline-title::after {
+      content: '✎';
+      position: absolute;
+      right: var(--space-200);
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: var(--font-size-heading-small);
+      color: var(--color-icon-subtlest);
+      opacity: 0.5;
+      transition: opacity 150ms var(--ease);
+      pointer-events: none;
+    }
+
+    .timeline-title:hover::after {
+      opacity: 0;
+    }
+
+    .timeline-title input {
+      font-family: inherit;
+      font-size: inherit;
+      font-weight: inherit;
+      border: none;
+      border-bottom: 2px solid var(--_N600);
+      border-radius: 0;
+      outline: none;
+      padding: 0;
+      margin: 0;
+      background: transparent;
+      color: inherit;
+      width: 100%;
+      min-width: 200px;
+    }
+
+    .timeline-col-header {
+      border-right: var(--border-width) solid var(--color-border-disabled);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: var(--font-size-heading-lane);
+      font-weight: var(--font-weight-medium);
+      color: var(--color-text);
+    }
+
+    .timeline-grid {
+      position: relative;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    .timeline-grid-row {
+      height: var(--row-height, 56px);
+      border-bottom: var(--border-width) solid var(--color-border-disabled);
+      position: relative;
+    }
+
+    .gridline {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: var(--border-width);
+      background: var(--color-border-disabled);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* Item bars */
+    .item-bar {
+      position: absolute;
+      height: var(--item-bar-height, 35px);
+      top: 50%;
+      transform: translateY(-50%);
+      border-radius: var(--radius-medium);
+      cursor: default;
+      display: flex;
+      align-items: center;
+      padding: 0 var(--space-100);
+      font-size: var(--font-size-heading-lane);
+      font-weight: var(--font-weight-medium);
+      color: var(--color-text-inverse);
+      z-index: 3;
+      min-width: var(--space-150);
+      box-shadow: var(--shadow-item);
+      transition: box-shadow 200ms var(--ease), transform 200ms var(--ease), opacity 150ms var(--ease);
+    }
+
+    .item-bar:hover {
+      box-shadow: var(--shadow-item-hover);
+      transform: translateY(calc(-50% - 1px));
+      z-index: 4;
+    }
+
+    .item-bar-text {
+      pointer-events: none;
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      cursor: text;
+      pointer-events: auto;
+      /* Re-enable pointer events for hover/click */
+    }
+
+    .item-edit-btn {
+      position: absolute;
+      right: var(--space-400);
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: var(--font-size-body);
+      color: var(--color-icon-inverse);
+      opacity: 0;
+      transition: opacity 150ms var(--ease);
+      cursor: pointer;
+      background: none;
+      border: none;
+      padding: 0;
+      line-height: 1;
+      z-index: 4;
+    }
+
+    .item-bar:hover .item-edit-btn {
+      opacity: 0.5;
+    }
+
+    .item-edit-btn:hover {
+      opacity: 1 !important;
+    }
+
+    .item-bar:hover .item-bar-text,
+    .item-bar.selected .item-bar-text {
+      padding-right: 28px;
+      /* Prevents text from overlapping the hover action buttons */
+    }
+
+    .item-bar input {
+      font-family: inherit;
+      font-size: inherit;
+      font-weight: inherit;
+      color: inherit;
+      background: rgba(0, 0, 0, 0.2);
+      border: none;
+      border-radius: var(--radius-small);
+      outline: none;
+      padding: 0 var(--space-050);
+      margin: 0 calc(-1 * var(--space-050));
+      width: calc(100% + var(--space-100));
+    }
+
+    .item-bar.selected {
+      box-shadow: 0 0 0 var(--border-width-selected) var(--_N800), var(--shadow-item-selected);
+    }
+
+    .item-bar.dragging {
+      opacity: 0.9;
+      cursor: grabbing;
+      z-index: 100;
+      box-shadow: var(--shadow-card);
+      transform: translateY(calc(-50% - 2px));
+    }
+
+    .item-bar .resize-handle {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: var(--space-100);
+      cursor: ew-resize;
+      z-index: 4;
+      transition: background 0.15s;
+    }
+
+    .item-bar .resize-handle.left {
+      left: 0;
+    }
+
+    .item-bar .resize-handle.right {
+      right: 0;
+    }
+
+    .item-delete-btn {
+      display: none;
+      position: absolute;
+      top: -7px;
+      right: -7px;
+      width: var(--space-200);
+      height: var(--space-200);
+      min-width: var(--space-200);
+      min-height: var(--space-200);
+      aspect-ratio: 1;
+      border-radius: var(--radius-full);
+      background: var(--color-bg-danger-bold);
+      color: var(--color-text-inverse);
+      border: none;
+      font-size: var(--font-size-heading-xxsmall);
+      line-height: var(--space-200);
+      cursor: pointer;
+      align-items: center;
+      justify-content: center;
+      z-index: 6;
+      padding: 0;
+      font-family: var(--font-family-body);
+      box-shadow: var(--elevation-shadow-raised);
+      appearance: none;
+      -webkit-appearance: none;
+    }
+
+    .item-drag-btn {
+      display: none;
+      position: absolute;
+      top: -7px;
+      right: 13px;
+      width: var(--space-200);
+      height: var(--space-200);
+      border-radius: var(--radius-full);
+      background: var(--elevation-surface);
+      color: var(--color-icon-subtle);
+      border: var(--border-width) solid var(--color-border);
+      cursor: grab;
+      align-items: center;
+      justify-content: center;
+      z-index: 6;
+      box-shadow: var(--elevation-shadow-raised);
+    }
+
+    .item-drag-btn svg {
+      width: 10px;
+      height: 10px;
+    }
+
+    .item-drag-btn:hover {
+      background: var(--color-bg-neutral-hovered);
+      color: var(--color-icon);
+    }
+
+    .item-drag-btn:active {
+      cursor: grabbing;
+    }
+
+    .item-bar:hover .item-delete-btn,
+    .item-bar.selected .item-delete-btn,
+    .item-bar:hover .item-drag-btn,
+    .item-bar.selected .item-drag-btn {
+      display: flex;
+    }
+
+    .item-bar:hover .resize-handle {
+      background: var(--color-overlay-light-30);
+    }
+
+    .item-bar .resize-handle:hover {
+      background: var(--color-overlay-light-50);
+    }
+
+    .item-bar .resize-handle::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 3px;
+      height: var(--space-150);
+      background: var(--color-overlay-light-00);
+      border-radius: var(--border-width);
+      transition: background 0.15s;
+    }
+
+    .item-bar:hover .resize-handle::before {
+      background: var(--color-overlay-light-60);
+    }
+
+    .item-bar .resize-handle:hover::before {
+      background: var(--color-overlay-light-90);
+    }
+
+    /* Ghost bar (drag-create) */
+    .ghost-bar {
+      position: absolute;
+      height: 28px;
+      top: 50%;
+      transform: translateY(-50%);
+      border-radius: var(--radius-medium);
+      background: var(--_N600);
+      opacity: var(--opacity-loading);
+      pointer-events: none;
+      z-index: 5;
+    }
+
+
+    /* Color swatches */
+    .color-swatches {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-050);
+    }
+
+    .color-swatch {
+      width: var(--swatch-size);
+      height: var(--swatch-size);
+      border-radius: var(--radius-full);
+      cursor: pointer;
+      border: var(--border-width-selected) solid transparent;
+      box-shadow: var(--elevation-shadow-raised);
+      transition: all 150ms var(--ease);
+      flex-shrink: 0;
+    }
+
+    .color-swatch:hover {
+      transform: scale(1.15);
+      box-shadow: var(--elevation-shadow-overlay);
+    }
+
+    .color-swatch.selected {
+      box-shadow: 0 0 0 2px var(--elevation-surface), 0 0 0 4px var(--_N700);
+    }
+
+    .color-swatch-info {
+      font-size: var(--font-size-body-small);
+      color: var(--color-text-subtlest);
+      margin-top: var(--space-050);
+    }
+
+    /* Legend */
+    .timeline-legend {
+      position: absolute;
+      bottom: var(--space-300);
+      right: var(--space-300);
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-100);
+      background: var(--elevation-surface);
+      padding: var(--space-200);
+      border: var(--border-width) solid var(--color-border);
+      border-radius: var(--radius-large);
+      box-shadow: var(--shadow-card);
+      z-index: 10;
+      min-width: 160px;
+    }
+
+    .timeline-legend-title {
+      font-size: var(--font-size-heading-lane);
+      font-weight: var(--font-weight-semibold);
+      color: var(--color-text-subtle);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: var(--space-050);
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: var(--space-100);
+    }
+
+    .legend-color {
+      width: 16px;
+      height: 16px;
+      border-radius: var(--radius-small);
+      flex-shrink: 0;
+    }
+
+    .legend-label {
+      font-size: var(--font-size-heading-lane);
+      font-weight: var(--font-weight-medium);
+      color: var(--color-text);
+      cursor: text;
+      flex: 1;
+      padding: var(--space-050) var(--space-400) var(--space-050) var(--space-100);
+      border-radius: var(--radius-small);
+      border: 1px solid transparent;
+      transition: all 150ms var(--ease);
+      position: relative;
+    }
+
+    .legend-label::after {
+      content: '✎';
+      position: absolute;
+      right: var(--space-100);
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: var(--font-size-body-small);
+      color: var(--color-icon-subtlest);
+      opacity: 0.5;
+      transition: opacity 150ms var(--ease);
+      pointer-events: none;
+    }
+
+    .legend-label:hover {
+      background: transparent;
+      border-color: transparent;
+    }
+
+    .legend-label:hover::after {
+      opacity: 0;
+    }
+
+    .legend-label input {
+      font-family: inherit;
+      font-size: inherit;
+      font-weight: inherit;
+      color: inherit;
+      background: transparent;
+      border: none;
+      border-bottom: 2px solid var(--_N600);
+      border-radius: 0;
+      outline: none;
+      padding: 0;
+      margin: 0;
+      min-width: 2ch;
+    }
+
+    /* Empty state */
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      flex: 1;
+      color: var(--color-text-subtle);
+      gap: var(--space-200);
+    }
+
+    .empty-state p {
+      font-family: var(--font-family-body);
+      font-size: var(--font-size-body);
+      font-weight: var(--font-weight-medium);
+    }
+
+    .empty-state button {
+      font-family: var(--font-family-body);
+      font-size: var(--font-size-body);
+      font-weight: var(--font-weight-semibold);
+      height: 38px;
+      padding: 0 var(--space-300);
+      border: 1px solid var(--eq-purple);
+      border-radius: var(--radius-medium);
+      background: var(--eq-purple);
+      color: var(--_N0);
+      cursor: pointer;
+      box-shadow: var(--shadow-purple-sm);
+      transition: all 150ms var(--ease);
+    }
+
+    .empty-state button:hover {
+      background: var(--eq-purple-hover);
+      border-color: var(--eq-purple-hover);
+      box-shadow: var(--shadow-purple-md);
+      transform: translateY(-1px);
+    }
+
+
+    /* Scrollbar styling */
+    ::-webkit-scrollbar {
+      width: var(--space-100);
+      height: var(--space-100);
+    }
+
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--_N300);
+      border-radius: var(--radius-small);
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--_N500);
+    }
+
+    /* Drag tooltip */
+    .drag-tooltip {
+      position: fixed;
+      background: var(--color-bg-neutral-bold);
+      color: var(--color-text-inverse);
+      padding: var(--space-100) var(--space-200);
+      border-radius: var(--radius-large);
+      font-family: var(--font-family-body);
+      font-size: var(--font-size-body);
+      font-weight: var(--font-weight-medium);
+      pointer-events: none;
+      z-index: 10000;
+      white-space: nowrap;
+      box-shadow: var(--elevation-shadow-overlay);
+    }
+
+    /* Confirm dialog */
+    .confirm-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 2000;
+      background: var(--color-blanket);
+      backdrop-filter: blur(2px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .confirm-box {
+      background: var(--elevation-surface-overlay);
+      border-radius: var(--radius-xlarge);
+      padding: var(--space-300);
+      width: 320px;
+      box-shadow: var(--elevation-shadow-overlay);
+    }
+
+    .confirm-box p {
+      font-size: var(--font-size-body);
+      margin-bottom: var(--space-200);
+      line-height: 1.5;
+    }
+
+    .confirm-box .confirm-actions {
+      display: flex;
+      gap: var(--space-100);
+      justify-content: flex-end;
+    }
+
+    .confirm-box button {
+      height: 36px;
+      padding: 0 var(--space-200);
+      border: var(--border-width) solid var(--color-border);
+      border-radius: var(--radius-large);
+      font-family: var(--font-family-body);
+      font-size: var(--font-size-body);
+      cursor: pointer;
+      background: var(--elevation-surface);
+      transition: all 150ms var(--ease);
+    }
+
+    .confirm-box button:hover {
+      background: var(--color-bg-neutral-hovered);
+    }
+
+    .confirm-box .btn-danger {
+      background: var(--color-bg-danger-bold);
+      color: var(--color-text-inverse);
+      border-color: var(--color-bg-danger-bold);
+    }
+
+    .confirm-box .btn-danger:hover {
+      filter: brightness(0.9);
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="app-container">
+    <div class="control-ribbon" id="control-sidebar">
+      <div class="control-section">
+        <h3>1 - fill out your timeline</h3>
+        <div class="section-content">
+          <button class="btn-primary" id="btn-add-swimlane">+ Add Group</button>
+          <button class="btn-primary" id="btn-add-item">+ Add Initiative</button>
+        </div>
+      </div>
+
+      <div class="control-section-divider"></div>
+
+      <div class="control-section">
+        <h3>2 - color code and update the legend</h3>
+        <div style="display: flex; flex-direction: column; gap: var(--space-050);">
+          <div class="color-swatches" id="color-swatches"></div>
+          <div class="color-swatch-info" id="color-info"
+            style="font-size: var(--font-size-body-small); color: rgba(255, 255, 255, 0.5);">Select an item to change
+            color</div>
+        </div>
+      </div>
+
+      <div class="control-section-divider"></div>
+
+      <div class="control-section">
+        <h3>3 - edit as you need</h3>
+        <div class="section-content">
+          <button class="btn-primary" id="btn-undo" disabled title="Undo (Ctrl+Z)">Undo</button>
+          <button class="btn-primary" id="btn-redo" disabled title="Redo (Ctrl+Y)">Redo</button>
+          <button class="btn-danger" id="btn-reset"
+            style="background: var(--color-bg-danger-bold); color: white; border: none; box-shadow: var(--shadow-neutral-sm);">Restart</button>
+        </div>
+      </div>
+
+      <div class="control-section-divider"></div>
+
+      <div class="control-section">
+        <h3>4 - export to PNG</h3>
+        <div class="section-content">
+          <button id="btn-export"
+            style="background: #FFCB31; color: var(--_N900); border-color: #FFCB31; font-weight: var(--font-weight-semibold); box-shadow: var(--shadow-neutral-sm);">Export
+            PNG</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="slide-viewport">
+      <div class="slide" id="slide">
+        <div id="app"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      "use strict";
+
+      const PALETTE = Array.from({ length: 8 }, (_, i) => `var(--palette-${i})`);
+      const STORAGE_KEY = 'timeline_tmpl_v1';
+      const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+      // Interpolate from eq-gold-light (#fff8e6) to eq-gold (#ffcb31), t in [0,1]
+      function goldRamp(t) {
+        const r = Math.round(255 + (255 - 255) * t);
+        const g = Math.round(248 + (203 - 248) * t);
+        const b = Math.round(230 + (49 - 230) * t);
+        return `rgb(${r},${g},${b})`;
+      }
+
+      // ---- State ----
+      function defaultState() {
+        const today = new Date();
+        const { start, end } = fiscalQuarterRange(today);
+        return {
+          timeline: {
+            startDate: fmt(start),
+            endDate: fmt(end),
+            zoomLevel: 1,
+            title: 'New Timeline'
+          },
+          swimlanes: [],
+          items: [],
+          legendLabels: {} // Map of color -> label
+        };
+      }
+
+      let STATE = defaultState();
+      let stateHistory = [JSON.parse(JSON.stringify(STATE))];
+      let historyIndex = 0;
+      const MAX_HISTORY = 50;
+
+      function pushHistory(newState) {
+        if (historyIndex < stateHistory.length - 1) {
+          stateHistory = stateHistory.slice(0, historyIndex + 1);
+        }
+        stateHistory.push(JSON.parse(JSON.stringify(newState)));
+        if (stateHistory.length > MAX_HISTORY) {
+          stateHistory.shift();
+        } else {
+          historyIndex++;
+        }
+        updateUndoRedoUI();
+      }
+
+      function undo() {
+        if (historyIndex > 0) {
+          historyIndex--;
+          STATE = JSON.parse(JSON.stringify(stateHistory[historyIndex]));
+          assignTracks();
+          saveState();
+          render();
+          updateUndoRedoUI();
+        }
+      }
+
+      function redo() {
+        if (historyIndex < stateHistory.length - 1) {
+          historyIndex++;
+          STATE = JSON.parse(JSON.stringify(stateHistory[historyIndex]));
+          assignTracks();
+          saveState();
+          render();
+          updateUndoRedoUI();
+        }
+      }
+
+      function updateUndoRedoUI() {
+        const btnUndo = document.getElementById('btn-undo');
+        const btnRedo = document.getElementById('btn-redo');
+        if (btnUndo) btnUndo.disabled = historyIndex <= 0;
+        if (btnRedo) btnRedo.disabled = historyIndex >= stateHistory.length - 1;
+      }
+
+      // Fiscal year starts October 1 (month 9); Q4 ends September 30.
+      // Returns the start of the current fiscal quarter and 4 quarters later.
+      function fiscalQuarterRange(today) {
+        const month = today.getMonth();
+        const year = today.getFullYear();
+        const FY_START = 9; // October
+        // Shift into fiscal calendar (Oct=0, Nov=1 … Sep=11)
+        const fiscalMonth = (month - FY_START + 12) % 12;
+        const fiscalQuarter = Math.floor(fiscalMonth / 3); // 0-based (0=Q1,3=Q4)
+        // Calendar month where this FY quarter begins
+        const qCalMonth = (FY_START + fiscalQuarter * 3) % 12;
+        // FY started in October — which calendar year?
+        const fyStartYear = month >= FY_START ? year : year - 1;
+        // Year the current quarter's start month falls in
+        const qYear = qCalMonth >= FY_START ? fyStartYear : fyStartYear + 1;
+        const start = new Date(qYear, qCalMonth, 1);
+        const end = new Date(qYear + 1, qCalMonth, 1);
+        return { start, end };
+      }
+
+      function fmt(d) {
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${y}-${m}-${day}`;
+      }
+
+      function parseDate(s) {
+        if (!s || typeof s !== 'string') return new Date();
+        const [y, m, d] = s.split('-').map(Number);
+        if (isNaN(y) || isNaN(m) || isNaN(d)) return new Date();
+        return new Date(y, m - 1, d);
+      }
+
+      function uid() {
+        if (crypto.randomUUID) return crypto.randomUUID();
+        return Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
+      }
+
+      // ---- Persistence ----
+      let saveTimer = null;
+
+      function saveState() {
+        clearTimeout(saveTimer);
+        saveTimer = setTimeout(() => {
+          try { localStorage.setItem(STORAGE_KEY, JSON.stringify(STATE)); } catch (e) { console.error('Save failed:', e); }
+        }, 500);
+      }
+
+      const COLOR_MIGRATION = {
+        '#4f6df5': '#5b8dbf', '#e5484d': '#d4736c', '#30a46c': '#5ea87a', '#e38627': '#d4964a',
+        '#8b5cf6': '#9179c2', '#0ea5e9': '#5ea5b8', '#ec4899': '#c97ba0', '#6d6e75': '#8a8580'
+      };
+
+      function loadState() {
+        try {
+          const raw = localStorage.getItem(STORAGE_KEY);
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            if (parsed && parsed.timeline) STATE = parsed;
+          }
+        } catch (e) { console.error('Load failed:', e); }
+        // Migrate old palette colors and add track property
+        if (STATE.items) {
+          STATE.items.forEach(item => {
+            const mapped = COLOR_MIGRATION[item.color];
+            if (mapped) item.color = mapped;
+            if (item.track === undefined) item.track = 0;
+          });
+        }
+        if (!STATE.legendLabels) {
+          STATE.legendLabels = {};
+        }
+        // Always update to current 4 quarters
+        updateTimelineDates();
+        // Assign tracks after loading
+        assignTracks();
+
+        // Reset history to the loaded state
+        stateHistory = [JSON.parse(JSON.stringify(STATE))];
+        historyIndex = 0;
+        updateUndoRedoUI();
+      }
+
+      function updateTimelineDates() {
+        const { start, end } = fiscalQuarterRange(new Date());
+        STATE.timeline.startDate = fmt(start);
+        STATE.timeline.endDate = fmt(end);
+      }
+
+      function setState(fn, skipHistory = false) {
+        fn(STATE);
+        assignTracks();
+        saveState();
+        if (!skipHistory) {
+          pushHistory(STATE);
+        }
+        render();
+      }
+
+      // ---- Track assignment ----
+      function assignTracks() {
+        // For each swimlane, assign tracks to items to prevent overlap
+        STATE.swimlanes.forEach(lane => {
+          const laneItems = STATE.items.filter(it => it.swimlaneId === lane.id);
+          if (laneItems.length === 0) return;
+
+          // Sort by start date, then by end date
+          laneItems.sort((a, b) => {
+            const aStart = parseDate(a.startDate).getTime();
+            const bStart = parseDate(b.startDate).getTime();
+            if (aStart !== bStart) return aStart - bStart;
+            return parseDate(a.endDate).getTime() - parseDate(b.endDate).getTime();
+          });
+
+          // Track end dates for each track
+          const trackEnds = [];
+
+          laneItems.forEach(item => {
+            const itemStart = parseDate(item.startDate);
+            const itemEnd = parseDate(item.endDate);
+
+            // Find the first track where this item doesn't overlap
+            let assignedTrack = 0;
+            for (let t = 0; t < trackEnds.length; t++) {
+              if (!trackEnds[t] || itemStart >= trackEnds[t]) {
+                assignedTrack = t;
+                break;
+              }
+            }
+
+            // If all tracks are occupied, create a new one
+            if (assignedTrack === trackEnds.length || !trackEnds[assignedTrack] || itemStart < trackEnds[assignedTrack]) {
+              assignedTrack = trackEnds.length;
+            }
+
+            // Assign the track
+            item.track = assignedTrack;
+            trackEnds[assignedTrack] = itemEnd;
+          });
+        });
+      }
+
+      // ---- Date axis helpers ----
+      function daysBetween(a, b) {
+        const utcA = Date.UTC(a.getFullYear(), a.getMonth(), a.getDate());
+        const utcB = Date.UTC(b.getFullYear(), b.getMonth(), b.getDate());
+        return Math.round((utcB - utcA) / 86400000);
+      }
+
+      function addDays(d, n) {
+        const r = new Date(d);
+        r.setDate(r.getDate() + n);
+        return r;
+      }
+
+      function snapToMonday(date) {
+        const d = new Date(date);
+        const day = d.getDay();
+        const diff = (day === 0 ? -6 : 1 - day); // Sunday = 0, Monday = 1
+        d.setDate(d.getDate() + diff);
+        d.setHours(0, 0, 0, 0);
+        return d;
+      }
+
+      function formatDateForTooltip(date) {
+        return `${MONTH_NAMES[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`;
+      }
+
+      function getGranularity(start, end) {
+        const days = daysBetween(start, end);
+        if (days <= 14) return 'day';
+        if (days <= 90) return 'week';
+        if (days <= 730) return 'month';
+        return 'quarter';
+      }
+
+      function getColumns(start, end, granularity) {
+        const cols = [];
+        let cur = new Date(start);
+        while (cur < end) {
+          let next;
+          let label;
+          if (granularity === 'day') {
+            next = addDays(cur, 1);
+            label = `${cur.getMonth() + 1}/${cur.getDate()}`;
+          } else if (granularity === 'week') {
+            next = addDays(cur, 7);
+            if (next > end) next = new Date(end);
+            label = `${cur.getMonth() + 1}/${cur.getDate()}`;
+          } else if (granularity === 'month') {
+            next = new Date(cur.getFullYear(), cur.getMonth() + 1, 1);
+            if (next > end) next = new Date(end);
+            label = `${MONTH_NAMES[cur.getMonth()]} ${cur.getFullYear()}`;
+          } else {
+            // Fiscal quarter label: Q1=Oct, Q2=Jan, Q3=Apr, Q4=Jul
+            const FY_START = 9; // October
+            const fiscalMonth = (cur.getMonth() - FY_START + 12) % 12;
+            const fiscalQ = Math.floor(fiscalMonth / 3) + 1;  // 1-4
+            // Fiscal year number = the year October falls in
+            const fyYear = cur.getMonth() >= FY_START ? cur.getFullYear() : cur.getFullYear() - 1;
+            next = new Date(cur.getFullYear(), cur.getMonth() - fiscalMonth % 3 + 3, 1);
+            // Advance to next FY quarter boundary
+            const nextFiscalQ0 = Math.floor(fiscalMonth / 3) + 1; // next index
+            const nextCalMonth = (FY_START + nextFiscalQ0 * 3) % 12;
+            const nextFyYear = nextFiscalQ0 >= 4
+              ? fyYear + 1
+              : fyYear;
+            const crossesYear = nextCalMonth < FY_START;
+            const nextYear = crossesYear ? nextFyYear + 1 : nextFyYear;
+            next = new Date(nextYear, nextCalMonth, 1);
+            if (next > end) next = new Date(end);
+            label = `Q${fiscalQ} FY${String(fyYear + 1).slice(2)}`;
+          }
+          cols.push({ start: new Date(cur), end: next, label });
+          cur = next;
+        }
+        return cols;
+      }
+
+      function getMonths(start, end) {
+        const months = [];
+        let cur = new Date(start.getFullYear(), start.getMonth(), 1);
+        while (cur < end) {
+          const next = new Date(cur.getFullYear(), cur.getMonth() + 1, 1);
+          months.push({
+            start: new Date(cur),
+            end: next > end ? new Date(end) : next,
+            label: MONTH_NAMES[cur.getMonth()]
+          });
+          cur = next;
+        }
+        return months;
+      }
+
+      function getWeeks(start, end) {
+        const weeks = [];
+        let cur = new Date(start);
+        // Align to Monday
+        const day = cur.getDay();
+        const diff = (day === 0 ? -6 : 1 - day);
+        cur.setDate(cur.getDate() + diff);
+
+        let weekNum = 1;
+        while (cur < end) {
+          const next = addDays(cur, 7);
+          weeks.push({
+            start: new Date(cur),
+            end: next > end ? new Date(end) : next,
+            label: `W${weekNum}`
+          });
+          cur = next;
+          weekNum++;
+        }
+        return weeks;
+      }
+
+      const SLIDE_W = 1920, SLIDE_H = 1080;
+
+      // Read layout constants from CSS custom properties (single source of truth)
+      function cssVar(name) {
+        return parseInt(getComputedStyle(document.documentElement).getPropertyValue(name), 10);
+      }
+      const SLIDE_PAD = cssVar('--slide-pad');
+      const CONTENT_W = SLIDE_W - SLIDE_PAD * 2;
+      const CONTENT_H = SLIDE_H - SLIDE_PAD * 2;
+      const SIDEBAR_W = cssVar('--sidebar-width');
+      const HEADER_H = cssVar('--header-height');
+      const GRID_H = CONTENT_H - HEADER_H;
+      const TIMELINE_W = CONTENT_W - SIDEBAR_W;
+      const TITLE_ROW_H = cssVar('--title-row-height');
+      const QUARTER_ROW_H = cssVar('--quarter-row-height');
+      const MONTH_ROW_H = cssVar('--month-row-height');
+      const ITEM_BAR_H = cssVar('--item-bar-height');
+      const TRACK_GAP = cssVar('--track-gap');
+      const LANE_PADDING = cssVar('--lane-padding');
+
+      function getTrackCount(laneId) {
+        const laneItems = STATE.items.filter(it => it.swimlaneId === laneId);
+        if (laneItems.length === 0) return 1;
+        return Math.max(...laneItems.map(it => it.track)) + 1;
+      }
+
+      function getLaneHeight(laneId) {
+        const trackCount = getTrackCount(laneId);
+        return trackCount * ITEM_BAR_H + (trackCount - 1) * TRACK_GAP + LANE_PADDING * 2;
+      }
+
+      function getLaneHeights() {
+        const raw = STATE.swimlanes.map(lane => getLaneHeight(lane.id));
+        const total = raw.reduce((sum, h) => sum + h, 0);
+        if (total <= GRID_H) return raw;
+        // Scale proportionally to fit within available grid height
+        const scale = GRID_H / total;
+        return raw.map(h => Math.floor(h * scale));
+      }
+
+      function getTotalGridHeight() {
+        const heights = getLaneHeights();
+        return heights.reduce((sum, h) => sum + h, 0);
+      }
+
+      function getRowHeight() {
+        return GRID_H / Math.max(STATE.swimlanes.length, 1);
+      }
+
+      function getColWidth(cols) {
+        return TIMELINE_W / Math.max(cols.length, 1);
+      }
+
+      function getItemBarHeight() {
+        const rh = getRowHeight();
+        return Math.max(10, Math.min(rh * 0.5, 35));
+      }
+
+      function getSlideScale() {
+        const slide = document.getElementById('slide');
+        if (!slide) return 1;
+        const rect = slide.getBoundingClientRect();
+        return Math.max(rect.width / SLIDE_W, 0.01);
+      }
+
+      function updateSlideScale() {
+        const slide = document.getElementById('slide');
+        const viewport = document.querySelector('.slide-viewport');
+        if (!slide || !viewport) return;
+
+        // Account for viewport padding (40px on each side = 80px total)
+        const padding = 80;
+        const availW = viewport.clientWidth - padding;
+        const availH = viewport.clientHeight - padding;
+
+        // Calculate scale to fit while maintaining aspect ratio
+        const scaleX = availW / SLIDE_W;
+        const scaleY = availH / SLIDE_H;
+        const scale = Math.min(scaleX, scaleY, 1);
+
+        slide.style.transform = `scale(${scale})`;
+      }
+
+      // Position helpers
+      function dateToX(date, tlStart, totalDays, totalWidth) {
+        const d = daysBetween(tlStart, date);
+        return (d / totalDays) * totalWidth;
+      }
+
+      function xToDate(x, tlStart, totalDays, totalWidth) {
+        if (totalWidth === 0) return new Date(tlStart);
+        const frac = x / totalWidth;
+        const days = Math.round(frac * totalDays);
+        return addDays(tlStart, days);
+      }
+
+      // ---- Selection state ----
+      let selectedItemId = null;
+
+      // ---- Drag state ----
+      let dragState = null;
+      // types: 'create', 'move', 'resize-left', 'resize-right', 'reorder-lane'
+      let dragTooltip = null; // DOM element for showing date during drag
+
+      function showDragTooltip(text, x, y) {
+        if (!dragTooltip) {
+          dragTooltip = document.createElement('div');
+          dragTooltip.className = 'drag-tooltip';
+          document.body.appendChild(dragTooltip);
+        }
+        dragTooltip.textContent = text;
+        dragTooltip.style.left = (x + 15) + 'px';
+        dragTooltip.style.top = (y - 30) + 'px';
+        dragTooltip.style.display = 'block';
+      }
+
+      function hideDragTooltip() {
+        if (dragTooltip) {
+          dragTooltip.remove();
+          dragTooltip = null;
+        }
+      }
+
+      // ---- Render helpers ----
+      function buildEmptyState() {
+        const empty = document.createElement('div');
+        empty.className = 'empty-state';
+        empty.innerHTML = '<p>Add a group to get started</p>';
+        const btn = document.createElement('button');
+        btn.textContent = '+ Add Group';
+        btn.onclick = addSwimlane;
+        empty.appendChild(btn);
+        return empty;
+      }
+
+      function buildSidebarRow(lane, height) {
+        const row = document.createElement('div');
+        row.className = 'sidebar-row';
+        row.dataset.laneId = lane.id;
+        row.draggable = true;
+        row.style.height = height + 'px';
+
+        row.addEventListener('dragstart', (e) => {
+          e.dataTransfer.setData('text/plain', lane.id);
+          e.dataTransfer.effectAllowed = 'move';
+          row.style.opacity = '0.5';
+        });
+        row.addEventListener('dragend', () => { row.style.opacity = ''; });
+        row.addEventListener('dragover', (e) => {
+          e.preventDefault();
+          e.dataTransfer.dropEffect = 'move';
+          const rect = row.getBoundingClientRect();
+          const mid = rect.top + rect.height / 2;
+          row.classList.remove('drag-over-above', 'drag-over-below');
+          if (e.clientY < mid) row.classList.add('drag-over-above');
+          else row.classList.add('drag-over-below');
+        });
+        row.addEventListener('dragleave', () => {
+          row.classList.remove('drag-over-above', 'drag-over-below');
+        });
+        row.addEventListener('drop', (e) => {
+          e.preventDefault();
+          row.classList.remove('drag-over-above', 'drag-over-below');
+          const dragId = e.dataTransfer.getData('text/plain');
+          if (dragId === lane.id) return;
+          const rect = row.getBoundingClientRect();
+          const mid = rect.top + rect.height / 2;
+          const above = e.clientY < mid;
+          setState(s => {
+            const fromIdx = s.swimlanes.findIndex(l => l.id === dragId);
+            if (fromIdx === -1) return;
+            const [moved] = s.swimlanes.splice(fromIdx, 1);
+            let toIdx = s.swimlanes.findIndex(l => l.id === lane.id);
+            if (!above) toIdx++;
+            s.swimlanes.splice(toIdx, 0, moved);
+          });
+        });
+
+        const nameEl = document.createElement('div');
+        nameEl.className = 'lane-name';
+        nameEl.textContent = lane.name;
+        nameEl.addEventListener('click', () => startRenameLane(lane.id));
+
+        const actions = document.createElement('div');
+        actions.className = 'lane-actions';
+        const delBtn = document.createElement('button');
+        delBtn.innerHTML = '&#x2715;';
+        delBtn.title = 'Delete group';
+        delBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          deleteSwimlane(lane.id);
+        });
+        actions.appendChild(delBtn);
+
+        row.appendChild(nameEl);
+        row.appendChild(actions);
+        return row;
+      }
+
+      function buildSidebar(laneHeights) {
+        const sidebar = document.createElement('div');
+        sidebar.className = 'sidebar';
+
+        const sideHeader = document.createElement('div');
+        sideHeader.className = 'sidebar-header';
+        sidebar.appendChild(sideHeader);
+
+        const sideRows = document.createElement('div');
+        sideRows.className = 'sidebar-rows';
+        STATE.swimlanes.forEach((lane, idx) => {
+          sideRows.appendChild(buildSidebarRow(lane, laneHeights[idx]));
+        });
+        sidebar.appendChild(sideRows);
+        return sidebar;
+      }
+
+      function buildItemBar(item, ctx) {
+        const { tlStart, totalDays, totalWidth } = ctx;
+        const itemStart = parseDate(item.startDate);
+        const itemEnd = parseDate(item.endDate);
+        const x1 = dateToX(itemStart, tlStart, totalDays, totalWidth);
+        const x2 = dateToX(itemEnd, tlStart, totalDays, totalWidth);
+        const w = Math.max(x2 - x1, 12);
+        const trackY = LANE_PADDING + item.track * (ITEM_BAR_H + TRACK_GAP);
+
+        const bar = document.createElement('div');
+        bar.className = 'item-bar' + (selectedItemId === item.id ? ' selected' : '');
+        bar.style.left = x1 + 'px';
+        bar.style.width = w + 'px';
+        bar.style.top = trackY + 'px';
+        bar.style.transform = 'none';
+        bar.style.background = item.color;
+        bar.dataset.itemId = item.id;
+        bar.dataset.track = item.track;
+
+        const textSpan = document.createElement('span');
+        textSpan.className = 'item-bar-text';
+        textSpan.textContent = item.name || 'Untitled';
+        bar.appendChild(textSpan);
+
+        const editBtn = document.createElement('button');
+        editBtn.className = 'item-edit-btn';
+        editBtn.textContent = '\u270E';
+        editBtn.addEventListener('pointerdown', (e) => e.stopPropagation());
+        editBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          startRenameItem(item.id, textSpan);
+        });
+        bar.appendChild(editBtn);
+
+        const handleL = document.createElement('div');
+        handleL.className = 'resize-handle left';
+        const handleR = document.createElement('div');
+        handleR.className = 'resize-handle right';
+        bar.appendChild(handleL);
+        bar.appendChild(handleR);
+
+        const deleteBtn = document.createElement('button');
+        deleteBtn.className = 'item-delete-btn';
+        deleteBtn.innerHTML = '&times;';
+        deleteBtn.addEventListener('pointerdown', (e) => e.stopPropagation());
+        deleteBtn.addEventListener('click', (e) => { e.stopPropagation(); deleteItem(item.id); });
+        bar.appendChild(deleteBtn);
+
+        const dragBtn = document.createElement('div');
+        dragBtn.className = 'item-drag-btn';
+        dragBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="12" r="1"/><circle cx="9" cy="5" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="19" r="1"/></svg>`;
+        dragBtn.addEventListener('pointerdown', (e) => {
+          e.stopPropagation();
+          startMove(e, item, tlStart, totalDays, totalWidth);
+        });
+        bar.appendChild(dragBtn);
+
+        handleL.addEventListener('pointerdown', (e) => {
+          e.stopPropagation();
+          startResize(e, item, 'resize-left', tlStart, totalDays, totalWidth);
+        });
+        handleR.addEventListener('pointerdown', (e) => {
+          e.stopPropagation();
+          startResize(e, item, 'resize-right', tlStart, totalDays, totalWidth);
+        });
+
+        bar.addEventListener('pointerdown', (e) => {
+          if (e.target.classList.contains('resize-handle')) return;
+          if (e.target.tagName === 'INPUT') return;
+          e.stopPropagation();
+        });
+        bar.addEventListener('click', (e) => {
+          if (dragState && dragState.moved) return;
+          if (e.target.tagName === 'INPUT') return;
+          e.stopPropagation();
+          selectedItemId = item.id;
+          render();
+        });
+        bar.addEventListener('dblclick', (e) => {
+          if (e.target.classList.contains('resize-handle')) return;
+          e.stopPropagation();
+          startRenameItem(item.id, textSpan);
+        });
+
+        return bar;
+      }
+
+      function buildHeader(ctx) {
+        const { tlStart, tlEnd, totalDays, cols } = ctx;
+        const header = document.createElement('div');
+        header.className = 'timeline-header';
+        const months = getMonths(tlStart, tlEnd);
+
+        // Title row
+        const titleRow = document.createElement('div');
+        titleRow.className = 'timeline-header-row timeline-title-row';
+        titleRow.style.height = TITLE_ROW_H + 'px';
+        const titleEl = document.createElement('div');
+        titleEl.className = 'timeline-title';
+        titleEl.textContent = STATE.timeline.title || 'New Timeline';
+        titleEl.addEventListener('click', () => startRenameTitle());
+        titleRow.appendChild(titleEl);
+
+        const logo = document.createElement('img');
+        logo.className = 'slide-logo';
+        logo.crossOrigin = 'anonymous';
+        logo.src = 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/2f/Logo_of_EQ_Bank.svg/960px-Logo_of_EQ_Bank.svg.png';
+        logo.alt = 'EQ Bank';
+        titleRow.appendChild(logo);
+        header.appendChild(titleRow);
+
+        // Quarter row
+        const quarterRow = document.createElement('div');
+        quarterRow.className = 'timeline-header-row';
+        quarterRow.style.height = QUARTER_ROW_H + 'px';
+        cols.forEach((col, i) => {
+          const hd = document.createElement('div');
+          hd.className = 'timeline-col-header';
+          hd.style.flex = '1';
+          hd.style.background = goldRamp(cols.length === 1 ? 1 : i / (cols.length - 1));
+          hd.textContent = col.label;
+          quarterRow.appendChild(hd);
+        });
+        header.appendChild(quarterRow);
+
+        // Month row
+        const monthRow = document.createElement('div');
+        monthRow.className = 'timeline-header-row';
+        monthRow.style.height = MONTH_ROW_H + 'px';
+        months.forEach((month, i) => {
+          const days = daysBetween(tlStart, month.end) - daysBetween(tlStart, month.start);
+          const pct = (days / totalDays) * 100;
+          const hd = document.createElement('div');
+          hd.className = 'timeline-col-header';
+          hd.style.width = pct + '%';
+          hd.style.background = i % 2 === 0 ? 'var(--canvas-row-even)' : 'var(--canvas-row-odd)';
+          hd.textContent = month.label;
+          monthRow.appendChild(hd);
+        });
+        header.appendChild(monthRow);
+
+        return header;
+      }
+
+      function buildGrid(ctx, laneHeights) {
+        const { tlStart, totalDays, totalWidth, cols } = ctx;
+        const grid = document.createElement('div');
+        grid.className = 'timeline-grid';
+        grid.id = 'timeline-grid';
+        grid.style.width = '100%';
+
+        // Gridlines
+        cols.forEach((col, i) => {
+          if (i === 0) return;
+          const line = document.createElement('div');
+          line.className = 'gridline';
+          line.style.left = (i * 100 / cols.length) + '%';
+          grid.appendChild(line);
+        });
+
+        // Rows with items
+        STATE.swimlanes.forEach((lane, laneIdx) => {
+          const row = document.createElement('div');
+          row.className = 'timeline-grid-row';
+          row.dataset.laneId = lane.id;
+          row.dataset.laneIdx = laneIdx;
+          row.style.height = laneHeights[laneIdx] + 'px';
+
+          STATE.items.filter(it => it.swimlaneId === lane.id).forEach(item => {
+            row.appendChild(buildItemBar(item, ctx));
+          });
+
+          grid.appendChild(row);
+        });
+
+        return grid;
+      }
+
+      function buildLegend() {
+        const usedColors = new Set(STATE.items.map(it => it.color));
+        if (usedColors.size === 0) return null;
+
+        const legend = document.createElement('div');
+        legend.className = 'timeline-legend';
+
+        const legendTitle = document.createElement('div');
+        legendTitle.className = 'timeline-legend-title';
+        legendTitle.textContent = 'Legend';
+        legend.appendChild(legendTitle);
+
+        PALETTE.forEach(color => {
+          if (!usedColors.has(color)) return;
+          const itemEl = document.createElement('div');
+          itemEl.className = 'legend-item';
+
+          const colorDot = document.createElement('div');
+          colorDot.className = 'legend-color';
+          colorDot.style.background = color;
+
+          const labelEl = document.createElement('div');
+          labelEl.className = 'legend-label';
+          labelEl.textContent = STATE.legendLabels[color] || 'Category';
+          labelEl.addEventListener('click', () => startRenameLegend(color, labelEl));
+
+          itemEl.appendChild(colorDot);
+          itemEl.appendChild(labelEl);
+          legend.appendChild(itemEl);
+        });
+
+        return legend;
+      }
+
+      function buildTimelineArea(ctx, laneHeights) {
+        const { tlStart, totalDays, totalWidth } = ctx;
+        const tlArea = document.createElement('div');
+        tlArea.className = 'timeline-area';
+        tlArea.id = 'timeline-area';
+
+        tlArea.appendChild(buildHeader(ctx));
+
+        const grid = buildGrid(ctx, laneHeights);
+
+        // Click-drag to create on grid
+        grid.addEventListener('pointerdown', (e) => {
+          if (e.target.closest('.item-bar')) return;
+          if (e.button !== 0) return;
+          const targetRow = e.target.closest('.timeline-grid-row');
+          if (!targetRow) return;
+          const laneIdx = parseInt(targetRow.dataset.laneIdx);
+          if (isNaN(laneIdx) || laneIdx < 0 || laneIdx >= STATE.swimlanes.length) return;
+          const scale = getSlideScale();
+          const gridRect = grid.getBoundingClientRect();
+          const x = (e.clientX - gridRect.left) / scale;
+
+          selectedItemId = null;
+          const startDate = xToDate(x, tlStart, totalDays, totalWidth);
+
+          dragState = {
+            type: 'create',
+            laneIdx,
+            startX: x,
+            currentX: x,
+            startDate,
+            tlStart, totalDays, totalWidth,
+            gridEl: grid,
+            areaEl: tlArea,
+            ghostEl: null,
+            row: grid.querySelectorAll('.timeline-grid-row')[laneIdx]
+          };
+
+          const ghost = document.createElement('div');
+          ghost.className = 'ghost-bar';
+          ghost.style.height = getItemBarHeight() + 'px';
+          ghost.style.left = x + 'px';
+          ghost.style.width = '0px';
+          dragState.row.appendChild(ghost);
+          dragState.ghostEl = ghost;
+        });
+
+        tlArea.appendChild(grid);
+
+        const legend = buildLegend();
+        if (legend) tlArea.appendChild(legend);
+
+        return tlArea;
+      }
+
+      // ---- Render ----
+      function render() {
+        if (dragState) return;
+        const app = document.getElementById('app');
+        const slide = document.getElementById('slide');
+        const rowHeight = getRowHeight();
+        if (slide) {
+          slide.style.setProperty('--row-height', rowHeight + 'px');
+          slide.style.setProperty('--item-bar-height', ITEM_BAR_H + 'px');
+        }
+
+        app.className = 'main';
+        app.innerHTML = '';
+
+        if (STATE.swimlanes.length === 0) {
+          app.appendChild(buildEmptyState());
+        } else {
+          const tlStart = parseDate(STATE.timeline.startDate);
+          const tlEnd = parseDate(STATE.timeline.endDate);
+          const totalDays = Math.max(daysBetween(tlStart, tlEnd), 1);
+          const cols = getColumns(tlStart, tlEnd, 'quarter');
+          const totalWidth = TIMELINE_W;
+          const laneHeights = getLaneHeights();
+          const ctx = { tlStart, tlEnd, totalDays, cols, totalWidth };
+
+          app.appendChild(buildSidebar(laneHeights));
+          app.appendChild(buildTimelineArea(ctx, laneHeights));
+        }
+
+        renderColorSwatches();
+        updateSlideScale();
+      }
+
+      // ---- Inline edit utility ----
+      function startInlineEdit(el, currentValue, onSave, options = {}) {
+        const { placeholder, autoSize } = options;
+        const input = document.createElement('input');
+        input.value = currentValue;
+        if (placeholder) input.placeholder = placeholder;
+        el.textContent = '';
+
+        let sizer = null;
+        if (autoSize) {
+          sizer = document.createElement('span');
+          sizer.style.cssText = 'position:absolute;visibility:hidden;white-space:pre;font:inherit;pointer-events:none;';
+          el.appendChild(sizer);
+          const resizeInput = () => {
+            sizer.textContent = input.value || input.placeholder || '';
+            input.style.width = sizer.offsetWidth + 'px';
+          };
+          el.appendChild(input);
+          resizeInput();
+          input.addEventListener('input', resizeInput);
+        } else {
+          el.appendChild(input);
+        }
+
+        input.focus();
+        input.select();
+
+        let finished = false;
+        const finish = () => {
+          if (finished) return;
+          finished = true;
+          onSave(input.value.trim());
+        };
+
+        input.addEventListener('blur', finish);
+        input.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') input.blur();
+          if (e.key === 'Escape') { input.value = currentValue; input.blur(); }
+        });
+        input.addEventListener('pointerdown', (e) => e.stopPropagation());
+      }
+
+      // ---- Legend Rename ops ----
+      function startRenameLegend(color, textEl) {
+        const currentName = STATE.legendLabels[color] || 'Category';
+        startInlineEdit(textEl, currentName === 'Category' ? '' : currentName, (val) => {
+          setState(s => {
+            if (val) { s.legendLabels[color] = val; } else { delete s.legendLabels[color]; }
+          });
+        }, { placeholder: 'Category', autoSize: true });
+      }
+
+      // ---- Title ops ----
+      function startRenameTitle() {
+        const titleEl = document.querySelector('.timeline-title');
+        if (!titleEl) return;
+        startInlineEdit(titleEl, STATE.timeline.title || 'New Timeline', (val) => {
+          setState(s => { s.timeline.title = val || 'New Timeline'; });
+        });
+      }
+
+      // ---- Item rename ----
+      function startRenameItem(itemId, textEl) {
+        const item = STATE.items.find(it => it.id === itemId);
+        if (!item) return;
+        startInlineEdit(textEl, item.name || '', (val) => {
+          setState(s => {
+            const it = s.items.find(i => i.id === itemId);
+            if (it) it.name = val;
+          });
+        });
+      }
+
+      // ---- Color Swatches (in control sidebar) ----
+      function renderColorSwatches() {
+        const container = document.getElementById('color-swatches');
+        const infoEl = document.getElementById('color-info');
+
+        if (!container) return;
+
+        container.innerHTML = '';
+
+        PALETTE.forEach((color) => {
+          const swatch = document.createElement('div');
+          swatch.className = 'color-swatch';
+          swatch.style.background = color;
+
+          if (selectedItemId) {
+            const selectedItem = STATE.items.find(it => it.id === selectedItemId);
+            if (selectedItem && selectedItem.color === color) {
+              swatch.classList.add('selected');
+            }
+          }
+
+          swatch.addEventListener('click', () => {
+            if (selectedItemId) {
+              setState(s => {
+                const item = s.items.find(it => it.id === selectedItemId);
+                if (item) item.color = color;
+              });
+            }
+          });
+
+          container.appendChild(swatch);
+        });
+
+        // Update info text
+        if (selectedItemId) {
+          const selectedItem = STATE.items.find(it => it.id === selectedItemId);
+          if (selectedItem) {
+            infoEl.textContent = `Color for: ${selectedItem.name || 'Untitled'}`;
+          }
+        } else {
+          infoEl.textContent = 'Select an item to change color';
+        }
+      }
+
+      // ---- Swimlane ops ----
+      function addSwimlane() {
+        setState(s => {
+          s.swimlanes.push({ id: uid(), name: 'New Group', order: s.swimlanes.length });
+        });
+        // Auto-focus rename on the new lane
+        setTimeout(() => {
+          const rows = document.querySelectorAll('.sidebar-row');
+          const last = rows[rows.length - 1];
+          if (last) {
+            const nameEl = last.querySelector('.lane-name');
+            if (nameEl) startRenameLaneEl(nameEl, STATE.swimlanes[STATE.swimlanes.length - 1].id);
+          }
+        }, 30);
+      }
+
+      function startRenameLane(laneId) {
+        const row = document.querySelector(`.sidebar-row[data-lane-id="${laneId}"]`);
+        if (!row) return;
+        const nameEl = row.querySelector('.lane-name');
+        startRenameLaneEl(nameEl, laneId);
+      }
+
+      function startRenameLaneEl(nameEl, laneId) {
+        const lane = STATE.swimlanes.find(l => l.id === laneId);
+        if (!lane) return;
+        startInlineEdit(nameEl, lane.name, (val) => {
+          setState(s => {
+            const l = s.swimlanes.find(l => l.id === laneId);
+            if (l) l.name = val || 'Untitled';
+          });
+        });
+      }
+
+      function deleteSwimlane(laneId) {
+        const laneItems = STATE.items.filter(it => it.swimlaneId === laneId);
+        if (laneItems.length > 0) {
+          showConfirm(`This group has ${laneItems.length} item(s). Delete it and all its items?`, () => {
+            setState(s => {
+              s.swimlanes = s.swimlanes.filter(l => l.id !== laneId);
+              s.items = s.items.filter(it => it.swimlaneId !== laneId);
+            });
+          });
+        } else {
+          setState(s => {
+            s.swimlanes = s.swimlanes.filter(l => l.id !== laneId);
+          });
+        }
+      }
+
+      // ---- Confirm dialog ----
+      function showConfirm(message, onConfirm) {
+        const overlay = document.createElement('div');
+        overlay.className = 'confirm-overlay';
+        const box = document.createElement('div');
+        box.className = 'confirm-box';
+        const p = document.createElement('p');
+        p.textContent = message;
+        box.appendChild(p);
+        const actions = document.createElement('div');
+        actions.className = 'confirm-actions';
+        actions.innerHTML = '<button class="btn-cancel">Cancel</button><button class="btn-danger">Delete</button>';
+        box.appendChild(actions);
+        overlay.appendChild(box);
+        document.body.appendChild(overlay);
+
+        box.querySelector('.btn-cancel').onclick = () => overlay.remove();
+        box.querySelector('.btn-danger').onclick = () => { overlay.remove(); onConfirm(); };
+        overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+      }
+
+      // ---- Drag handlers (strategy pattern) ----
+      function handleCreateDrag(e, ds, scale) {
+        const gridRect = ds.gridEl.getBoundingClientRect();
+        const x = (e.clientX - gridRect.left) / scale;
+        ds.currentX = x;
+
+        const left = Math.min(ds.startX, x);
+        const right = Math.max(ds.startX, x);
+        const snappedStart = snapToMonday(xToDate(left, ds.tlStart, ds.totalDays, ds.totalWidth));
+        const snappedEnd = snapToMonday(xToDate(right, ds.tlStart, ds.totalDays, ds.totalWidth));
+
+        const snappedLeft = dateToX(snappedStart, ds.tlStart, ds.totalDays, ds.totalWidth);
+        const snappedRight = dateToX(snappedEnd, ds.tlStart, ds.totalDays, ds.totalWidth);
+
+        if (ds.ghostEl) {
+          ds.ghostEl.style.left = snappedLeft + 'px';
+          ds.ghostEl.style.width = Math.abs(snappedRight - snappedLeft) + 'px';
+        }
+        showDragTooltip(`${formatDateForTooltip(snappedStart)} - ${formatDateForTooltip(snappedEnd)}`, e.clientX, e.clientY);
+      }
+
+      function handleMoveDrag(e, ds, scale) {
+        ds.moved = true;
+        const gridRect = ds.gridEl.getBoundingClientRect();
+        const x = (e.clientX - gridRect.left) / scale;
+        const y = (e.clientY - gridRect.top) / scale;
+        const dx = x - ds.startMouseX;
+        const dy = y - ds.startMouseY;
+
+        ds.barEl.style.transform = `translate(${dx}px, calc(-50% - 2px + ${dy}px))`;
+
+        const rawLeft = ds.origLeft + dx;
+        const snappedStartDate = snapToMonday(xToDate(rawLeft, ds.tlStart, ds.totalDays, ds.totalWidth));
+        ds.newStartDate = snappedStartDate;
+        showDragTooltip(formatDateForTooltip(snappedStartDate), e.clientX, e.clientY);
+
+        const laneHeights = getLaneHeights();
+        let cumulativeY = 0;
+        let newLaneIdx = 0;
+        let newTrack = 0;
+
+        for (let i = 0; i < laneHeights.length; i++) {
+          if (y < cumulativeY + laneHeights[i]) {
+            newLaneIdx = i;
+            const trackY = (y - cumulativeY) - LANE_PADDING;
+            newTrack = Math.max(0, Math.floor(trackY / (ITEM_BAR_H + TRACK_GAP)));
+            const maxTrack = getTrackCount(STATE.swimlanes[i].id) - 1;
+            newTrack = Math.min(newTrack, maxTrack + 1);
+            break;
+          }
+          cumulativeY += laneHeights[i];
+        }
+
+        ds.currentLaneIdx = newLaneIdx;
+        ds.currentTrack = newTrack;
+
+        const rows = ds.gridEl.querySelectorAll('.timeline-grid-row');
+        rows.forEach(r => r.classList.remove('drag-over-active'));
+        if (rows[newLaneIdx]) rows[newLaneIdx].classList.add('drag-over-active');
+      }
+
+      function handleResizeDrag(e, ds, scale) {
+        ds.moved = true;
+        const gridRect = ds.gridEl.getBoundingClientRect();
+        const x = (e.clientX - gridRect.left) / scale;
+        const rawDate = xToDate(x, ds.tlStart, ds.totalDays, ds.totalWidth);
+        const snappedX = dateToX(snapToMonday(rawDate), ds.tlStart, ds.totalDays, ds.totalWidth);
+
+        if (ds.type === 'resize-left') {
+          const newLeft = Math.min(snappedX, ds.origRight - 12);
+          ds.barEl.style.left = newLeft + 'px';
+          ds.barEl.style.width = (ds.origRight - newLeft) + 'px';
+          ds.newStartDate = snapToMonday(xToDate(newLeft, ds.tlStart, ds.totalDays, ds.totalWidth));
+          showDragTooltip(formatDateForTooltip(ds.newStartDate), e.clientX, e.clientY);
+        } else {
+          const newRight = Math.max(snappedX, ds.origLeft + 12);
+          ds.barEl.style.width = (newRight - ds.origLeft) + 'px';
+          ds.newEndDate = snapToMonday(xToDate(newRight, ds.tlStart, ds.totalDays, ds.totalWidth));
+          showDragTooltip(formatDateForTooltip(ds.newEndDate), e.clientX, e.clientY);
+        }
+      }
+
+      const dragHandlers = {
+        create: handleCreateDrag,
+        move: handleMoveDrag,
+        'resize-left': handleResizeDrag,
+        'resize-right': handleResizeDrag,
+      };
+
+      document.addEventListener('pointermove', (e) => {
+        if (!dragState) return;
+        const handler = dragHandlers[dragState.type];
+        if (handler) handler(e, dragState, getSlideScale());
+      });
+
+      document.addEventListener('pointerup', (e) => {
+        if (!dragState) return;
+        const ds = dragState;
+        dragState = null;
+        hideDragTooltip();
+
+        // Check if dragged then clear transform & clean up active highlight
+        if (ds.barEl) {
+          ds.barEl.classList.remove('dragging');
+          ds.barEl.style.transform = ''; // Reset the free drag transform
+        }
+        document.querySelectorAll('.drag-over-active').forEach(r => r.classList.remove('drag-over-active'));
+
+        if (ds.type === 'create') {
+          if (ds.ghostEl) ds.ghostEl.remove();
+          const width = Math.abs(ds.currentX - ds.startX);
+          if (width < 5) return; // too small, ignore
+
+          const left = Math.min(ds.startX, ds.currentX);
+          const right = Math.max(ds.startX, ds.currentX);
+          const rawStartDate = xToDate(left, ds.tlStart, ds.totalDays, ds.totalWidth);
+          const rawEndDate = xToDate(right, ds.tlStart, ds.totalDays, ds.totalWidth);
+
+          // Snap to weeks
+          const startDate = snapToMonday(rawStartDate);
+          const endDate = snapToMonday(rawEndDate);
+
+          // Ensure at least 1 week
+          if (daysBetween(startDate, endDate) < 7) {
+            endDate.setDate(endDate.getDate() + 7);
+          }
+
+          const lane = STATE.swimlanes[ds.laneIdx];
+          if (!lane) return;
+
+          const newItem = {
+            id: uid(),
+            swimlaneId: lane.id,
+            name: '',
+            startDate: fmt(startDate),
+            endDate: fmt(endDate),
+            color: PALETTE[STATE.items.length % PALETTE.length],
+            track: 0
+          };
+
+          selectedItemId = newItem.id;
+          setState(s => {
+            s.items.push(newItem);
+          });
+        } else if (ds.type === 'move' && ds.moved) {
+          // Use the snapped start date from dragState (calculated during mousemove)
+          const newStartDate = ds.newStartDate;
+          const origStart = parseDate(ds.item.startDate);
+          const origEnd = parseDate(ds.item.endDate);
+          const duration = daysBetween(origStart, origEnd);
+          const newEndDate = addDays(newStartDate, duration);
+
+          const newLane = STATE.swimlanes[ds.currentLaneIdx];
+
+          setState(s => {
+            const it = s.items.find(i => i.id === ds.item.id);
+            if (it) {
+              it.startDate = fmt(newStartDate);
+              it.endDate = fmt(newEndDate);
+              if (newLane) it.swimlaneId = newLane.id;
+              if (ds.currentTrack !== undefined) it.track = ds.currentTrack;
+            }
+          });
+        } else if ((ds.type === 'resize-left' || ds.type === 'resize-right') && ds.moved) {
+          setState(s => {
+            const it = s.items.find(i => i.id === ds.item.id);
+            if (!it) return;
+            if (ds.type === 'resize-left' && ds.newStartDate) {
+              it.startDate = fmt(ds.newStartDate);
+            } else if (ds.type === 'resize-right' && ds.newEndDate) {
+              it.endDate = fmt(ds.newEndDate);
+            }
+            // Ensure start < end
+            if (parseDate(it.startDate) >= parseDate(it.endDate)) {
+              it.endDate = fmt(addDays(parseDate(it.startDate), 1));
+            }
+          });
+        }
+      });
+
+      function startMove(e, item, tlStart, totalDays, totalWidth) {
+        const bar = e.target.closest('.item-bar');
+        if (!bar) return;
+
+        const grid = document.getElementById('timeline-grid');
+        const area = document.getElementById('timeline-area');
+        const scale = getSlideScale();
+        const gridRect = grid.getBoundingClientRect();
+
+        dragState = {
+          type: 'move',
+          item,
+          barEl: bar,
+          gridEl: grid,
+          areaEl: area,
+          startMouseX: (e.clientX - gridRect.left) / scale,
+          startMouseY: (e.clientY - gridRect.top) / scale,
+          origLeft: parseFloat(bar.style.left),
+          currentLaneIdx: STATE.swimlanes.findIndex(l => l.id === item.swimlaneId),
+          tlStart, totalDays, totalWidth,
+          moved: false
+        };
+        bar.classList.add('dragging');
+      }
+
+      function startResize(e, item, type, tlStart, totalDays, totalWidth) {
+        const bar = e.target.closest('.item-bar');
+        const grid = document.getElementById('timeline-grid');
+        const area = document.getElementById('timeline-area');
+
+        dragState = {
+          type,
+          item,
+          barEl: bar,
+          gridEl: grid,
+          areaEl: area,
+          origLeft: parseFloat(bar.style.left),
+          origRight: parseFloat(bar.style.left) + parseFloat(bar.style.width),
+          tlStart, totalDays, totalWidth,
+          moved: false,
+          newStartDate: null,
+          newEndDate: null
+        };
+      }
+
+
+      // ---- Item delete ----
+      function deleteItem(itemId) {
+        if (selectedItemId === itemId) selectedItemId = null;
+        setState(s => { s.items = s.items.filter(it => it.id !== itemId); });
+      }
+
+      document.addEventListener('keydown', (e) => {
+        // Only trigger global shortcuts if not typing in an input
+        if (document.activeElement.tagName === 'INPUT') {
+          // Input bindings are handled elsewhere (like esc/enter)
+          return;
+        }
+
+        // Undo: Ctrl+Z or Cmd+Z
+        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z' && !e.shiftKey) {
+          e.preventDefault();
+          undo();
+          return;
+        }
+
+        // Redo: Ctrl+Y or Cmd+Y or Ctrl+Shift+Z or Cmd+Shift+Z
+        if ((e.ctrlKey || e.metaKey) && (e.key.toLowerCase() === 'y' || (e.key.toLowerCase() === 'z' && e.shiftKey))) {
+          e.preventDefault();
+          redo();
+          return;
+        }
+
+        // Delete item
+        if (selectedItemId && (e.key === 'Delete' || e.key === 'Backspace')) {
+          deleteItem(selectedItemId);
+        }
+      });
+
+      // ---- Control sidebar events ----
+      document.getElementById('btn-undo').addEventListener('click', undo);
+      document.getElementById('btn-redo').addEventListener('click', redo);
+      document.getElementById('btn-add-swimlane').addEventListener('click', addSwimlane);
+
+      document.getElementById('btn-add-item').addEventListener('click', () => {
+        if (STATE.swimlanes.length === 0) {
+          alert('Please add a group first.');
+          return;
+        }
+        // Add item to first swimlane with default 1-week duration
+        const tlStart = parseDate(STATE.timeline.startDate);
+        const startDate = snapToMonday(new Date());
+        const endDate = addDays(startDate, 28);
+
+        setState(s => {
+          const newItem = {
+            id: uid(),
+            swimlaneId: s.swimlanes[0].id,
+            name: 'New Initiative',
+            startDate: fmt(startDate),
+            endDate: fmt(endDate),
+            color: PALETTE[s.items.length % PALETTE.length],
+            track: 0
+          };
+          s.items.push(newItem);
+          selectedItemId = newItem.id;
+        });
+      });
+
+      document.getElementById('btn-export').addEventListener('click', exportPNG);
+
+      document.getElementById('btn-reset').addEventListener('click', () => {
+        showConfirm('Reset to blank slate? This will delete all groups and initiatives.', () => {
+          STATE = defaultState();
+          selectedItemId = null;
+          saveState();
+          render();
+        });
+      });
+
+      // Deselect on click outside
+      document.addEventListener('click', (e) => {
+        if (!e.target.closest('.item-bar')) {
+          if (selectedItemId) {
+            selectedItemId = null;
+            render();
+          }
+        }
+      });
+
+      // ---- PNG Export ----
+      async function exportPNG() {
+        const slide = document.getElementById('slide');
+        const savedTransform = slide.style.transform;
+        slide.style.transform = 'none';
+        try {
+          const canvas = await html2canvas(slide, { scale: 2, useCORS: true });
+          canvas.toBlob((blob) => {
+            if (!blob) { alert('Export failed.'); return; }
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'timeline.png';
+            a.click();
+            URL.revokeObjectURL(a.href);
+          }, 'image/png');
+        } catch (err) {
+          console.error('Export failed:', err);
+          alert('Export failed. See console for details.');
+        } finally {
+          slide.style.transform = savedTransform;
+        }
+      }
+
+      // ---- Init ----
+      loadState();
+      render();
+      window.addEventListener('resize', updateSlideScale);
+
+    })();
+  </script>
+</body>
+
+</html>
