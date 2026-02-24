@@ -312,7 +312,7 @@
       --sidebar-width: 180px;
       --header-height: 164px;
       --toolbar-height: 44px;
-      --swatch-size: 18px;
+      --swatch-size: 24px;
       --slide-pad: 48px;
       --item-bar-height: 35px;
       --track-gap: 8px;
@@ -363,6 +363,7 @@
       gap: var(--space-300);
       flex-shrink: 0;
       overflow-x: auto;
+      flex-wrap: wrap;
     }
 
     .control-section {
@@ -370,6 +371,8 @@
       flex-direction: column;
       justify-content: flex-start;
       gap: var(--space-100);
+      flex: 1 1 auto;
+      min-width: 150px;
     }
 
     .control-ribbon h3 {
@@ -389,6 +392,12 @@
       flex: 1;
     }
 
+    .control-ribbon button svg,
+    .btn-restart svg {
+      vertical-align: -2px;
+      flex-shrink: 0;
+    }
+
     .control-ribbon button {
       min-width: 80px;
       height: 32px;
@@ -405,83 +414,67 @@
       white-space: nowrap;
     }
 
-    .control-ribbon button:hover {
-      border-color: rgba(255, 255, 255, 0.25);
+    .control-ribbon button:hover:not(:disabled) {
+      border-color: rgba(255, 255, 255, 0.3);
       background: rgba(255, 255, 255, 0.15);
+      transform: translateY(-1px);
     }
 
-    .control-ribbon .btn-primary {
-      background: var(--eq-purple);
-      color: var(--_N0);
-      border-color: var(--eq-purple);
-      font-weight: var(--font-weight-semibold);
-      box-shadow: var(--shadow-purple-sm);
-    }
-
-    .control-ribbon .btn-primary:disabled {
+    .control-ribbon button:disabled {
       opacity: 0.4;
       cursor: not-allowed;
       pointer-events: none;
-    }
-
-    .control-ribbon .btn-primary:hover:not(:disabled) {
-      background: var(--eq-purple-hover);
-      border-color: var(--eq-purple-hover);
-      box-shadow: var(--shadow-purple-md);
-      transform: translateY(-1px);
-    }
-
-    .control-ribbon .btn-secondary {
-      background: var(--eq-gold);
-      color: #000000;
-      border-color: var(--eq-gold);
-      font-weight: var(--font-weight-semibold);
-      box-shadow: var(--shadow-gold-sm);
-    }
-
-    .control-ribbon .btn-secondary:hover:not(:disabled) {
-      filter: brightness(0.92);
-      box-shadow: var(--shadow-gold-md);
-      transform: translateY(-1px);
-    }
-
-    .control-ribbon .btn-danger {
-      background: var(--color-bg-danger-bold);
-      color: var(--color-text-inverse);
-      border-color: var(--color-bg-danger-bold);
-      font-weight: var(--font-weight-semibold);
-      box-shadow: var(--shadow-neutral-sm);
-    }
-
-    .control-ribbon .btn-danger:hover:not(:disabled) {
-      filter: brightness(0.9);
-      box-shadow: var(--shadow-neutral-md);
-      transform: translateY(-1px);
-    }
-
-    .control-ribbon .btn-warning {
-      background: var(--_Y500);
-      color: var(--_N900);
-      border-color: var(--_Y500);
-      font-weight: var(--font-weight-semibold);
-      box-shadow: var(--shadow-neutral-sm);
-    }
-
-    .control-ribbon .btn-warning:hover:not(:disabled) {
-      filter: brightness(0.9);
-      box-shadow: var(--shadow-neutral-md);
-      transform: translateY(-1px);
-    }
-
-    button:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
     }
 
     .control-section-divider {
       width: var(--border-width);
       background: rgba(255, 255, 255, 0.15);
       margin: 0 var(--space-100);
+      align-self: stretch;
+    }
+
+    @media (max-width: 900px) {
+      .control-section-divider {
+        display: none;
+      }
+
+      .control-ribbon {
+        gap: var(--space-200);
+      }
+
+      .control-section {
+        padding: var(--space-100);
+        background: rgba(255, 255, 255, 0.04);
+        border-radius: var(--radius-medium);
+      }
+    }
+
+    /* Restart button */
+    .btn-restart {
+      position: fixed;
+      bottom: var(--space-200);
+      left: var(--space-200);
+      padding: 0 var(--space-200);
+      height: 32px;
+      min-width: 80px;
+      border: var(--border-width) solid rgba(0, 0, 0, 0.15);
+      border-radius: var(--radius-medium);
+      background: rgba(0, 0, 0, 0.06);
+      color: var(--eq-dark);
+      font-family: var(--font-family-body);
+      font-size: var(--font-size-body-medium);
+      font-weight: var(--font-weight-medium);
+      cursor: pointer;
+      opacity: 0.6;
+      transition: all 150ms var(--ease);
+      z-index: 100;
+    }
+
+    .btn-restart:hover {
+      opacity: 1;
+      border-color: var(--color-bg-danger-bold);
+      background: var(--color-bg-danger-bold);
+      color: white;
     }
 
     /* Slide viewport */
@@ -909,19 +902,19 @@
     .item-delete-btn {
       display: none;
       position: absolute;
-      top: -7px;
-      right: -7px;
-      width: var(--space-200);
-      height: var(--space-200);
-      min-width: var(--space-200);
-      min-height: var(--space-200);
+      top: -9px;
+      right: -9px;
+      width: 22px;
+      height: 22px;
+      min-width: 22px;
+      min-height: 22px;
       aspect-ratio: 1;
       border-radius: var(--radius-full);
       background: var(--color-bg-danger-bold);
       color: var(--color-text-inverse);
       border: none;
-      font-size: var(--font-size-heading-xxsmall);
-      line-height: var(--space-200);
+      font-size: var(--font-size-body-small);
+      line-height: 22px;
       cursor: pointer;
       align-items: center;
       justify-content: center;
@@ -936,10 +929,10 @@
     .item-drag-btn {
       display: none;
       position: absolute;
-      top: -7px;
-      right: 13px;
-      width: var(--space-200);
-      height: var(--space-200);
+      top: -9px;
+      right: 17px;
+      width: 22px;
+      height: 22px;
       border-radius: var(--radius-full);
       background: var(--elevation-surface);
       color: var(--color-icon-subtle);
@@ -952,8 +945,8 @@
     }
 
     .item-drag-btn svg {
-      width: 10px;
-      height: 10px;
+      width: 13px;
+      height: 13px;
     }
 
     .item-drag-btn:hover {
@@ -1019,7 +1012,8 @@
     .color-swatches {
       display: flex;
       flex-wrap: wrap;
-      gap: var(--space-050);
+      align-items: center;
+      gap: var(--space-100);
     }
 
     .color-swatch {
@@ -1044,8 +1038,12 @@
 
     .color-swatch-info {
       font-size: var(--font-size-body-small);
-      color: var(--color-text-subtlest);
-      margin-top: var(--space-050);
+      color: rgba(255, 255, 255, 0.5);
+      min-height: 0;
+    }
+
+    .color-swatch-info:empty {
+      display: none;
     }
 
     /* Legend */
@@ -1279,21 +1277,19 @@
       <div class="control-section">
         <h3>1 - fill out your timeline</h3>
         <div class="section-content">
-          <button class="btn-primary" id="btn-add-swimlane">+ Add Group</button>
-          <button class="btn-primary" id="btn-add-item">+ Add Initiative</button>
+          <button id="btn-add-swimlane"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Add Group</button>
+          <button id="btn-add-item"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Add Initiative</button>
         </div>
       </div>
 
       <div class="control-section-divider"></div>
 
       <div class="control-section">
-        <h3>2 - color code and update the legend</h3>
-        <div style="display: flex; flex-direction: column; gap: var(--space-050);">
+        <h3>2 - color code</h3>
+        <div class="section-content">
           <div class="color-swatches" id="color-swatches"></div>
-          <div class="color-swatch-info" id="color-info"
-            style="font-size: var(--font-size-body-small); color: rgba(255, 255, 255, 0.5);">Select an item to change
-            color</div>
         </div>
+        <div class="color-swatch-info" id="color-info"></div>
       </div>
 
       <div class="control-section-divider"></div>
@@ -1301,23 +1297,21 @@
       <div class="control-section">
         <h3>3 - edit as you need</h3>
         <div class="section-content">
-          <button class="btn-primary" id="btn-undo" disabled title="Undo (Ctrl+Z)">Undo</button>
-          <button class="btn-primary" id="btn-redo" disabled title="Redo (Ctrl+Y)">Redo</button>
-          <button class="btn-danger" id="btn-reset"
-            style="background: var(--color-bg-danger-bold); color: white; border: none; box-shadow: var(--shadow-neutral-sm);">Restart</button>
+          <button id="btn-undo" disabled title="Undo (Ctrl+Z)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg> Undo</button>
+          <button id="btn-redo" disabled title="Redo (Ctrl+Y)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.13-9.36L23 10"/></svg> Redo</button>
         </div>
       </div>
 
       <div class="control-section-divider"></div>
 
       <div class="control-section">
-        <h3>4 - export to PNG</h3>
+        <h3>4 - export</h3>
         <div class="section-content">
-          <button id="btn-export"
-            style="background: #FFCB31; color: var(--_N900); border-color: #FFCB31; font-weight: var(--font-weight-semibold); box-shadow: var(--shadow-neutral-sm);">Export
-            PNG</button>
+          <button id="btn-export"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> PNG</button>
+          <button id="btn-export-csv"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg> CSV</button>
         </div>
       </div>
+
     </div>
 
     <div class="slide-viewport">
@@ -1325,6 +1319,8 @@
         <div id="app"></div>
       </div>
     </div>
+
+    <button class="btn-restart" id="btn-reset"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg> Restart</button>
   </div>
 
   <script>
@@ -1930,7 +1926,7 @@
 
         const dragBtn = document.createElement('div');
         dragBtn.className = 'item-drag-btn';
-        dragBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="12" r="1"/><circle cx="9" cy="5" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="19" r="1"/></svg>`;
+        dragBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 9 2 12 5 15"/><polyline points="9 5 12 2 15 5"/><polyline points="15 19 12 22 9 19"/><polyline points="19 9 22 12 19 15"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="12" y2="22"/></svg>`;
         dragBtn.addEventListener('pointerdown', (e) => {
           e.stopPropagation();
           startMove(e, item, tlStart, totalDays, totalWidth);
@@ -2280,6 +2276,8 @@
                 const item = s.items.find(it => it.id === selectedItemId);
                 if (item) item.color = color;
               });
+            } else {
+              infoEl.textContent = 'Select an item first';
             }
           });
 
@@ -2287,14 +2285,7 @@
         });
 
         // Update info text
-        if (selectedItemId) {
-          const selectedItem = STATE.items.find(it => it.id === selectedItemId);
-          if (selectedItem) {
-            infoEl.textContent = `Color for: ${selectedItem.name || 'Untitled'}`;
-          }
-        } else {
-          infoEl.textContent = 'Select an item to change color';
-        }
+        infoEl.textContent = '';
       }
 
       // ---- Swimlane ops ----
@@ -2657,7 +2648,29 @@
         });
       });
 
+      function exportCSV() {
+        const laneMap = {};
+        STATE.swimlanes.forEach(l => { laneMap[l.id] = l.name; });
+        const escape = (v) => '"' + String(v).replace(/"/g, '""') + '"';
+        const rows = [['Group', 'Initiative', 'Start Date', 'End Date'].map(escape).join(',')];
+        STATE.items.forEach(item => {
+          rows.push([
+            escape(laneMap[item.swimlaneId] || ''),
+            escape(item.name || ''),
+            escape(item.startDate),
+            escape(item.endDate)
+          ].join(','));
+        });
+        const blob = new Blob([rows.join('\n')], { type: 'text/csv' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'timeline.csv';
+        a.click();
+        URL.revokeObjectURL(a.href);
+      }
+
       document.getElementById('btn-export').addEventListener('click', exportPNG);
+      document.getElementById('btn-export-csv').addEventListener('click', exportCSV);
 
       document.getElementById('btn-reset').addEventListener('click', () => {
         showConfirm('Reset to blank slate? This will delete all groups and initiatives.', () => {
