@@ -792,10 +792,8 @@
     .item-bar {
       position: absolute;
       height: var(--item-bar-height, 35px);
-      top: 50%;
-      transform: translateY(-50%);
       border-radius: var(--radius-medium);
-      cursor: default;
+      cursor: pointer;
       display: flex;
       align-items: center;
       padding: 0 var(--space-100);
@@ -810,49 +808,50 @@
 
     .item-bar:hover {
       box-shadow: var(--shadow-item-hover);
-      transform: translateY(calc(-50% - 1px));
+      transform: translateY(-1px);
       z-index: 4;
     }
 
     .item-bar-text {
-      pointer-events: none;
+      pointer-events: auto;
       flex: 1;
       overflow: hidden;
       text-overflow: ellipsis;
-      cursor: text;
-      pointer-events: auto;
-      /* Re-enable pointer events for hover/click */
-    }
-
-    .item-edit-btn {
-      position: absolute;
-      right: var(--space-400);
-      top: 50%;
-      transform: translateY(-50%);
-      font-size: var(--font-size-body);
-      color: var(--color-icon-inverse);
-      opacity: 0;
-      transition: opacity 150ms var(--ease);
       cursor: pointer;
-      background: none;
-      border: none;
+    }
+
+    .item-delete-btn {
+      display: none;
+      position: absolute;
+      top: -8px;
+      right: -8px;
+      width: 22px;
+      height: 22px;
+      border-radius: var(--radius-full);
+      background: var(--color-bg-danger-bold);
+      color: white;
+      border: 2px solid var(--elevation-surface);
+      cursor: pointer;
+      align-items: center;
+      justify-content: center;
+      z-index: 6;
       padding: 0;
-      line-height: 1;
-      z-index: 4;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+      transition: transform 120ms var(--ease);
     }
 
-    .item-bar:hover .item-edit-btn {
-      opacity: 0.5;
+    .item-delete-btn svg {
+      width: 12px;
+      height: 12px;
     }
 
-    .item-edit-btn:hover {
-      opacity: 1 !important;
+    .item-delete-btn:hover {
+      transform: scale(1.15);
     }
 
-    .item-bar:hover .item-bar-text,
-    .item-bar.selected .item-bar-text {
-      padding-right: 28px;
-      /* Prevents text from overlapping the hover action buttons */
+    .item-bar:hover .item-delete-btn,
+    .item-bar.selected .item-delete-btn {
+      display: flex;
     }
 
     .item-bar input {
@@ -860,13 +859,15 @@
       font-size: inherit;
       font-weight: inherit;
       color: inherit;
-      background: rgba(0, 0, 0, 0.2);
+      background: transparent;
       border: none;
-      border-radius: var(--radius-small);
+      border-bottom: 2px solid rgba(255, 255, 255, 0.6);
+      border-radius: 0;
       outline: none;
-      padding: 0 var(--space-050);
+      padding: 0 var(--space-050) 2px;
       margin: 0 calc(-1 * var(--space-050));
       width: calc(100% + var(--space-100));
+      caret-color: white;
     }
 
     .item-bar.selected {
@@ -878,7 +879,7 @@
       cursor: grabbing;
       z-index: 100;
       box-shadow: var(--shadow-card);
-      transform: translateY(calc(-50% - 2px));
+      transform: translateY(-2px);
     }
 
     .item-bar .resize-handle {
@@ -888,110 +889,25 @@
       width: var(--space-100);
       cursor: ew-resize;
       z-index: 4;
-      transition: background 0.15s;
+      transition: background 150ms var(--ease);
     }
 
     .item-bar .resize-handle.left {
       left: 0;
+      border-radius: var(--radius-medium) 0 0 var(--radius-medium);
     }
 
     .item-bar .resize-handle.right {
       right: 0;
-    }
-
-    .item-delete-btn {
-      display: none;
-      position: absolute;
-      top: -9px;
-      right: -9px;
-      width: 22px;
-      height: 22px;
-      min-width: 22px;
-      min-height: 22px;
-      aspect-ratio: 1;
-      border-radius: var(--radius-full);
-      background: var(--color-bg-danger-bold);
-      color: var(--color-text-inverse);
-      border: none;
-      font-size: var(--font-size-body-small);
-      line-height: 22px;
-      cursor: pointer;
-      align-items: center;
-      justify-content: center;
-      z-index: 6;
-      padding: 0;
-      font-family: var(--font-family-body);
-      box-shadow: var(--elevation-shadow-raised);
-      appearance: none;
-      -webkit-appearance: none;
-    }
-
-    .item-drag-btn {
-      display: none;
-      position: absolute;
-      top: -9px;
-      right: 17px;
-      width: 22px;
-      height: 22px;
-      border-radius: var(--radius-full);
-      background: var(--elevation-surface);
-      color: var(--color-icon-subtle);
-      border: var(--border-width) solid var(--color-border);
-      cursor: grab;
-      align-items: center;
-      justify-content: center;
-      z-index: 6;
-      box-shadow: var(--elevation-shadow-raised);
-    }
-
-    .item-drag-btn svg {
-      width: 13px;
-      height: 13px;
-    }
-
-    .item-drag-btn:hover {
-      background: var(--color-bg-neutral-hovered);
-      color: var(--color-icon);
-    }
-
-    .item-drag-btn:active {
-      cursor: grabbing;
-    }
-
-    .item-bar:hover .item-delete-btn,
-    .item-bar.selected .item-delete-btn,
-    .item-bar:hover .item-drag-btn,
-    .item-bar.selected .item-drag-btn {
-      display: flex;
+      border-radius: 0 var(--radius-medium) var(--radius-medium) 0;
     }
 
     .item-bar:hover .resize-handle {
-      background: var(--color-overlay-light-30);
+      background: rgba(255, 255, 255, 0.2);
     }
 
     .item-bar .resize-handle:hover {
-      background: var(--color-overlay-light-50);
-    }
-
-    .item-bar .resize-handle::before {
-      content: '';
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: 3px;
-      height: var(--space-150);
-      background: var(--color-overlay-light-00);
-      border-radius: var(--border-width);
-      transition: background 0.15s;
-    }
-
-    .item-bar:hover .resize-handle::before {
-      background: var(--color-overlay-light-60);
-    }
-
-    .item-bar .resize-handle:hover::before {
-      background: var(--color-overlay-light-90);
+      background: rgba(255, 255, 255, 0.4);
     }
 
     /* Ghost bar (drag-create) */
@@ -1890,7 +1806,6 @@
         bar.style.left = x1 + 'px';
         bar.style.width = w + 'px';
         bar.style.top = trackY + 'px';
-        bar.style.transform = 'none';
         bar.style.background = item.color;
         bar.dataset.itemId = item.id;
         bar.dataset.track = item.track;
@@ -1900,15 +1815,17 @@
         textSpan.textContent = item.name || 'Untitled';
         bar.appendChild(textSpan);
 
-        const editBtn = document.createElement('button');
-        editBtn.className = 'item-edit-btn';
-        editBtn.textContent = '\u270E';
-        editBtn.addEventListener('pointerdown', (e) => e.stopPropagation());
-        editBtn.addEventListener('click', (e) => {
+        // Delete button (top-right)
+        const deleteBtn = document.createElement('button');
+        deleteBtn.className = 'item-delete-btn';
+        deleteBtn.title = 'Delete';
+        deleteBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`;
+        deleteBtn.addEventListener('pointerdown', (e) => e.stopPropagation());
+        deleteBtn.addEventListener('click', (e) => {
           e.stopPropagation();
-          startRenameItem(item.id, textSpan);
+          deleteItem(item.id);
         });
-        bar.appendChild(editBtn);
+        bar.appendChild(deleteBtn);
 
         const handleL = document.createElement('div');
         handleL.className = 'resize-handle left';
@@ -1916,22 +1833,6 @@
         handleR.className = 'resize-handle right';
         bar.appendChild(handleL);
         bar.appendChild(handleR);
-
-        const deleteBtn = document.createElement('button');
-        deleteBtn.className = 'item-delete-btn';
-        deleteBtn.innerHTML = '&times;';
-        deleteBtn.addEventListener('pointerdown', (e) => e.stopPropagation());
-        deleteBtn.addEventListener('click', (e) => { e.stopPropagation(); deleteItem(item.id); });
-        bar.appendChild(deleteBtn);
-
-        const dragBtn = document.createElement('div');
-        dragBtn.className = 'item-drag-btn';
-        dragBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 9 2 12 5 15"/><polyline points="9 5 12 2 15 5"/><polyline points="15 19 12 22 9 19"/><polyline points="19 9 22 12 19 15"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="12" y2="22"/></svg>`;
-        dragBtn.addEventListener('pointerdown', (e) => {
-          e.stopPropagation();
-          startMove(e, item, tlStart, totalDays, totalWidth);
-        });
-        bar.appendChild(dragBtn);
 
         handleL.addEventListener('pointerdown', (e) => {
           e.stopPropagation();
@@ -1945,19 +1846,42 @@
         bar.addEventListener('pointerdown', (e) => {
           if (e.target.classList.contains('resize-handle')) return;
           if (e.target.tagName === 'INPUT') return;
+          if (e.target.closest('.item-delete-btn')) return;
           e.stopPropagation();
+
+          const startX = e.clientX;
+          const startY = e.clientY;
+          let moved = false;
+
+          function onMove(me) {
+            const dx = me.clientX - startX;
+            const dy = me.clientY - startY;
+            if (!moved && Math.abs(dx) + Math.abs(dy) > 5) {
+              moved = true;
+              document.removeEventListener('pointermove', onMove);
+              document.removeEventListener('pointerup', onUp);
+              startMove(e, item, tlStart, totalDays, totalWidth);
+            }
+          }
+
+          function onUp() {
+            document.removeEventListener('pointermove', onMove);
+            document.removeEventListener('pointerup', onUp);
+          }
+
+          document.addEventListener('pointermove', onMove);
+          document.addEventListener('pointerup', onUp);
         });
         bar.addEventListener('click', (e) => {
           if (dragState && dragState.moved) return;
           if (e.target.tagName === 'INPUT') return;
           e.stopPropagation();
-          selectedItemId = item.id;
-          render();
-        });
-        bar.addEventListener('dblclick', (e) => {
-          if (e.target.classList.contains('resize-handle')) return;
-          e.stopPropagation();
-          startRenameItem(item.id, textSpan);
+          if (selectedItemId === item.id) {
+            startRenameItem(item.id, textSpan);
+          } else {
+            selectedItemId = item.id;
+            render();
+          }
         });
 
         return bar;
@@ -2201,7 +2125,7 @@
         }
 
         input.focus();
-        input.select();
+        input.setSelectionRange(input.value.length, input.value.length);
 
         let finished = false;
         const finish = () => {
@@ -2339,6 +2263,24 @@
       }
 
       // ---- Confirm dialog ----
+      function showInfo(message) {
+        const overlay = document.createElement('div');
+        overlay.className = 'confirm-overlay';
+        const box = document.createElement('div');
+        box.className = 'confirm-box';
+        const p = document.createElement('p');
+        p.textContent = message;
+        box.appendChild(p);
+        const actions = document.createElement('div');
+        actions.className = 'confirm-actions';
+        actions.innerHTML = '<button class="btn-cancel">OK</button>';
+        box.appendChild(actions);
+        overlay.appendChild(box);
+        document.body.appendChild(overlay);
+        box.querySelector('.btn-cancel').onclick = () => overlay.remove();
+        overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+      }
+
       function showConfirm(message, onConfirm) {
         const overlay = document.createElement('div');
         overlay.className = 'confirm-overlay';
@@ -2388,7 +2330,7 @@
         const dx = x - ds.startMouseX;
         const dy = y - ds.startMouseY;
 
-        ds.barEl.style.transform = `translate(${dx}px, calc(-50% - 2px + ${dy}px))`;
+        ds.barEl.style.transform = `translate(${dx}px, calc(-2px + ${dy}px))`;
 
         const rawLeft = ds.origLeft + dx;
         const snappedStartDate = snapToMonday(xToDate(rawLeft, ds.tlStart, ds.totalDays, ds.totalWidth));
@@ -2625,7 +2567,7 @@
 
       document.getElementById('btn-add-item').addEventListener('click', () => {
         if (STATE.swimlanes.length === 0) {
-          alert('Please add a group first.');
+          showInfo('Please add a group first.');
           return;
         }
         // Add item to first swimlane with default 1-week duration
