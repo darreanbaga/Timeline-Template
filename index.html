@@ -278,6 +278,7 @@
       /* ── Row stripe palette ──────────────────────────────────────── */
       --canvas-row-even: var(--_N100);
       --canvas-row-odd: var(--_N200);
+      --canvas-row-weekend: #E6E8EC;
       /* ── EQ Bank brand accent ────────────────────────────────────── */
       --eq-gold: #ffcb31;
       --eq-purple: #513bfc;
@@ -921,6 +922,10 @@
       flex-direction: column;
       gap: var(--space-100);
       z-index: 10;
+      background: var(--canvas-row-weekend);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-medium);
+      padding: var(--space-150) var(--space-200);
     }
 
     .timeline-legend.legend-align-left {
@@ -990,44 +995,6 @@
       min-width: 2ch;
     }
 
-    /* Empty state */
-    .empty-state {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      flex: 1;
-      color: var(--color-text-subtle);
-      gap: var(--space-200);
-    }
-
-    .empty-state p {
-      font-family: var(--font-family-body);
-      font-size: var(--font-size-body);
-      font-weight: var(--font-weight-medium);
-    }
-
-    .empty-state button {
-      font-family: var(--font-family-body);
-      font-size: var(--font-size-body);
-      font-weight: var(--font-weight-semibold);
-      height: 38px;
-      padding: 0 var(--space-300);
-      border: 1px solid var(--eq-purple);
-      border-radius: var(--radius-medium);
-      background: var(--eq-purple);
-      color: var(--_N0);
-      cursor: pointer;
-      box-shadow: var(--shadow-purple-sm);
-      transition: all 150ms var(--ease);
-    }
-
-    .empty-state button:hover {
-      background: var(--eq-purple-hover);
-      border-color: var(--eq-purple-hover);
-      box-shadow: var(--shadow-purple-md);
-      transform: translateY(-1px);
-    }
 
 
     /* Scrollbar styling */
@@ -1505,7 +1472,7 @@
       const AUTOFOCUS_DELAY_MS = 30;
       const SAVE_DEBOUNCE_MS = 500;
       const MAX_HISTORY = 50;
-      const FY_START_MONTH = 9; // October (0-indexed)
+      const FY_START_MONTH = 10; // November (0-indexed), FY ends October 31
 
       // Interpolate from eq-gold-light (#fff8e6) to eq-gold (#ffcb31), t in [0,1]
       function goldRamp(t) {
@@ -1541,8 +1508,8 @@
         return {
           isExample: true,
           timeline: {
-            startDate: '2025-10-01',
-            endDate: '2026-10-01',
+            startDate: '2025-11-01',
+            endDate: '2026-11-01',
             zoomLevel: 1,
             title: 'Q1 Product Launch Campaign',
             monthCount: 12,
@@ -2073,16 +2040,6 @@
       }
 
       // ---- Render helpers ----
-      function buildEmptyState() {
-        const empty = document.createElement('div');
-        empty.className = 'empty-state';
-        empty.innerHTML = '<p>Add a group to get started</p>';
-        const btn = document.createElement('button');
-        btn.textContent = '+ Add Group';
-        btn.onclick = addSwimlane;
-        empty.appendChild(btn);
-        return empty;
-      }
 
       function buildSidebarRow(lane, height) {
         const row = document.createElement('div');
@@ -2303,27 +2260,19 @@
           e.stopPropagation();
           selectedItemId = item.id;
           render();
-        });
-
-        bar.addEventListener('contextmenu', (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          selectedItemId = item.id;
-          showMenu([
-            { label: 'Rename', onClick: () => {
-              const lbl = document.querySelector(`.item-bar-label[data-item-id="${item.id}"]`);
-              if (lbl) startRenameItem(item.id, lbl);
-            }},
-            { separator: true },
-            { colors: PALETTE, selectedColor: item.color, onColorClick: (color) => {
-              setState(s => {
-                const it = s.items.find(i => i.id === item.id);
-                if (it) it.color = color;
-              });
-            }},
-            { separator: true },
-            { label: 'Delete', danger: true, onClick: () => deleteItem(item.id) },
-          ], bar);
+          requestAnimationFrame(() => {
+            const newBar = document.querySelector(`.item-bar[data-item-id="${item.id}"]`);
+            if (!newBar) return;
+            showMenu([
+              { colors: PALETTE, selectedColor: item.color, onColorClick: (color) => {
+                setState(s => {
+                  const it = s.items.find(i => i.id === item.id);
+                  if (it) it.color = color;
+                });
+              }},
+              { label: 'Delete', danger: true, onClick: () => deleteItem(item.id) },
+            ], newBar);
+          });
         });
 
         wrapper.appendChild(bar);
@@ -2432,7 +2381,7 @@
         // Month row
         const monthStyle = cfg.monthColorMode === 'gradient'
           ? (_m, i, len) => goldRamp(len === 1 ? 1 : i / (len - 1))
-          : (_m, i) => i % 2 === 0 ? 'var(--canvas-row-even)' : 'var(--canvas-row-odd)';
+          : (_m, i) => i % 2 === 0 ? 'var(--canvas-row-even)' : 'var(--canvas-row-weekend)';
         const monthLabel = cfg.useFullMonthNames
           ? (m) => MONTH_NAMES_FULL[m.start.getMonth()]
           : undefined;
@@ -2444,13 +2393,13 @@
             header.appendChild(buildHeaderRow(getDays(tlStart, tlEnd), ctx, WEEK_ROW_H,
               (day) => {
                 const dow = day.start.getDay();
-                return (dow === 0 || dow === 6) ? 'var(--_N300)' : 'var(--canvas-row-even)';
+                return (dow === 0 || dow === 6) ? 'var(--canvas-row-weekend)' : 'var(--canvas-row-even)';
               },
               { className: 'timeline-week-header' }
             ));
           } else {
             header.appendChild(buildHeaderRow(getWeeks(tlStart, tlEnd), ctx, WEEK_ROW_H,
-              (_w, i) => i % 2 === 0 ? 'var(--canvas-row-even)' : 'var(--canvas-row-odd)',
+              (_w, i) => i % 2 === 0 ? 'var(--canvas-row-even)' : 'var(--canvas-row-weekend)',
               { className: 'timeline-week-header' }
             ));
           }
@@ -2600,21 +2549,17 @@
         app.className = 'main';
         app.innerHTML = '';
 
-        if (STATE.swimlanes.length === 0) {
-          app.appendChild(buildEmptyState());
-        } else {
-          const tlStart = parseDate(STATE.timeline.startDate);
-          const tlEnd = parseDate(STATE.timeline.endDate);
-          const totalDays = Math.max(daysBetween(tlStart, tlEnd), 1);
-          const cfg = getDisplayConfig(STATE.timeline.monthCount || 12);
-          const cols = getColumns(tlStart, tlEnd, cfg.topGranularity);
-          const totalWidth = getTimelineWidth();
-          const laneHeights = getLaneHeights();
-          const ctx = { tlStart, tlEnd, totalDays, cols, totalWidth };
+        const tlStart = parseDate(STATE.timeline.startDate);
+        const tlEnd = parseDate(STATE.timeline.endDate);
+        const totalDays = Math.max(daysBetween(tlStart, tlEnd), 1);
+        const cfg = getDisplayConfig(STATE.timeline.monthCount || 12);
+        const cols = getColumns(tlStart, tlEnd, cfg.topGranularity);
+        const totalWidth = getTimelineWidth();
+        const laneHeights = getLaneHeights();
+        const ctx = { tlStart, tlEnd, totalDays, cols, totalWidth };
 
-          app.appendChild(buildSidebar(laneHeights));
-          app.appendChild(buildTimelineArea(ctx, laneHeights));
-        }
+        app.appendChild(buildSidebar(laneHeights));
+        app.appendChild(buildTimelineArea(ctx, laneHeights));
 
         updateLengthDisplay();
         updateStartDateDisplay();
@@ -2818,7 +2763,7 @@
         activeMenu = menu;
       }
 
-      // ---- Confirm dialog (legacy, kept for restart) ----
+      // ---- Confirm dialog ----
       function showInfo(message) {
         const overlay = document.createElement('div');
         overlay.className = 'confirm-overlay';
@@ -3250,11 +3195,13 @@
       document.getElementById('btn-export-csv').addEventListener('click', exportCSV);
 
       document.getElementById('btn-reset').addEventListener('click', () => {
-        showConfirm('Reset to blank slate? This will delete all groups and initiatives.', () => {
-          STATE = defaultState();
+        showConfirm('Delete all groups and initiatives?', () => {
+          setState(s => {
+            s.swimlanes = [{ id: uid(), name: 'New Group', order: 0, minRows: 1 }];
+            s.items = [];
+            s.legendLabels = {};
+          });
           selectedItemId = null;
-          saveState();
-          render();
         });
       });
 
