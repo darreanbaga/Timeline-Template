@@ -187,8 +187,6 @@
 
       /* ── Border width ────────────────────────────────────────────── */
       --border-width: 1px;
-      --border-width-selected: 2px;
-      --border-width-focused: 2px;
 
       /* ── Radius ──────────────────────────────────────────────────── */
       --radius-xsmall: 2px;
@@ -561,6 +559,10 @@
       transition: background 150ms var(--ease);
     }
 
+    .sidebar-row:last-child {
+      border-bottom: none;
+    }
+
     .sidebar-row:hover {
       background: var(--color-bg-neutral-hovered);
     }
@@ -575,7 +577,7 @@
       padding: var(--space-050) var(--space-100);
       border-radius: var(--radius-small);
       position: relative;
-      border: 1px solid transparent;
+      border: var(--border-width) solid transparent;
       transition: all 150ms var(--ease);
       margin-right: var(--space-100);
     }
@@ -652,7 +654,6 @@
       top: 0;
       z-index: 5;
       background: var(--elevation-surface);
-      border-bottom: var(--border-width) solid var(--color-border);
       display: flex;
       flex-direction: column;
       width: 100%;
@@ -691,7 +692,7 @@
       letter-spacing: -0.01em;
       position: relative;
       display: inline-block;
-      border: 1px solid transparent;
+      border: var(--border-width) solid transparent;
       background: transparent;
       transition: all 150ms var(--ease);
       margin-right: var(--space-300);
@@ -718,8 +719,8 @@
     }
 
     .timeline-col-header {
-      border: var(--border-width) solid var(--color-border-disabled);
-      margin-right: calc(-1 * var(--border-width));
+      border-right: var(--border-width) solid var(--color-border-disabled);
+      border-bottom: var(--border-width) solid var(--color-border-disabled);
       flex-grow: 1;
       display: flex;
       align-items: center;
@@ -728,6 +729,10 @@
       font-weight: var(--font-weight-medium);
       color: var(--color-text);
       box-sizing: border-box;
+    }
+
+    .timeline-col-header:last-child {
+      border-right: none;
     }
 
     .timeline-grid {
@@ -740,6 +745,10 @@
       height: var(--row-height, 56px);
       border-bottom: var(--border-width) solid var(--color-border-disabled);
       position: relative;
+    }
+
+    .timeline-grid-row:last-child {
+      border-bottom: none;
     }
 
     .gridline {
@@ -756,7 +765,7 @@
       position: absolute;
       left: 0;
       right: 0;
-      height: 1px;
+      height: var(--border-width);
       background: var(--color-border-disabled);
       pointer-events: none;
       opacity: 0.5;
@@ -887,7 +896,7 @@
       height: var(--swatch-size);
       border-radius: var(--radius-full);
       cursor: pointer;
-      border: var(--border-width-selected) solid transparent;
+      border: var(--border-width) solid transparent;
       box-shadow: var(--elevation-shadow-raised);
       transition: all 150ms var(--ease);
       flex-shrink: 0;
@@ -923,7 +932,7 @@
       gap: var(--space-100);
       z-index: 10;
       background: var(--canvas-row-weekend);
-      border: 1px solid var(--color-border);
+      border: var(--border-width) solid var(--color-border);
       border-radius: var(--radius-medium);
       padding: var(--space-150) var(--space-200);
     }
@@ -971,7 +980,7 @@
       flex: 1;
       padding: var(--space-050) var(--space-100);
       border-radius: var(--radius-small);
-      border: 1px solid transparent;
+      border: var(--border-width) solid transparent;
       transition: all 150ms var(--ease);
       position: relative;
     }
@@ -1192,7 +1201,7 @@
     .ctx-menu {
       position: fixed;
       background: var(--elevation-surface-overlay);
-      border: 1px solid var(--color-border);
+      border: var(--border-width) solid var(--color-border);
       border-radius: var(--radius-medium);
       box-shadow: var(--elevation-shadow-overlay);
       z-index: 3000;
@@ -1271,7 +1280,7 @@
       height: 16px;
       border-radius: 50%;
       cursor: pointer;
-      border: 2px solid transparent;
+      border: var(--border-width) solid transparent;
       box-sizing: border-box;
       transition: transform 80ms, border-color 80ms;
       flex-shrink: 0;
@@ -2322,11 +2331,12 @@
         } else {
           label.classList.add('label-overflow');
           // Prefer right of bar; fall back to left if it would overflow the timeline
-          const rightPos = x2 + 6;
+          const labelGap = labelInset; // match internal inset (padding + resize handle)
+          const rightPos = x2 + labelGap;
           if (rightPos + labelW <= totalWidth) {
             label.style.left = rightPos + 'px';
           } else {
-            label.style.left = Math.max(0, x1 - 6 - labelW) + 'px';
+            label.style.left = Math.max(0, x1 - labelGap - labelW) + 'px';
           }
         }
 
@@ -2399,7 +2409,7 @@
         // Quarter row
         if (cfg.showQuarterRow) {
           header.appendChild(buildHeaderRow(cols, ctx, QUARTER_ROW_H,
-            (_col, i, len) => goldRamp(len === 1 ? 1 : i / (len - 1))
+            (col) => goldRamp((getFiscalInfo(col.start).fiscalQuarter + 1) / 4)
           ));
         }
 
@@ -2434,18 +2444,20 @@
       }
 
       function buildGrid(ctx, laneHeights) {
-        const { tlStart, totalDays, totalWidth, cols } = ctx;
+        const { tlStart, tlEnd, totalDays, totalWidth } = ctx;
         const grid = document.createElement('div');
         grid.className = 'timeline-grid';
         grid.id = 'timeline-grid';
         grid.style.width = '100%';
 
-        // Gridlines
-        cols.forEach((col, i) => {
+        // Gridlines anchored to quarter boundaries
+        const quarters = getQuarters(tlStart, tlEnd);
+        quarters.forEach((q, i) => {
           if (i === 0) return;
+          const pct = (daysBetween(tlStart, q.start) / totalDays) * 100;
           const line = document.createElement('div');
           line.className = 'gridline';
-          line.style.left = (i * 100 / cols.length) + '%';
+          line.style.left = pct + '%';
           grid.appendChild(line);
         });
 
