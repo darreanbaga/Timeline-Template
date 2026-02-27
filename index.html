@@ -360,11 +360,10 @@
       display: flex;
       flex-direction: row;
       align-items: stretch;
-      padding: var(--space-200) var(--space-300);
-      gap: var(--space-300);
+      justify-content: space-evenly;
+      padding: var(--space-150) var(--space-200);
+      gap: var(--space-200);
       flex-shrink: 0;
-      overflow-x: auto;
-      flex-wrap: wrap;
     }
 
     .control-section {
@@ -372,8 +371,7 @@
       flex-direction: column;
       justify-content: flex-start;
       gap: var(--space-100);
-      flex: 1 1 auto;
-      min-width: 150px;
+      flex: 0 0 auto;
     }
 
     .control-ribbon h3 {
@@ -393,8 +391,7 @@
       flex: 1;
     }
 
-    .control-ribbon button svg,
-    .btn-restart svg {
+    .control-ribbon button svg {
       vertical-align: -2px;
       flex-shrink: 0;
     }
@@ -404,9 +401,9 @@
     }
 
     .control-ribbon button {
-      min-width: 80px;
+      min-width: auto;
       height: 32px;
-      padding: 0 var(--space-200);
+      padding: 0 var(--space-150);
       border: var(--border-width) solid rgba(255, 255, 255, 0.15);
       border-radius: var(--radius-medium);
       background: rgba(255, 255, 255, 0.08);
@@ -466,52 +463,21 @@
     .control-section-divider {
       width: var(--border-width);
       background: rgba(255, 255, 255, 0.15);
-      margin: 0 var(--space-100);
       align-self: stretch;
+      flex-shrink: 0;
     }
 
-    @media (max-width: 900px) {
-      .control-section-divider {
-        display: none;
-      }
-
-      .control-ribbon {
-        gap: var(--space-200);
-      }
-
-      .control-section {
-        padding: var(--space-100);
-        background: rgba(255, 255, 255, 0.04);
-        border-radius: var(--radius-medium);
-      }
+    .control-ribbon button.btn-danger {
+      background: rgba(220, 38, 38, 0.15);
+      border-color: rgba(220, 38, 38, 0.4);
+      color: #fca5a5;
     }
 
-    /* Restart button */
-    .btn-restart {
-      position: fixed;
-      bottom: var(--space-200);
-      left: var(--space-200);
-      padding: 0 var(--space-200);
-      height: 32px;
-      min-width: 80px;
-      border: var(--border-width) solid rgba(0, 0, 0, 0.15);
-      border-radius: var(--radius-medium);
-      background: rgba(0, 0, 0, 0.06);
-      color: var(--eq-dark);
-      font-family: var(--font-family-body);
-      font-size: var(--font-size-body-medium);
-      font-weight: var(--font-weight-medium);
-      cursor: pointer;
-      opacity: 0.6;
-      transition: all 150ms var(--ease);
-      z-index: 100;
-    }
-
-    .btn-restart:hover {
-      opacity: 1;
-      border-color: var(--color-bg-danger-bold);
-      background: var(--color-bg-danger-bold);
+    .control-ribbon button.btn-danger:hover:not(:disabled) {
+      background: rgba(220, 38, 38, 0.9);
+      border-color: rgba(220, 38, 38, 1);
       color: white;
+      transform: translateY(-1px);
     }
 
     /* Slide viewport */
@@ -1157,6 +1123,83 @@
       filter: brightness(0.9);
     }
 
+    .confirm-box .btn-primary {
+      background: var(--eq-purple);
+      color: var(--_N0);
+      border-color: rgba(81, 59, 252, 0.5);
+    }
+
+    .confirm-box .btn-primary:hover {
+      filter: brightness(1.15);
+    }
+
+    .welcome-toast {
+      position: fixed;
+      bottom: var(--space-300);
+      left: var(--space-300);
+      z-index: 2000;
+      display: flex;
+      align-items: center;
+      gap: var(--space-200);
+      border-radius: var(--radius-large);
+      padding: var(--space-200) var(--space-300);
+      background: linear-gradient(135deg, var(--eq-purple), #7c3aed, var(--eq-purple));
+      background-size: 200% 200%;
+      animation: toast-in 500ms var(--ease) both, toast-shimmer 3s ease-in-out infinite 500ms;
+      box-shadow:
+        0 4px 24px rgba(81, 59, 252, 0.4),
+        0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+    }
+
+    .welcome-toast span {
+      font-size: var(--font-size-body);
+      font-weight: var(--font-weight-medium);
+      color: var(--_N0);
+    }
+
+    .welcome-toast .btn-primary {
+      height: 32px;
+      padding: 0 var(--space-200);
+      border: var(--border-width) solid rgba(255, 255, 255, 0.3);
+      border-radius: var(--radius-medium);
+      background: rgba(255, 255, 255, 0.15);
+      color: var(--_N0);
+      font-family: var(--font-family-body);
+      font-size: var(--font-size-body-medium);
+      font-weight: var(--font-weight-semibold);
+      cursor: pointer;
+      transition: all 150ms var(--ease);
+      white-space: nowrap;
+      backdrop-filter: blur(4px);
+    }
+
+    .welcome-toast .btn-primary:hover {
+      background: rgba(255, 255, 255, 0.25);
+      border-color: rgba(255, 255, 255, 0.5);
+      transform: translateY(-1px);
+    }
+
+    .toast-exit {
+      animation: toast-out 250ms var(--ease) both !important;
+    }
+
+    @keyframes toast-in {
+      from { opacity: 0; transform: translateY(20px) scale(0.95); }
+      60% { transform: translateY(-4px) scale(1.02); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    @keyframes toast-shimmer {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    @keyframes toast-out {
+      from { opacity: 1; transform: translateY(0) scale(1); }
+      to { opacity: 0; transform: translateY(12px) scale(0.95); }
+    }
+
     /* Sidebar resize handle */
     .sidebar-resize-handle {
       position: absolute;
@@ -1328,59 +1371,39 @@
     }
 
     /* Timeline length slider */
-    .length-slider-wrapper {
+    .timeline-controls {
       display: flex;
-      flex-direction: column;
-      gap: var(--space-100);
-      min-width: 140px;
+      flex-direction: row;
+      align-items: center;
+      gap: var(--space-300);
     }
 
-    .length-slider-header {
+    .chevron-stepper {
       display: flex;
       align-items: center;
-      justify-content: space-between;
+      gap: var(--space-075);
     }
 
-    .length-slider-header .length-display {
+    .chevron-stepper .stepper-label {
       color: var(--_N0);
       font-size: var(--font-size-body-medium);
       font-weight: var(--font-weight-medium);
       font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+      min-width: 80px;
+      text-align: center;
+      user-select: none;
     }
 
-    #length-slider {
-      -webkit-appearance: none;
-      appearance: none;
-      width: 100%;
-      height: 4px;
-      border-radius: 2px;
-      background: rgba(255, 255, 255, 0.2);
-      outline: none;
-      cursor: pointer;
-    }
-
-    #length-slider::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      appearance: none;
-      width: 14px;
-      height: 14px;
-      border-radius: 50%;
-      background: var(--_N0);
-      cursor: pointer;
-      transition: transform 100ms var(--ease);
-    }
-
-    #length-slider::-moz-range-thumb {
-      width: 14px;
-      height: 14px;
-      border-radius: 50%;
-      background: var(--_N0);
-      border: none;
-      cursor: pointer;
-    }
-
-    #length-slider:hover::-webkit-slider-thumb {
-      transform: scale(1.2);
+    .chevron-stepper button {
+      min-width: 28px !important;
+      width: 28px !important;
+      height: 28px !important;
+      padding: 0 !important;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
     }
   </style>
 </head>
@@ -1400,13 +1423,19 @@
       <div class="control-section-divider"></div>
 
       <div class="control-section">
-        <h3>Length</h3>
+        <h3>Timeline</h3>
         <div class="section-content">
-          <div class="length-slider-wrapper">
-            <div class="length-slider-header">
-              <span class="length-display" id="length-display">12 mo</span>
+          <div class="timeline-controls">
+            <div class="chevron-stepper">
+              <button id="btn-start-prev" class="btn-icon-only" title="Previous month"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>
+              <span class="stepper-label" id="start-date-label">Oct 2025</span>
+              <button id="btn-start-next" class="btn-icon-only" title="Next month"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></button>
             </div>
-            <input type="range" id="length-slider" min="1" max="12" value="12">
+            <div class="chevron-stepper">
+              <button id="btn-length-prev" class="btn-icon-only" title="Shorter"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>
+              <span class="stepper-label" id="length-display">12 mo</span>
+              <button id="btn-length-next" class="btn-icon-only" title="Longer"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></button>
+            </div>
           </div>
         </div>
       </div>
@@ -1444,6 +1473,15 @@
         </div>
       </div>
 
+      <div class="control-section-divider"></div>
+
+      <div class="control-section">
+        <h3>&nbsp;</h3>
+        <div class="section-content">
+          <button id="btn-reset" class="btn-danger"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg> Restart</button>
+        </div>
+      </div>
+
     </div>
 
     <div class="slide-viewport">
@@ -1452,7 +1490,6 @@
       </div>
     </div>
 
-    <button class="btn-restart" id="btn-reset"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg> Restart</button>
   </div>
 
   <script>
@@ -1500,7 +1537,67 @@
           },
           swimlanes: [],
           items: [],
-          legendLabels: {} // Map of color -> label
+          legendLabels: {}
+        };
+      }
+
+      function exampleState() {
+        const laneStrategy = uid(), laneCreative = uid(), laneExecution = uid(), laneAnalytics = uid();
+        return {
+          isExample: true,
+          timeline: {
+            startDate: '2025-10-01',
+            endDate: '2026-10-01',
+            zoomLevel: 1,
+            title: 'Q1 Product Launch Campaign',
+            monthCount: 12,
+            sidebarWidth: DEFAULT_SIDEBAR_W,
+            legendOrientation: 'horizontal',
+            legendAlign: 'right'
+          },
+          swimlanes: [
+            { id: laneStrategy, name: 'Strategy', order: 0, minRows: 3 },
+            { id: laneCreative, name: 'Creative', order: 1, minRows: 3 },
+            { id: laneExecution, name: 'Execution', order: 2, minRows: 3 },
+            { id: laneAnalytics, name: 'Analytics', order: 3, minRows: 3 }
+          ],
+          items: [
+            // Strategy
+            { id: uid(), swimlaneId: laneStrategy, name: 'Research', startDate: '2025-10-06', endDate: '2025-11-21', color: PALETTE[0], track: 0 },
+            { id: uid(), swimlaneId: laneStrategy, name: 'Segmentation', startDate: '2025-11-03', endDate: '2025-12-12', color: PALETTE[0], track: 1 },
+            { id: uid(), swimlaneId: laneStrategy, name: 'Brief', startDate: '2025-12-01', endDate: '2026-01-16', color: PALETTE[0], track: 0 },
+            { id: uid(), swimlaneId: laneStrategy, name: 'Channels', startDate: '2025-12-15', endDate: '2026-02-06', color: PALETTE[0], track: 2 },
+            { id: uid(), swimlaneId: laneStrategy, name: 'Budget', startDate: '2026-01-12', endDate: '2026-02-20', color: PALETTE[0], track: 1 },
+
+            // Creative
+            { id: uid(), swimlaneId: laneCreative, name: 'Brand Update', startDate: '2025-11-17', endDate: '2026-01-09', color: PALETTE[1], track: 0 },
+            { id: uid(), swimlaneId: laneCreative, name: 'Ad Copy', startDate: '2026-01-05', endDate: '2026-02-27', color: PALETTE[1], track: 0 },
+            { id: uid(), swimlaneId: laneCreative, name: 'Video', startDate: '2026-01-19', endDate: '2026-04-10', color: PALETTE[2], track: 1 },
+            { id: uid(), swimlaneId: laneCreative, name: 'Landing Pages', startDate: '2026-02-16', endDate: '2026-04-03', color: PALETTE[1], track: 0 },
+            { id: uid(), swimlaneId: laneCreative, name: 'Social Assets', startDate: '2026-03-09', endDate: '2026-05-01', color: PALETTE[2], track: 2 },
+
+            // Execution
+            { id: uid(), swimlaneId: laneExecution, name: 'Paid Media', startDate: '2026-03-02', endDate: '2026-04-17', color: PALETTE[3], track: 0 },
+            { id: uid(), swimlaneId: laneExecution, name: 'Email Nurture', startDate: '2026-03-16', endDate: '2026-05-08', color: PALETTE[4], track: 1 },
+            { id: uid(), swimlaneId: laneExecution, name: 'Influencers', startDate: '2026-04-06', endDate: '2026-06-05', color: PALETTE[3], track: 2 },
+            { id: uid(), swimlaneId: laneExecution, name: 'Launch Event', startDate: '2026-04-20', endDate: '2026-05-22', color: PALETTE[4], track: 0 },
+            { id: uid(), swimlaneId: laneExecution, name: 'Retargeting', startDate: '2026-05-18', endDate: '2026-07-31', color: PALETTE[3], track: 1 },
+
+            // Analytics
+            { id: uid(), swimlaneId: laneAnalytics, name: 'Attribution Setup', startDate: '2026-02-02', endDate: '2026-03-20', color: PALETTE[5], track: 0 },
+            { id: uid(), swimlaneId: laneAnalytics, name: 'A/B Testing', startDate: '2026-03-16', endDate: '2026-05-01', color: PALETTE[5], track: 1 },
+            { id: uid(), swimlaneId: laneAnalytics, name: 'Weekly Reports', startDate: '2026-04-20', endDate: '2026-07-31', color: PALETTE[5], track: 0 },
+            { id: uid(), swimlaneId: laneAnalytics, name: 'Optimization', startDate: '2026-05-25', endDate: '2026-07-10', color: PALETTE[5], track: 2 },
+            { id: uid(), swimlaneId: laneAnalytics, name: 'Post-Mortem', startDate: '2026-07-27', endDate: '2026-09-11', color: PALETTE[5], track: 0 }
+          ],
+          legendLabels: {
+            [PALETTE[0]]: 'Strategy',
+            [PALETTE[1]]: 'Copy & Design',
+            [PALETTE[2]]: 'Production',
+            [PALETTE[3]]: 'Paid Media',
+            [PALETTE[4]]: 'Owned Channels',
+            [PALETTE[5]]: 'Analytics'
+          }
         };
       }
 
@@ -1614,6 +1711,8 @@
           if (raw) {
             const parsed = JSON.parse(raw);
             if (parsed && parsed.timeline) STATE = parsed;
+          } else {
+            STATE = exampleState();
           }
         } catch (e) { console.error('Load failed:', e); }
         // Migrate old palette colors and add track property
@@ -2523,6 +2622,7 @@
         }
 
         updateLengthDisplay();
+        updateStartDateDisplay();
         updateSlideScale();
       }
 
@@ -3036,24 +3136,48 @@
       document.getElementById('btn-redo').addEventListener('click', redo);
       document.getElementById('btn-add-swimlane').addEventListener('click', addSwimlane);
 
-      // Timeline length slider
+      // Timeline length stepper
       function updateLengthDisplay() {
         const el = document.getElementById('length-display');
-        const slider = document.getElementById('length-slider');
         const mc = STATE.timeline.monthCount || 12;
         if (el) el.textContent = mc + ' mo';
-        if (slider) slider.value = mc;
+        document.getElementById('btn-length-prev').disabled = mc <= 1;
+        document.getElementById('btn-length-next').disabled = mc >= 24;
       }
 
-      document.getElementById('length-slider').addEventListener('input', (e) => {
-        const val = parseInt(e.target.value, 10);
+      function shiftLength(delta) {
+        const mc = STATE.timeline.monthCount || 12;
+        const next = Math.max(1, Math.min(24, mc + delta));
+        if (next === mc) return;
         setState(s => {
-          s.timeline.monthCount = val;
+          s.timeline.monthCount = next;
           updateTimelineDates();
         });
-        const el = document.getElementById('length-display');
-        if (el) el.textContent = val + ' mo';
-      });
+      }
+
+      document.getElementById('btn-length-prev').addEventListener('click', () => shiftLength(-1));
+      document.getElementById('btn-length-next').addEventListener('click', () => shiftLength(1));
+
+      // Timeline start date stepper
+      function updateStartDateDisplay() {
+        const label = document.getElementById('start-date-label');
+        if (!label) return;
+        const d = parseDate(STATE.timeline.startDate);
+        label.textContent = MONTH_NAMES[d.getMonth()] + ' ' + d.getFullYear();
+      }
+
+      function shiftStartDate(deltaMonths) {
+        setState(s => {
+          const d = parseDate(s.timeline.startDate);
+          d.setMonth(d.getMonth() + deltaMonths);
+          d.setDate(1);
+          s.timeline.startDate = fmt(d);
+          updateTimelineDates();
+        });
+      }
+
+      document.getElementById('btn-start-prev').addEventListener('click', () => shiftStartDate(-1));
+      document.getElementById('btn-start-next').addEventListener('click', () => shiftStartDate(1));
 
       document.getElementById('btn-add-item').addEventListener('click', () => {
         if (STATE.swimlanes.length === 0) {
@@ -3180,9 +3304,38 @@
       // ---- Init ----
       loadState();
       updateLengthDisplay();
+      updateStartDateDisplay();
       updateLegendToggleUI();
       render();
       window.addEventListener('resize', updateSlideScale);
+
+      // Show welcome toast on first visit (example data loaded)
+      if (STATE.isExample) {
+        const toast = document.createElement('div');
+        toast.className = 'welcome-toast';
+        const p = document.createElement('span');
+        p.textContent = 'This is a sample timeline.';
+        toast.appendChild(p);
+        const btn = document.createElement('button');
+        btn.className = 'btn-primary';
+        btn.textContent = 'Get Started';
+        btn.onclick = () => {
+          toast.classList.add('toast-exit');
+          toast.addEventListener('animationend', () => toast.remove());
+          STATE = defaultState();
+          selectedItemId = null;
+          saveState();
+          stateHistory = [JSON.parse(JSON.stringify(STATE))];
+          historyIndex = 0;
+          updateUndoRedoUI();
+          updateLengthDisplay();
+          updateStartDateDisplay();
+          updateLegendToggleUI();
+          render();
+        };
+        toast.appendChild(btn);
+        document.body.appendChild(toast);
+      }
 
     })();
   </script>
