@@ -753,6 +753,17 @@
       z-index: 0;
     }
 
+    .track-separator {
+      position: absolute;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: var(--color-border-disabled);
+      pointer-events: none;
+      opacity: 0.5;
+      z-index: 1;
+    }
+
     /* Item bars */
     .item-bar {
       position: absolute;
@@ -1176,19 +1187,54 @@
       background: var(--color-bg-danger);
     }
 
+    .ctx-menu-item.ctx-disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    .ctx-menu-item.ctx-disabled:hover {
+      background: transparent;
+    }
+
     .ctx-menu-separator {
       height: 1px;
       background: var(--color-border);
       margin: var(--space-050) 0;
     }
 
+    .ctx-menu-colors {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      padding: var(--space-075) var(--space-150);
+    }
 
-    /* Draggable bar label */
+    .ctx-menu-swatch {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      cursor: pointer;
+      border: 2px solid transparent;
+      box-sizing: border-box;
+      transition: transform 80ms, border-color 80ms;
+      flex-shrink: 0;
+    }
+
+    .ctx-menu-swatch:hover {
+      transform: scale(1.2);
+    }
+
+    .ctx-menu-swatch.selected {
+      border-color: var(--color-text);
+    }
+
+
+    /* Bar label — auto-positioned, no drag */
     .item-bar-label {
       position: absolute;
       white-space: nowrap;
       pointer-events: auto;
-      cursor: grab;
+      cursor: default;
       z-index: 5;
       font-size: var(--font-size-heading-lane);
       font-weight: var(--font-weight-medium);
@@ -1197,16 +1243,16 @@
       border-radius: var(--radius-small);
       user-select: none;
       -webkit-user-select: none;
-      transition: box-shadow 150ms var(--ease);
     }
 
-    .item-bar-label:hover {
-      box-shadow: 0 0 0 1px rgba(255,255,255,0.4);
+    .item-bar-label.label-overflow {
+      background: none !important;
+      color: var(--color-text);
     }
 
-    .item-bar-label.dragging-label {
-      cursor: grabbing;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    .item-bar-label.label-overflow input {
+      border-bottom-color: var(--color-text);
+      caret-color: var(--color-text);
     }
 
     .item-bar-label input {
@@ -1288,17 +1334,7 @@
       <div class="control-section-divider"></div>
 
       <div class="control-section">
-        <h3>2 - color code</h3>
-        <div class="section-content">
-          <div class="color-swatches" id="color-swatches"></div>
-        </div>
-        <div class="color-swatch-info" id="color-info"></div>
-      </div>
-
-      <div class="control-section-divider"></div>
-
-      <div class="control-section">
-        <h3>3 - edit as you need</h3>
+        <h3>2 - edit as you need</h3>
         <div class="section-content">
           <button id="btn-undo" disabled title="Undo (Ctrl+Z)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg> Undo</button>
           <button id="btn-redo" disabled title="Redo (Ctrl+Y)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.13-9.36L23 10"/></svg> Redo</button>
@@ -1478,6 +1514,11 @@
             if (item.track === undefined) item.track = 0;
           });
         }
+        if (STATE.swimlanes) {
+          STATE.swimlanes.forEach(lane => {
+            if (lane.minRows === undefined) lane.minRows = 1;
+          });
+        }
         if (!STATE.legendLabels) {
           STATE.legendLabels = {};
         }
@@ -1486,13 +1527,6 @@
         }
         if (!STATE.timeline.sidebarWidth) {
           STATE.timeline.sidebarWidth = 180;
-        }
-        // Migrate items: add label offsets if missing
-        if (STATE.items) {
-          STATE.items.forEach(item => {
-            if (item.labelOffsetX === undefined) item.labelOffsetX = 0;
-            if (item.labelOffsetY === undefined) item.labelOffsetY = 0;
-          });
         }
         // Update timeline dates based on monthCount
         updateTimelineDates();
@@ -1524,43 +1558,36 @@
 
       // ---- Track assignment ----
       function assignTracks() {
-        // For each swimlane, assign tracks to items to prevent overlap
+        // Preserve user-set track positions. Only push items DOWN when there is
+        // an actual collision on their current track — never pack items upward.
         STATE.swimlanes.forEach(lane => {
           const laneItems = STATE.items.filter(it => it.swimlaneId === lane.id);
           if (laneItems.length === 0) return;
 
-          // Sort by start date, then by end date
+          // Sort by intended track first, then by start date within each track.
+          // This ensures earlier-placed items on a track claim it before later ones.
           laneItems.sort((a, b) => {
-            const aStart = parseDate(a.startDate).getTime();
-            const bStart = parseDate(b.startDate).getTime();
-            if (aStart !== bStart) return aStart - bStart;
-            return parseDate(a.endDate).getTime() - parseDate(b.endDate).getTime();
+            if (a.track !== b.track) return a.track - b.track;
+            return parseDate(a.startDate).getTime() - parseDate(b.startDate).getTime();
           });
 
-          // Track end dates for each track
-          const trackEnds = [];
+          // trackEnds[t] = latest end date of items already placed on track t
+          const trackEnds = {};
 
           laneItems.forEach(item => {
             const itemStart = parseDate(item.startDate);
-            const itemEnd = parseDate(item.endDate);
+            const itemEnd   = parseDate(item.endDate);
+            let t = item.track;
 
-            // Find the first track where this item doesn't overlap
-            let assignedTrack = 0;
-            for (let t = 0; t < trackEnds.length; t++) {
-              if (!trackEnds[t] || itemStart >= trackEnds[t]) {
-                assignedTrack = t;
-                break;
-              }
+            // Push down only if there is a real collision on track t
+            while (trackEnds[t] && itemStart < trackEnds[t]) {
+              t++;
             }
 
-            // If all tracks are occupied, create a new one
-            if (assignedTrack === trackEnds.length || !trackEnds[assignedTrack] || itemStart < trackEnds[assignedTrack]) {
-              assignedTrack = trackEnds.length;
+            item.track = t;
+            if (!trackEnds[t] || itemEnd > trackEnds[t]) {
+              trackEnds[t] = itemEnd;
             }
-
-            // Assign the track
-            item.track = assignedTrack;
-            trackEnds[assignedTrack] = itemEnd;
           });
         });
       }
@@ -1715,9 +1742,12 @@
       }
 
       function getTrackCount(laneId) {
+        const lane = STATE.swimlanes.find(l => l.id === laneId);
+        const minRows = (lane && lane.minRows) ? lane.minRows : 1;
         const laneItems = STATE.items.filter(it => it.swimlaneId === laneId);
-        if (laneItems.length === 0) return 1;
-        return Math.max(...laneItems.map(it => it.track)) + 1;
+        if (laneItems.length === 0) return minRows;
+        const itemMax = Math.max(...laneItems.map(it => it.track)) + 1;
+        return Math.max(itemMax, minRows);
       }
 
       function getLaneHeight(laneId) {
@@ -1745,6 +1775,17 @@
 
       function getColWidth(cols) {
         return getTimelineWidth() / Math.max(cols.length, 1);
+      }
+
+      // Measure rendered width of a label string using canvas (matches label CSS font)
+      let _measureCanvas = null;
+      function measureLabelText(text) {
+        if (!_measureCanvas) {
+          _measureCanvas = document.createElement('canvas');
+        }
+        const ctx = _measureCanvas.getContext('2d');
+        ctx.font = '500 17px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+        return ctx.measureText(text).width;
       }
 
       function getItemBarHeight() {
@@ -1882,8 +1923,24 @@
           const deleteMsg = itemCount > 0
             ? `Delete '${lane.name}' and ${itemCount} item(s)?`
             : `Delete '${lane.name}'?`;
+          const currentMinRows = (STATE.swimlanes.find(l => l.id === lane.id) || {}).minRows || 1;
+          const lastRowEmpty = !STATE.items.some(it => it.swimlaneId === lane.id && it.track >= currentMinRows - 1);
           showMenu([
             { label: 'Rename', onClick: () => startRenameLane(lane.id) },
+            { separator: true },
+            { label: '+ Add row', onClick: () => {
+              setState(s => {
+                const l = s.swimlanes.find(l => l.id === lane.id);
+                if (l) l.minRows = (l.minRows || 1) + 1;
+              });
+            }},
+            { label: '- Remove row', disabled: !lastRowEmpty || currentMinRows <= 1, onClick: () => {
+              if (!lastRowEmpty || currentMinRows <= 1) return;
+              setState(s => {
+                const l = s.swimlanes.find(l => l.id === lane.id);
+                if (l) l.minRows = Math.max(1, (l.minRows || 1) - 1);
+              });
+            }},
             { separator: true },
             { label: 'Delete', danger: true, onClick: () => {
               setState(s => {
@@ -2036,65 +2093,46 @@
               if (label) startRenameItem(item.id, label);
             }},
             { separator: true },
+            { colors: PALETTE, selectedColor: item.color, onColorClick: (color) => {
+              setState(s => {
+                const it = s.items.find(i => i.id === item.id);
+                if (it) it.color = color;
+              });
+            }},
+            { separator: true },
             { label: 'Delete', danger: true, onClick: () => deleteItem(item.id) },
           ], bar);
         });
 
         wrapper.appendChild(bar);
 
-        // Floating draggable label
-        const labelOffX = item.labelOffsetX || 0;
-        const labelOffY = item.labelOffsetY || 0;
+        // Auto-positioned label — inside bar if text fits, outside (no bg) if not
+        const labelText = item.name || 'Untitled';
+        const labelPadH = 12; // 6px left + 6px right padding
+        const labelH = 22;
+        const textPx = measureLabelText(labelText);
+        const labelW = textPx + labelPadH;
+        const fitsInBar = labelW <= (w - 8);
+
         const label = document.createElement('div');
         label.className = 'item-bar-label';
         label.dataset.itemId = item.id;
-        label.textContent = item.name || 'Untitled';
-        label.style.left = (x1 + 8 + labelOffX) + 'px';
-        label.style.top = (trackY + (ITEM_BAR_H - 22) / 2 + labelOffY) + 'px';
-        label.style.background = item.color;
-        label.style.pointerEvents = 'auto';
+        label.textContent = labelText;
+        label.style.top = (trackY + (ITEM_BAR_H - labelH) / 2) + 'px';
 
-        // Drag label to reposition
-        label.addEventListener('pointerdown', (e) => {
-          if (e.target.tagName === 'INPUT') return;
-          e.stopPropagation();
-          e.preventDefault();
-          label.classList.add('dragging-label');
-          const scale = getSlideScale();
-          const startMX = e.clientX;
-          const startMY = e.clientY;
-          const startOffX = item.labelOffsetX || 0;
-          const startOffY = item.labelOffsetY || 0;
-          let moved = false;
-
-          function onMove(me) {
-            moved = true;
-            const dx = (me.clientX - startMX) / scale;
-            const dy = (me.clientY - startMY) / scale;
-            label.style.left = (x1 + 8 + startOffX + dx) + 'px';
-            label.style.top = (trackY + (ITEM_BAR_H - 22) / 2 + startOffY + dy) + 'px';
+        if (fitsInBar) {
+          label.style.left = (x1 + 8) + 'px';
+          label.style.background = item.color;
+        } else {
+          label.classList.add('label-overflow');
+          // Prefer right of bar; fall back to left if it would overflow the timeline
+          const rightPos = x2 + 6;
+          if (rightPos + labelW <= totalWidth) {
+            label.style.left = rightPos + 'px';
+          } else {
+            label.style.left = Math.max(0, x1 - 6 - labelW) + 'px';
           }
-
-          function onUp(me) {
-            label.classList.remove('dragging-label');
-            document.removeEventListener('pointermove', onMove);
-            document.removeEventListener('pointerup', onUp);
-            if (moved) {
-              const dx = (me.clientX - startMX) / scale;
-              const dy = (me.clientY - startMY) / scale;
-              setState(s => {
-                const it = s.items.find(i => i.id === item.id);
-                if (it) {
-                  it.labelOffsetX = Math.round(startOffX + dx);
-                  it.labelOffsetY = Math.round(startOffY + dy);
-                }
-              });
-            }
-          }
-
-          document.addEventListener('pointermove', onMove);
-          document.addEventListener('pointerup', onUp);
-        });
+        }
 
         // Double-click to rename
         label.addEventListener('dblclick', (e) => {
@@ -2224,6 +2262,14 @@
           STATE.items.filter(it => it.swimlaneId === lane.id).forEach(item => {
             row.appendChild(buildItemBar(item, ctx));
           });
+
+          const trackCount = getTrackCount(lane.id);
+          for (let t = 1; t < trackCount; t++) {
+            const sep = document.createElement('div');
+            sep.className = 'track-separator';
+            sep.style.top = (LANE_PADDING + t * (ITEM_BAR_H + TRACK_GAP) - Math.floor(TRACK_GAP / 2)) + 'px';
+            row.appendChild(sep);
+          }
 
           grid.appendChild(row);
         });
@@ -2359,7 +2405,6 @@
           app.appendChild(buildTimelineArea(ctx, laneHeights));
         }
 
-        renderColorSwatches();
         updateLengthDisplay();
         updateSlideScale();
       }
@@ -2437,49 +2482,26 @@
         });
       }
 
-      // ---- Color Swatches (in control sidebar) ----
-      function renderColorSwatches() {
-        const container = document.getElementById('color-swatches');
-        const infoEl = document.getElementById('color-info');
-
-        if (!container) return;
-
-        container.innerHTML = '';
-
-        PALETTE.forEach((color) => {
-          const swatch = document.createElement('div');
-          swatch.className = 'color-swatch';
-          swatch.style.background = color;
-
-          if (selectedItemId) {
-            const selectedItem = STATE.items.find(it => it.id === selectedItemId);
-            if (selectedItem && selectedItem.color === color) {
-              swatch.classList.add('selected');
-            }
-          }
-
-          swatch.addEventListener('click', () => {
-            if (selectedItemId) {
-              setState(s => {
-                const item = s.items.find(it => it.id === selectedItemId);
-                if (item) item.color = color;
-              });
-            } else {
-              infoEl.textContent = 'Select an item first';
-            }
-          });
-
-          container.appendChild(swatch);
-        });
-
-        // Update info text
-        infoEl.textContent = '';
+      // ---- Track helpers ----
+      function findFreeTrack(laneId, startDateStr, endDateStr, items) {
+        const src = items || STATE.items;
+        const laneItems = src.filter(it => it.swimlaneId === laneId);
+        const itemStart = parseDate(startDateStr);
+        const itemEnd   = parseDate(endDateStr);
+        for (let t = 0; ; t++) {
+          const conflict = laneItems.some(it =>
+            it.track === t &&
+            parseDate(it.startDate) < itemEnd &&
+            parseDate(it.endDate)   > itemStart
+          );
+          if (!conflict) return t;
+        }
       }
 
       // ---- Swimlane ops ----
       function addSwimlane() {
         setState(s => {
-          s.swimlanes.push({ id: uid(), name: 'New Group', order: s.swimlanes.length });
+          s.swimlanes.push({ id: uid(), name: 'New Group', order: s.swimlanes.length, minRows: 1 });
         });
         // Auto-focus rename on the new lane
         setTimeout(() => {
@@ -2535,10 +2557,28 @@
             menu.appendChild(sep);
             return;
           }
+          if (item.colors) {
+            const row = document.createElement('div');
+            row.className = 'ctx-menu-colors';
+            item.colors.forEach(color => {
+              const sw = document.createElement('div');
+              sw.className = 'ctx-menu-swatch' + (item.selectedColor === color ? ' selected' : '');
+              sw.style.background = color;
+              sw.addEventListener('click', () => {
+                dismissMenu();
+                if (item.onColorClick) item.onColorClick(color);
+              });
+              row.appendChild(sw);
+            });
+            menu.appendChild(row);
+            return;
+          }
           const btn = document.createElement('button');
-          btn.className = 'ctx-menu-item' + (item.danger ? ' ctx-danger' : '');
+          btn.className = 'ctx-menu-item' + (item.danger ? ' ctx-danger' : '') + (item.disabled ? ' ctx-disabled' : '');
           btn.textContent = item.label;
+          if (item.disabled) btn.disabled = true;
           btn.addEventListener('click', () => {
+            if (item.disabled) return;
             dismissMenu();
             if (item.onClick) item.onClick();
           });
@@ -2640,29 +2680,38 @@
         ds.newStartDate = snappedStartDate;
         showDragTooltip(formatDateForTooltip(snappedStartDate), e.clientX, e.clientY);
 
-        const laneHeights = getLaneHeights();
+        const baseLaneHeights = getLaneHeights();
+        const EXTRA = ITEM_BAR_H + TRACK_GAP;
+        // Expand the previously-hovered lane so the cursor can reach a new track slot
+        const prevLaneIdx = ds.currentLaneIdx ?? 0;
+        const effectiveHeights = baseLaneHeights.map((h, i) => i === prevLaneIdx ? h + EXTRA : h);
+
         let cumulativeY = 0;
-        let newLaneIdx = 0;
+        let newLaneIdx = baseLaneHeights.length - 1;
         let newTrack = 0;
 
-        for (let i = 0; i < laneHeights.length; i++) {
-          if (y < cumulativeY + laneHeights[i]) {
+        for (let i = 0; i < effectiveHeights.length; i++) {
+          if (y < cumulativeY + effectiveHeights[i]) {
             newLaneIdx = i;
             const trackY = (y - cumulativeY) - LANE_PADDING;
             newTrack = Math.max(0, Math.floor(trackY / (ITEM_BAR_H + TRACK_GAP)));
-            const maxTrack = getTrackCount(STATE.swimlanes[i].id) - 1;
-            newTrack = Math.min(newTrack, maxTrack + 1);
             break;
           }
-          cumulativeY += laneHeights[i];
+          cumulativeY += effectiveHeights[i];
         }
 
         ds.currentLaneIdx = newLaneIdx;
         ds.currentTrack = newTrack;
 
         const rows = ds.gridEl.querySelectorAll('.timeline-grid-row');
-        rows.forEach(r => r.classList.remove('drag-over-active'));
-        if (rows[newLaneIdx]) rows[newLaneIdx].classList.add('drag-over-active');
+        rows.forEach((r, i) => {
+          r.classList.remove('drag-over-active');
+          r.style.height = baseLaneHeights[i] + 'px';
+        });
+        if (rows[newLaneIdx]) {
+          rows[newLaneIdx].classList.add('drag-over-active');
+          rows[newLaneIdx].style.height = (baseLaneHeights[newLaneIdx] + EXTRA) + 'px';
+        }
       }
 
       function handleResizeDrag(e, ds, scale) {
@@ -2711,6 +2760,7 @@
           ds.barEl.style.transform = ''; // Reset the free drag transform
         }
         document.querySelectorAll('.drag-over-active').forEach(r => r.classList.remove('drag-over-active'));
+        document.querySelectorAll('.timeline-grid-row').forEach(r => r.style.height = '');
 
         if (ds.type === 'create') {
           if (ds.ghostEl) ds.ghostEl.remove();
@@ -2741,9 +2791,7 @@
             startDate: fmt(startDate),
             endDate: fmt(endDate),
             color: PALETTE[STATE.items.length % PALETTE.length],
-            track: 0,
-            labelOffsetX: 0,
-            labelOffsetY: 0
+            track: findFreeTrack(lane.id, fmt(startDate), fmt(endDate))
           };
 
           selectedItemId = newItem.id;
@@ -2914,9 +2962,7 @@
             startDate: fmt(startDate),
             endDate: fmt(endDate),
             color: PALETTE[s.items.length % PALETTE.length],
-            track: 0,
-            labelOffsetX: 0,
-            labelOffsetY: 0
+            track: findFreeTrack(s.swimlanes[0].id, fmt(startDate), fmt(endDate), s.items)
           };
           s.items.push(newItem);
           selectedItemId = newItem.id;
