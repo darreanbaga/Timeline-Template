@@ -1468,6 +1468,9 @@
       const MIN_BAR_WIDTH = 12;
       const DRAG_THRESHOLD = 5;
       const LABEL_PAD_H = 12;
+      const BASE_FONT = 17;
+      const MIN_FONT = 10;
+      const MIN_LANE_SCALE = MIN_FONT / BASE_FONT;
       const DEFAULT_SIDEBAR_W = 180;
       const AUTOFOCUS_DELAY_MS = 30;
       const SAVE_DEBOUNCE_MS = 500;
@@ -1918,8 +1921,9 @@
         return h;
       }
 
+      const LEGEND_RESERVE = 80; // space reserved at bottom of grid for legend overlay
       function getGridHeight() {
-        return CONTENT_H - getHeaderHeight();
+        return CONTENT_H - getHeaderHeight() - LEGEND_RESERVE;
       }
 
       function getTrackCount(laneId) {
@@ -1931,17 +1935,26 @@
         return Math.max(itemMax, minRows);
       }
 
+      function getTotalRows() {
+        return STATE.swimlanes.reduce((sum, lane) => sum + getTrackCount(lane.id), 0);
+      }
+
       function getLaneHeight(laneId) {
         const trackCount = getTrackCount(laneId);
         return trackCount * ITEM_BAR_H + (trackCount - 1) * TRACK_GAP + LANE_PADDING * 2;
       }
 
-      function getLaneHeights() {
+      function getLaneScale() {
         const raw = STATE.swimlanes.map(lane => getLaneHeight(lane.id));
         const total = raw.reduce((sum, h) => sum + h, 0);
-        if (total <= getGridHeight()) return raw;
-        // Scale proportionally to fit within available grid height
-        const scale = getGridHeight() / total;
+        if (total <= getGridHeight()) return 1;
+        return Math.max(getGridHeight() / total, MIN_LANE_SCALE);
+      }
+
+      function getLaneHeights() {
+        const raw = STATE.swimlanes.map(lane => getLaneHeight(lane.id));
+        const scale = getLaneScale();
+        if (scale >= 1) return raw;
         return raw.map(h => Math.floor(h * scale));
       }
 
@@ -1960,19 +1973,21 @@
 
       // Measure rendered width of a label string using canvas (matches label CSS font)
       let _measureCanvas = null;
-      function measureLabelText(text) {
+      function measureLabelText(text, fontPx) {
         if (!_measureCanvas) {
           _measureCanvas = document.createElement('canvas');
         }
         const ctx = _measureCanvas.getContext('2d');
-        ctx.font = '500 17px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+        ctx.font = `500 ${fontPx || BASE_FONT}px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`;
         return ctx.measureText(text).width;
       }
 
       function getItemBarHeight() {
-        const rh = getRowHeight();
-        return Math.max(10, Math.min(rh * 0.5, 35));
+        return Math.round(ITEM_BAR_H * getLaneScale());
       }
+
+      const MAX_SWIMLANES = 8;
+      const MAX_TOTAL_ROWS = 20;
 
       function getSlideScale() {
         const slide = document.getElementById('slide');
@@ -2099,7 +2114,8 @@
           showMenu([
             { label: 'Rename', onClick: () => startRenameLane(lane.id) },
             { separator: true },
-            { label: '+ Add row', onClick: () => {
+            { label: '+ Add row', disabled: getTotalRows() >= MAX_TOTAL_ROWS, onClick: () => {
+              if (getTotalRows() >= MAX_TOTAL_ROWS) return;
               setState(s => {
                 const l = s.swimlanes.find(l => l.id === lane.id);
                 if (l) l.minRows = (l.minRows || 1) + 1;
@@ -2114,10 +2130,11 @@
             }},
             { separator: true },
             { label: 'Delete', danger: true, onClick: () => {
-              setState(s => {
+              const doDelete = () => setState(s => {
                 s.swimlanes = s.swimlanes.filter(l => l.id !== lane.id);
                 s.items = s.items.filter(it => it.swimlaneId !== lane.id);
               });
+              if (itemCount > 0) { showConfirm(deleteMsg, doDelete); } else { doDelete(); }
             }},
           ], nameEl);
         });
@@ -2180,13 +2197,17 @@
       }
 
       function buildItemBar(item, ctx) {
-        const { tlStart, totalDays, totalWidth } = ctx;
+        const { tlStart, totalDays, totalWidth, scale } = ctx;
+        const s = scale || 1;
+        const barH = Math.round(ITEM_BAR_H * s);
+        const gap = Math.round(TRACK_GAP * s);
+        const padY = Math.round(LANE_PADDING * s);
         const itemStart = parseDate(item.startDate);
         const itemEnd = parseDate(item.endDate);
         const x1 = dateToX(itemStart, tlStart, totalDays, totalWidth);
         const x2 = dateToX(itemEnd, tlStart, totalDays, totalWidth);
         const w = Math.max(x2 - x1, MIN_BAR_WIDTH);
-        const trackY = LANE_PADDING + item.track * (ITEM_BAR_H + TRACK_GAP);
+        const trackY = padY + item.track * (barH + gap);
 
         // Wrapper to hold bar + floating label
         const wrapper = document.createElement('div');
@@ -2194,9 +2215,12 @@
 
         const bar = document.createElement('div');
         bar.className = 'item-bar' + (selectedItemId === item.id ? ' selected' : '');
+        const fontSize = Math.round(BASE_FONT * s);
         bar.style.left = x1 + 'px';
         bar.style.width = w + 'px';
         bar.style.top = trackY + 'px';
+        bar.style.height = barH + 'px';
+        bar.style.fontSize = fontSize + 'px';
         bar.style.background = item.color;
         bar.style.setProperty('--bar-color', item.color);
         bar.dataset.itemId = item.id;
@@ -2280,8 +2304,7 @@
         // Auto-positioned label — inside bar if text fits, outside (no bg) if not
         const labelText = item.name || 'Untitled';
         const labelPadH = LABEL_PAD_H;
-        const labelH = 22;
-        const textPx = measureLabelText(labelText);
+        const textPx = measureLabelText(labelText, fontSize);
         const labelW = textPx + labelPadH;
         const labelInset = 16;
         const fitsInBar = labelW <= (w - labelInset * 2);
@@ -2290,7 +2313,9 @@
         label.className = 'item-bar-label';
         label.dataset.itemId = item.id;
         label.textContent = labelText;
-        label.style.top = (trackY + (ITEM_BAR_H - labelH) / 2) + 'px';
+        label.style.fontSize = fontSize + 'px';
+        const labelH = Math.round(22 * s);
+        label.style.top = (trackY + (barH - labelH) / 2) + 'px';
 
         if (fitsInBar) {
           label.style.left = (x1 + labelInset) + 'px';
@@ -2556,7 +2581,8 @@
         const cols = getColumns(tlStart, tlEnd, cfg.topGranularity);
         const totalWidth = getTimelineWidth();
         const laneHeights = getLaneHeights();
-        const ctx = { tlStart, tlEnd, totalDays, cols, totalWidth };
+        const scale = getLaneScale();
+        const ctx = { tlStart, tlEnd, totalDays, cols, totalWidth, scale };
 
         app.appendChild(buildSidebar(laneHeights));
         app.appendChild(buildTimelineArea(ctx, laneHeights));
@@ -2564,6 +2590,11 @@
         updateLengthDisplay();
         updateStartDateDisplay();
         updateSlideScale();
+
+        const addBtn = document.getElementById('btn-add-swimlane');
+        if (addBtn) addBtn.disabled = STATE.swimlanes.length >= MAX_SWIMLANES || getTotalRows() >= MAX_TOTAL_ROWS;
+        const addItemBtn = document.getElementById('btn-add-item');
+        if (addItemBtn) addItemBtn.disabled = STATE.swimlanes.length === 0 || getTotalRows() >= MAX_TOTAL_ROWS;
       }
 
       // ---- Inline edit utility ----
@@ -2646,28 +2677,39 @@
         const laneItems = src.filter(it => it.swimlaneId === laneId);
         const itemStart = parseDate(startDateStr);
         const itemEnd   = parseDate(endDateStr);
+        // Check total row budget before allowing a new track
+        const currentTotal = getTotalRows();
+        const currentLaneTracks = getTrackCount(laneId);
         for (let t = 0; ; t++) {
           const conflict = laneItems.some(it =>
             it.track === t &&
             parseDate(it.startDate) < itemEnd &&
             parseDate(it.endDate)   > itemStart
           );
-          if (!conflict) return t;
+          if (!conflict) {
+            // If this track would create a new row, check the budget
+            if (t >= currentLaneTracks && currentTotal >= MAX_TOTAL_ROWS) return -1;
+            return t;
+          }
         }
       }
 
       // ---- Swimlane ops ----
+      let _addLaneTimer = null;
       function addSwimlane() {
+        if (STATE.swimlanes.length >= MAX_SWIMLANES || getTotalRows() >= MAX_TOTAL_ROWS) return;
+        const newId = uid();
         setState(s => {
-          s.swimlanes.push({ id: uid(), name: 'New Group', order: s.swimlanes.length, minRows: 1 });
+          s.swimlanes.push({ id: newId, name: 'New Group', order: s.swimlanes.length, minRows: 1 });
         });
-        // Auto-focus rename on the new lane
-        setTimeout(() => {
-          const rows = document.querySelectorAll('.sidebar-row');
-          const last = rows[rows.length - 1];
-          if (last) {
-            const nameEl = last.querySelector('.lane-name');
-            if (nameEl) startRenameLaneEl(nameEl, STATE.swimlanes[STATE.swimlanes.length - 1].id);
+        // Auto-focus rename on the new lane (cancel any pending autofocus)
+        if (_addLaneTimer) clearTimeout(_addLaneTimer);
+        _addLaneTimer = setTimeout(() => {
+          _addLaneTimer = null;
+          const row = document.querySelector(`.sidebar-row[data-lane-id="${newId}"]`);
+          if (row) {
+            const nameEl = row.querySelector('.lane-name');
+            if (nameEl) startRenameLaneEl(nameEl, newId);
           }
         }, AUTOFOCUS_DELAY_MS);
       }
@@ -2838,8 +2880,12 @@
         ds.newStartDate = snappedStartDate;
         showDragTooltip(formatDateForTooltip(snappedStartDate), e.clientX, e.clientY);
 
+        const ls = getLaneScale();
+        const scaledBarH = Math.round(ITEM_BAR_H * ls);
+        const scaledGap = Math.round(TRACK_GAP * ls);
+        const scaledPad = Math.round(LANE_PADDING * ls);
         const baseLaneHeights = getLaneHeights();
-        const EXTRA = ITEM_BAR_H + TRACK_GAP;
+        const EXTRA = scaledBarH + scaledGap;
         // Expand the previously-hovered lane so the cursor can reach a new track slot
         const prevLaneIdx = ds.currentLaneIdx ?? 0;
         const effectiveHeights = baseLaneHeights.map((h, i) => i === prevLaneIdx ? h + EXTRA : h);
@@ -2851,8 +2897,8 @@
         for (let i = 0; i < effectiveHeights.length; i++) {
           if (y < cumulativeY + effectiveHeights[i]) {
             newLaneIdx = i;
-            const trackY = (y - cumulativeY) - LANE_PADDING;
-            newTrack = Math.max(0, Math.floor(trackY / (ITEM_BAR_H + TRACK_GAP)));
+            const trackY = (y - cumulativeY) - scaledPad;
+            newTrack = Math.max(0, Math.floor(trackY / (scaledBarH + scaledGap)));
             break;
           }
           cumulativeY += effectiveHeights[i];
@@ -2942,6 +2988,9 @@
           const lane = STATE.swimlanes[ds.laneIdx];
           if (!lane) return;
 
+          const track = findFreeTrack(lane.id, fmt(startDate), fmt(endDate));
+          if (track === -1) return; // lane full
+
           const newItem = {
             id: uid(),
             swimlaneId: lane.id,
@@ -2949,13 +2998,18 @@
             startDate: fmt(startDate),
             endDate: fmt(endDate),
             color: PALETTE[STATE.items.length % PALETTE.length],
-            track: findFreeTrack(lane.id, fmt(startDate), fmt(endDate))
+            track
           };
 
           selectedItemId = newItem.id;
           setState(s => {
             s.items.push(newItem);
           });
+          // Auto-trigger rename on the new drag-created item
+          setTimeout(() => {
+            const lbl = document.querySelector(`.item-bar-label[data-item-id="${newItem.id}"]`);
+            if (lbl) startRenameItem(newItem.id, lbl);
+          }, AUTOFOCUS_DELAY_MS);
         } else if (ds.type === 'move' && ds.moved) {
           // Use the snapped start date from dragState (calculated during mousemove)
           const newStartDate = ds.newStartDate;
@@ -2984,9 +3038,14 @@
             } else if (ds.type === 'resize-right' && ds.newEndDate) {
               it.endDate = fmt(ds.newEndDate);
             }
-            // Ensure start < end
-            if (parseDate(it.startDate) >= parseDate(it.endDate)) {
-              it.endDate = fmt(addDays(parseDate(it.startDate), 1));
+            // Ensure start < end with 7-day minimum (matches drag-create minimum)
+            const rs = parseDate(it.startDate), re = parseDate(it.endDate);
+            if (rs >= re || daysBetween(rs, re) < 7) {
+              if (ds.type === 'resize-left') {
+                it.startDate = fmt(addDays(re, -7));
+              } else {
+                it.endDate = fmt(addDays(rs, 7));
+              }
             }
           });
         }
@@ -3124,20 +3183,37 @@
           showInfo('Please add a group first.');
           return;
         }
-        // Add item to first swimlane with default 1-week duration
+
+        // Clamp start date to visible timeline range
         const tlStart = parseDate(STATE.timeline.startDate);
-        const startDate = snapToMonday(new Date());
-        const endDate = addDays(startDate, 28);
+        const tlEnd = parseDate(STATE.timeline.endDate);
+        let startDate = snapToMonday(new Date());
+        if (startDate < tlStart || startDate >= tlEnd) startDate = snapToMonday(tlStart);
+        let endDate = addDays(startDate, 28);
+        if (endDate > tlEnd) endDate = tlEnd;
+        if (daysBetween(startDate, endDate) < 7) endDate = addDays(startDate, 7);
+
+        // Find the first lane with a free track (not always the first lane)
+        let targetLaneId = null;
+        let targetTrack = -1;
+        for (const lane of STATE.swimlanes) {
+          const t = findFreeTrack(lane.id, fmt(startDate), fmt(endDate));
+          if (t !== -1) { targetLaneId = lane.id; targetTrack = t; break; }
+        }
+        if (targetTrack === -1) {
+          showInfo('No space available. Remove items or add rows first.');
+          return;
+        }
 
         setState(s => {
           const newItem = {
             id: uid(),
-            swimlaneId: s.swimlanes[0].id,
+            swimlaneId: targetLaneId,
             name: 'New Initiative',
             startDate: fmt(startDate),
             endDate: fmt(endDate),
             color: PALETTE[s.items.length % PALETTE.length],
-            track: findFreeTrack(s.swimlanes[0].id, fmt(startDate), fmt(endDate), s.items)
+            track: targetTrack
           };
           s.items.push(newItem);
           selectedItemId = newItem.id;
