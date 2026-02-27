@@ -1454,6 +1454,17 @@
       const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
       const MONTH_NAMES_FULL = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
+      // Layout and behavior constants (avoid magic numbers scattered in code)
+      const MS_PER_DAY = 86400000;
+      const MIN_BAR_WIDTH = 12;
+      const DRAG_THRESHOLD = 5;
+      const LABEL_PAD_H = 12;
+      const DEFAULT_SIDEBAR_W = 180;
+      const AUTOFOCUS_DELAY_MS = 30;
+      const SAVE_DEBOUNCE_MS = 500;
+      const MAX_HISTORY = 50;
+      const FY_START_MONTH = 9; // October (0-indexed)
+
       // Interpolate from eq-gold-light (#fff8e6) to eq-gold (#ffcb31), t in [0,1]
       function goldRamp(t) {
         const r = Math.round(255 + (255 - 255) * t);
@@ -1473,7 +1484,7 @@
             zoomLevel: 1,
             title: 'New Timeline',
             monthCount: 12,
-            sidebarWidth: 180,
+            sidebarWidth: DEFAULT_SIDEBAR_W,
             legendOrientation: 'vertical',
             legendAlign: 'right'
           },
@@ -1486,7 +1497,6 @@
       let STATE = defaultState();
       let stateHistory = [JSON.parse(JSON.stringify(STATE))];
       let historyIndex = 0;
-      const MAX_HISTORY = 50;
 
       function pushHistory(newState) {
         if (historyIndex < stateHistory.length - 1) {
@@ -1530,21 +1540,22 @@
         if (btnRedo) btnRedo.disabled = historyIndex >= stateHistory.length - 1;
       }
 
-      // Fiscal year starts October 1 (month 9); Q4 ends September 30.
+      // Shared fiscal calendar calculation for a given date.
+      // Returns fiscalMonth (0=Oct..11=Sep), fiscalQuarter (0-based), fyYear.
+      function getFiscalInfo(date) {
+        const month = date.getMonth();
+        const year = date.getFullYear();
+        const fiscalMonth = (month - FY_START_MONTH + 12) % 12;
+        const fiscalQuarter = Math.floor(fiscalMonth / 3);
+        const fyYear = month >= FY_START_MONTH ? year : year - 1;
+        return { fiscalMonth, fiscalQuarter, fyYear };
+      }
+
       // Returns the start of the current fiscal quarter and 4 quarters later.
       function fiscalQuarterRange(today) {
-        const month = today.getMonth();
-        const year = today.getFullYear();
-        const FY_START = 9; // October
-        // Shift into fiscal calendar (Oct=0, Nov=1 … Sep=11)
-        const fiscalMonth = (month - FY_START + 12) % 12;
-        const fiscalQuarter = Math.floor(fiscalMonth / 3); // 0-based (0=Q1,3=Q4)
-        // Calendar month where this FY quarter begins
-        const qCalMonth = (FY_START + fiscalQuarter * 3) % 12;
-        // FY started in October — which calendar year?
-        const fyStartYear = month >= FY_START ? year : year - 1;
-        // Year the current quarter's start month falls in
-        const qYear = qCalMonth >= FY_START ? fyStartYear : fyStartYear + 1;
+        const { fiscalQuarter, fyYear } = getFiscalInfo(today);
+        const qCalMonth = (FY_START_MONTH + fiscalQuarter * 3) % 12;
+        const qYear = qCalMonth >= FY_START_MONTH ? fyYear : fyYear + 1;
         const start = new Date(qYear, qCalMonth, 1);
         const end = new Date(qYear + 1, qCalMonth, 1);
         return { start, end };
@@ -1575,8 +1586,11 @@
       function saveState() {
         clearTimeout(saveTimer);
         saveTimer = setTimeout(() => {
-          try { localStorage.setItem(STORAGE_KEY, JSON.stringify(STATE)); } catch (e) { console.error('Save failed:', e); }
-        }, 500);
+          try { localStorage.setItem(STORAGE_KEY, JSON.stringify(STATE)); } catch (e) {
+            console.error('Save failed:', e);
+            showInfo('Could not save. Storage may be full.');
+          }
+        }, SAVE_DEBOUNCE_MS);
       }
 
       const COLOR_MIGRATION = {
@@ -1612,7 +1626,7 @@
           STATE.timeline.monthCount = 12;
         }
         if (!STATE.timeline.sidebarWidth) {
-          STATE.timeline.sidebarWidth = 180;
+          STATE.timeline.sidebarWidth = DEFAULT_SIDEBAR_W;
         }
         if (!STATE.timeline.legendOrientation) {
           STATE.timeline.legendOrientation = 'vertical';
@@ -1688,7 +1702,7 @@
       function daysBetween(a, b) {
         const utcA = Date.UTC(a.getFullYear(), a.getMonth(), a.getDate());
         const utcB = Date.UTC(b.getFullYear(), b.getMonth(), b.getDate());
-        return Math.round((utcB - utcA) / 86400000);
+        return Math.round((utcB - utcA) / MS_PER_DAY);
       }
 
       function addDays(d, n) {
@@ -1736,24 +1750,17 @@
             if (next > end) next = new Date(end);
             label = `${MONTH_NAMES[cur.getMonth()]} ${cur.getFullYear()}`;
           } else {
-            // Fiscal quarter label: Q1=Oct, Q2=Jan, Q3=Apr, Q4=Jul
-            const FY_START = 9; // October
-            const fiscalMonth = (cur.getMonth() - FY_START + 12) % 12;
-            const fiscalQ = Math.floor(fiscalMonth / 3) + 1;  // 1-4
-            // Fiscal year number = the year October falls in
-            const fyYear = cur.getMonth() >= FY_START ? cur.getFullYear() : cur.getFullYear() - 1;
-            next = new Date(cur.getFullYear(), cur.getMonth() - fiscalMonth % 3 + 3, 1);
+            // Fiscal quarter
+            const fi = getFiscalInfo(cur);
+            const fiscalQ = fi.fiscalQuarter + 1; // 1-based
             // Advance to next FY quarter boundary
-            const nextFiscalQ0 = Math.floor(fiscalMonth / 3) + 1; // next index
-            const nextCalMonth = (FY_START + nextFiscalQ0 * 3) % 12;
-            const nextFyYear = nextFiscalQ0 >= 4
-              ? fyYear + 1
-              : fyYear;
-            const crossesYear = nextCalMonth < FY_START;
-            const nextYear = crossesYear ? nextFyYear + 1 : nextFyYear;
+            const nextQIdx = fi.fiscalQuarter + 1;
+            const nextCalMonth = (FY_START_MONTH + nextQIdx * 3) % 12;
+            const nextFyYear = nextQIdx >= 4 ? fi.fyYear + 1 : fi.fyYear;
+            const nextYear = nextCalMonth < FY_START_MONTH ? nextFyYear + 1 : nextFyYear;
             next = new Date(nextYear, nextCalMonth, 1);
             if (next > end) next = new Date(end);
-            label = `Q${fiscalQ} FY${String(fyYear + 1).slice(2)}`;
+            label = `Q${fiscalQ} FY${String(fi.fyYear + 1).slice(2)}`;
           }
           cols.push({ start: new Date(cur), end: next, label });
           cur = next;
@@ -1779,10 +1786,7 @@
       function getWeeks(start, end) {
         const weeks = [];
         let cur = new Date(start);
-        // Align to Monday
-        const day = cur.getDay();
-        const diff = (day === 0 ? -6 : 1 - day);
-        cur.setDate(cur.getDate() + diff);
+        cur = snapToMonday(cur);
 
         let weekNum = 1;
         while (cur < end) {
@@ -1831,7 +1835,7 @@
       const LANE_PADDING = cssVar('--lane-padding');
 
       function getSidebarWidth() {
-        return STATE.timeline.sidebarWidth || 180;
+        return STATE.timeline.sidebarWidth || DEFAULT_SIDEBAR_W;
       }
 
       function getTimelineWidth() {
@@ -2093,7 +2097,7 @@
 
           function onMove(me) {
             const dx = (me.clientX - startX) / scale;
-            const newWidth = Math.max(180, Math.min(400, startWidth + dx));
+            const newWidth = Math.max(DEFAULT_SIDEBAR_W, Math.min(400, startWidth + dx));
             STATE.timeline.sidebarWidth = Math.round(newWidth);
             if (slide) {
               slide.style.setProperty('--sidebar-width', Math.round(newWidth) + 'px');
@@ -2123,7 +2127,7 @@
         const itemEnd = parseDate(item.endDate);
         const x1 = dateToX(itemStart, tlStart, totalDays, totalWidth);
         const x2 = dateToX(itemEnd, tlStart, totalDays, totalWidth);
-        const w = Math.max(x2 - x1, 12);
+        const w = Math.max(x2 - x1, MIN_BAR_WIDTH);
         const trackY = LANE_PADDING + item.track * (ITEM_BAR_H + TRACK_GAP);
 
         // Wrapper to hold bar + floating label
@@ -2176,7 +2180,7 @@
           function onMove(me) {
             const dx = me.clientX - startX;
             const dy = me.clientY - startY;
-            if (!moved && Math.abs(dx) + Math.abs(dy) > 5) {
+            if (!moved && Math.abs(dx) + Math.abs(dy) > DRAG_THRESHOLD) {
               moved = true;
               document.removeEventListener('pointermove', onMove);
               document.removeEventListener('pointerup', onUp);
@@ -2227,7 +2231,7 @@
 
         // Auto-positioned label — inside bar if text fits, outside (no bg) if not
         const labelText = item.name || 'Untitled';
-        const labelPadH = 12; // 6px left + 6px right padding
+        const labelPadH = LABEL_PAD_H;
         const labelH = 22;
         const textPx = measureLabelText(labelText);
         const labelW = textPx + labelPadH;
@@ -2455,7 +2459,7 @@
           if (e.button !== 0) return;
           const targetRow = e.target.closest('.timeline-grid-row');
           if (!targetRow) return;
-          const laneIdx = parseInt(targetRow.dataset.laneIdx);
+          const laneIdx = parseInt(targetRow.dataset.laneIdx, 10);
           if (isNaN(laneIdx) || laneIdx < 0 || laneIdx >= STATE.swimlanes.length) return;
           const scale = getSlideScale();
           const gridRect = grid.getBoundingClientRect();
@@ -2634,7 +2638,7 @@
             const nameEl = last.querySelector('.lane-name');
             if (nameEl) startRenameLaneEl(nameEl, STATE.swimlanes[STATE.swimlanes.length - 1].id);
           }
-        }, 30);
+        }, AUTOFOCUS_DELAY_MS);
       }
 
       function startRenameLane(laneId) {
@@ -2845,13 +2849,13 @@
         const snappedX = dateToX(snapToMonday(rawDate), ds.tlStart, ds.totalDays, ds.totalWidth);
 
         if (ds.type === 'resize-left') {
-          const newLeft = Math.min(snappedX, ds.origRight - 12);
+          const newLeft = Math.min(snappedX, ds.origRight - MIN_BAR_WIDTH);
           ds.barEl.style.left = newLeft + 'px';
           ds.barEl.style.width = (ds.origRight - newLeft) + 'px';
           ds.newStartDate = snapToMonday(xToDate(newLeft, ds.tlStart, ds.totalDays, ds.totalWidth));
           showDragTooltip(formatDateForTooltip(ds.newStartDate), e.clientX, e.clientY);
         } else {
-          const newRight = Math.max(snappedX, ds.origLeft + 12);
+          const newRight = Math.max(snappedX, ds.origLeft + MIN_BAR_WIDTH);
           ds.barEl.style.width = (newRight - ds.origLeft) + 'px';
           ds.newEndDate = snapToMonday(xToDate(newRight, ds.tlStart, ds.totalDays, ds.totalWidth));
           showDragTooltip(formatDateForTooltip(ds.newEndDate), e.clientX, e.clientY);
@@ -2888,7 +2892,7 @@
         if (ds.type === 'create') {
           if (ds.ghostEl) ds.ghostEl.remove();
           const width = Math.abs(ds.currentX - ds.startX);
-          if (width < 5) return; // too small, ignore
+          if (width < DRAG_THRESHOLD) return; // too small, ignore
 
           const left = Math.min(ds.startX, ds.currentX);
           const right = Math.max(ds.startX, ds.currentX);
@@ -3167,7 +3171,7 @@
         try {
           const canvas = await html2canvas(slide, { scale: 2, useCORS: true });
           canvas.toBlob((blob) => {
-            if (!blob) { alert('Export failed.'); return; }
+            if (!blob) { showInfo('Export failed.'); return; }
             const a = document.createElement('a');
             a.href = URL.createObjectURL(blob);
             a.download = 'timeline.png';
@@ -3176,7 +3180,7 @@
           }, 'image/png');
         } catch (err) {
           console.error('Export failed:', err);
-          alert('Export failed. See console for details.');
+          showInfo('Export failed. See console for details.');
         } finally {
           slide.style.transform = savedTransform;
         }
