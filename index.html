@@ -290,23 +290,23 @@
       --eq-border: #d0d0d0;
       --eq-selection: #3297fd;
 
-      /* ── Initiative palette (500-level primitives, Blue → Magenta) ── */
-      --palette-0: var(--_B500);
+      /* ── Initiative palette (vivid, saturated) ──────────────── */
+      --palette-0: #3B82F6;
       /* Blue    */
-      --palette-1: var(--_T500);
-      /* Teal    */
-      --palette-2: var(--_L500);
-      /* Green   */
-      --palette-3: var(--_Y500);
-      /* Yellow  */
-      --palette-4: var(--_O500);
+      --palette-1: #06B6D4;
+      /* Cyan    */
+      --palette-2: #10B981;
+      /* Emerald */
+      --palette-3: #F59E0B;
+      /* Amber   */
+      --palette-4: #F97316;
       /* Orange  */
-      --palette-5: var(--_R500);
+      --palette-5: #EF4444;
       /* Red     */
-      --palette-6: var(--_P500);
-      /* Purple  */
-      --palette-7: var(--_M500);
-      /* Magenta */
+      --palette-6: #8B5CF6;
+      /* Violet  */
+      --palette-7: #EC4899;
+      /* Pink    */
 
       /* ── Layout (JS-driven values injected at init) ────────────── */
       --sidebar-width: 180px;
@@ -374,13 +374,13 @@
       flex: 0 0 auto;
     }
 
-    .control-ribbon h3 {
+    .ribbon-label {
       font-size: var(--font-size-heading-xxsmall);
       font-weight: var(--font-weight-semibold);
       text-transform: uppercase;
       letter-spacing: 0.8px;
       color: rgba(255, 255, 255, 0.5);
-      margin: 0;
+      white-space: nowrap;
     }
 
     .section-content {
@@ -1413,7 +1413,6 @@
   <div class="app-container">
     <div class="control-ribbon" id="control-sidebar">
       <div class="control-section">
-        <h3>Structure</h3>
         <div class="section-content">
           <button id="btn-add-swimlane" class="btn-primary"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Add Group</button>
           <button id="btn-add-item" class="btn-primary"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Add Initiative</button>
@@ -1423,7 +1422,6 @@
       <div class="control-section-divider"></div>
 
       <div class="control-section">
-        <h3>Timeline</h3>
         <div class="section-content">
           <div class="timeline-controls">
             <div class="chevron-stepper">
@@ -1443,7 +1441,6 @@
       <div class="control-section-divider"></div>
 
       <div class="control-section">
-        <h3>History</h3>
         <div class="section-content">
           <button id="btn-undo" class="btn-icon-only" disabled title="Undo (Ctrl+Z)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg></button>
           <button id="btn-redo" class="btn-icon-only" disabled title="Redo (Ctrl+Y)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.13-9.36L23 10"/></svg></button>
@@ -1453,10 +1450,10 @@
       <div class="control-section-divider"></div>
 
       <div class="control-section">
-        <h3>Legend</h3>
         <div class="section-content">
-          <button id="btn-legend-vertical">Vertical</button>
-          <button id="btn-legend-horizontal">Horizontal</button>
+          <span class="ribbon-label">Legend</span>
+          <button id="btn-legend-vertical" class="btn-icon-only" title="Vertical legend"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><line x1="3" y1="2" x2="3" y2="12"/><line x1="6" y1="3" x2="12" y2="3"/><line x1="6" y1="7" x2="12" y2="7"/><line x1="6" y1="11" x2="12" y2="11"/></svg></button>
+          <button id="btn-legend-horizontal" class="btn-icon-only" title="Horizontal legend"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><line x1="1" y1="7" x2="13" y2="7"/><line x1="2" y1="4" x2="2" y2="7"/><line x1="7" y1="4" x2="7" y2="7"/><line x1="12" y1="4" x2="12" y2="7"/></svg></button>
           <button id="btn-legend-left" class="btn-icon-only" title="Align left"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><line x1="1" y1="3" x2="13" y2="3"/><line x1="1" y1="7" x2="9" y2="7"/><line x1="1" y1="11" x2="13" y2="11"/></svg></button>
           <button id="btn-legend-center" class="btn-icon-only" title="Align center"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><line x1="1" y1="3" x2="13" y2="3"/><line x1="3" y1="7" x2="11" y2="7"/><line x1="1" y1="11" x2="13" y2="11"/></svg></button>
           <button id="btn-legend-right" class="btn-icon-only" title="Align right"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><line x1="1" y1="3" x2="13" y2="3"/><line x1="5" y1="7" x2="13" y2="7"/><line x1="1" y1="11" x2="13" y2="11"/></svg></button>
@@ -1466,7 +1463,6 @@
       <div class="control-section-divider"></div>
 
       <div class="control-section">
-        <h3>Export</h3>
         <div class="section-content">
           <button id="btn-export"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> PNG</button>
           <button id="btn-export-csv"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg> CSV</button>
@@ -1476,7 +1472,6 @@
       <div class="control-section-divider"></div>
 
       <div class="control-section">
-        <h3>&nbsp;</h3>
         <div class="section-content">
           <button id="btn-reset" class="btn-danger"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg> Restart</button>
         </div>
