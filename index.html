@@ -638,7 +638,6 @@
       font-size: inherit;
       font-weight: inherit;
       border: none;
-      border-bottom: 2px solid var(--_N600);
       border-radius: 0;
       outline: none;
       padding: 0;
@@ -756,7 +755,6 @@
       font-size: inherit;
       font-weight: inherit;
       border: none;
-      border-bottom: 2px solid var(--_N600);
       border-radius: 0;
       outline: none;
       padding: 0;
@@ -851,17 +849,16 @@
       color: inherit;
       background: transparent;
       border: none;
-      border-bottom: 2px solid rgba(255, 255, 255, 0.6);
       border-radius: 0;
       outline: none;
-      padding: 0 var(--space-050) 2px;
+      padding: 0 var(--space-050);
       margin: 0 calc(-1 * var(--space-050));
       width: calc(100% + var(--space-100));
       caret-color: white;
     }
 
     .item-bar.selected {
-      box-shadow: 0 0 0 var(--border-width-selected) var(--_N800), var(--shadow-item-selected);
+      box-shadow: 0 0 0 2px var(--bar-color), 0 0 16px var(--bar-color), var(--shadow-item-selected);
     }
 
     .item-bar.dragging {
@@ -1025,7 +1022,6 @@
       color: inherit;
       background: transparent;
       border: none;
-      border-bottom: 2px solid var(--_N600);
       border-radius: 0;
       outline: none;
       padding: 0;
@@ -1307,7 +1303,6 @@
     }
 
     .item-bar-label.label-overflow input {
-      border-bottom-color: var(--color-text);
       caret-color: var(--color-text);
     }
 
@@ -1318,10 +1313,9 @@
       color: inherit;
       background: transparent;
       border: none;
-      border-bottom: 2px solid rgba(255, 255, 255, 0.6);
       border-radius: 0;
       outline: none;
-      padding: 0 var(--space-050) 2px;
+      padding: 0 var(--space-050);
       margin: 0;
       caret-color: white;
     }
@@ -2122,6 +2116,7 @@
         bar.style.width = w + 'px';
         bar.style.top = trackY + 'px';
         bar.style.background = item.color;
+        bar.style.setProperty('--bar-color', item.color);
         bar.dataset.itemId = item.id;
         bar.dataset.track = item.track;
 
@@ -2182,10 +2177,19 @@
           if (e.target.tagName === 'INPUT') return;
           e.stopPropagation();
           selectedItemId = item.id;
+          render();
+          const lbl = document.querySelector(`.item-bar-label[data-item-id="${item.id}"]`);
+          if (lbl) startRenameItem(item.id, lbl);
+        });
+
+        bar.addEventListener('contextmenu', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          selectedItemId = item.id;
           showMenu([
             { label: 'Rename', onClick: () => {
-              const label = document.querySelector(`.item-bar-label[data-item-id="${item.id}"]`);
-              if (label) startRenameItem(item.id, label);
+              const lbl = document.querySelector(`.item-bar-label[data-item-id="${item.id}"]`);
+              if (lbl) startRenameItem(item.id, lbl);
             }},
             { separator: true },
             { colors: PALETTE, selectedColor: item.color, onColorClick: (color) => {
@@ -2229,11 +2233,13 @@
           }
         }
 
-        // Double-click to rename
-        label.addEventListener('dblclick', (e) => {
+        label.addEventListener('click', (e) => {
+          if (e.target.tagName === 'INPUT') return;
           e.stopPropagation();
           selectedItemId = item.id;
-          startRenameItem(item.id, label);
+          render();
+          const lbl = document.querySelector(`.item-bar-label[data-item-id="${item.id}"]`);
+          if (lbl) startRenameItem(item.id, lbl);
         });
 
         wrapper.appendChild(label);
@@ -2367,14 +2373,6 @@
           STATE.items.filter(it => it.swimlaneId === lane.id).forEach(item => {
             row.appendChild(buildItemBar(item, ctx));
           });
-
-          const trackCount = getTrackCount(lane.id);
-          for (let t = 1; t < trackCount; t++) {
-            const sep = document.createElement('div');
-            sep.className = 'track-separator';
-            sep.style.top = (LANE_PADDING + t * (ITEM_BAR_H + TRACK_GAP) - Math.floor(TRACK_GAP / 2)) + 'px';
-            row.appendChild(sep);
-          }
 
           grid.appendChild(row);
         });
