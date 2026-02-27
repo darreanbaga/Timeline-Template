@@ -463,21 +463,6 @@
       justify-content: center;
     }
 
-.stepper-wrapper {
-      display: flex;
-      align-items: center;
-      gap: var(--space-100);
-    }
-
-    .stepper-label {
-      font-size: var(--font-size-heading-xxsmall);
-      font-weight: var(--font-weight-medium);
-      color: rgba(255, 255, 255, 0.5);
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      white-space: nowrap;
-    }
-
     .control-section-divider {
       width: var(--border-width);
       background: rgba(255, 255, 255, 0.15);
@@ -1317,6 +1302,7 @@
       outline: none;
       padding: 0 var(--space-050);
       margin: 0;
+      width: 100%;
       caret-color: white;
     }
 
@@ -1331,32 +1317,60 @@
       font-weight: var(--font-weight-regular);
     }
 
-    /* Timeline length stepper */
-    .timeline-length-stepper {
+    /* Timeline length slider */
+    .length-slider-wrapper {
       display: flex;
-      align-items: center;
-      gap: var(--space-050);
+      flex-direction: column;
+      gap: var(--space-100);
+      min-width: 140px;
     }
 
-    .timeline-length-stepper button {
-      min-width: 28px !important;
-      width: 28px;
-      height: 28px;
-      padding: 0 !important;
+    .length-slider-header {
       display: flex;
       align-items: center;
-      justify-content: center;
-      font-size: 16px;
-      font-weight: var(--font-weight-bold);
+      justify-content: space-between;
     }
 
-    .timeline-length-stepper .length-display {
-      min-width: 42px;
-      text-align: center;
+    .length-slider-header .length-display {
       color: var(--_N0);
       font-size: var(--font-size-body-medium);
       font-weight: var(--font-weight-medium);
       font-variant-numeric: tabular-nums;
+    }
+
+    #length-slider {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 4px;
+      border-radius: 2px;
+      background: rgba(255, 255, 255, 0.2);
+      outline: none;
+      cursor: pointer;
+    }
+
+    #length-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: var(--_N0);
+      cursor: pointer;
+      transition: transform 100ms var(--ease);
+    }
+
+    #length-slider::-moz-range-thumb {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: var(--_N0);
+      border: none;
+      cursor: pointer;
+    }
+
+    #length-slider:hover::-webkit-slider-thumb {
+      transform: scale(1.2);
     }
   </style>
 </head>
@@ -1370,13 +1384,19 @@
         <div class="section-content">
           <button id="btn-add-swimlane" class="btn-primary"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Add Group</button>
           <button id="btn-add-item" class="btn-primary"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Add Initiative</button>
-          <div class="stepper-wrapper">
-            <span class="stepper-label">Length</span>
-            <div class="timeline-length-stepper">
-              <button id="btn-length-minus" title="Fewer months">&minus;</button>
+        </div>
+      </div>
+
+      <div class="control-section-divider"></div>
+
+      <div class="control-section">
+        <h3>Length</h3>
+        <div class="section-content">
+          <div class="length-slider-wrapper">
+            <div class="length-slider-header">
               <span class="length-display" id="length-display">12 mo</span>
-              <button id="btn-length-plus" title="More months">+</button>
             </div>
+            <input type="range" id="length-slider" min="1" max="12" value="12">
           </div>
         </div>
       </div>
@@ -2221,6 +2241,7 @@
 
         if (fitsInBar) {
           label.style.left = (x1 + 8) + 'px';
+          label.style.width = (w - 16) + 'px';
           label.style.background = item.color;
         } else {
           label.classList.add('label-overflow');
@@ -2318,13 +2339,14 @@
           subRow.className = 'timeline-header-row timeline-week-header';
           subRow.style.height = WEEK_ROW_H + 'px';
           if (mc <= 1) {
-            getDays(tlStart, tlEnd).forEach((day, i) => {
+            getDays(tlStart, tlEnd).forEach((day) => {
               const d = daysBetween(tlStart, day.end) - daysBetween(tlStart, day.start);
               const pct = (d / totalDays) * 100;
               const hd = document.createElement('div');
               hd.className = 'timeline-col-header';
               hd.style.width = pct + '%';
-              hd.style.background = i % 2 === 0 ? 'var(--canvas-row-even)' : 'var(--canvas-row-odd)';
+              const dow = day.start.getDay(); // 0=Sun, 6=Sat
+              hd.style.background = (dow === 0 || dow === 6) ? 'var(--_N300)' : 'var(--canvas-row-even)';
               hd.textContent = day.label;
               subRow.appendChild(hd);
             });
@@ -2574,6 +2596,7 @@
       function startRenameItem(itemId, textEl) {
         const item = STATE.items.find(it => it.id === itemId);
         if (!item) return;
+        textEl.style.background = 'transparent';
         startInlineEdit(textEl, item.name || '', (val) => {
           setState(s => {
             const it = s.items.find(i => i.id === itemId);
@@ -3018,30 +3041,23 @@
       document.getElementById('btn-redo').addEventListener('click', redo);
       document.getElementById('btn-add-swimlane').addEventListener('click', addSwimlane);
 
-      // Timeline length stepper
+      // Timeline length slider
       function updateLengthDisplay() {
         const el = document.getElementById('length-display');
-        if (el) el.textContent = (STATE.timeline.monthCount || 12) + ' mo';
+        const slider = document.getElementById('length-slider');
+        const mc = STATE.timeline.monthCount || 12;
+        if (el) el.textContent = mc + ' mo';
+        if (slider) slider.value = mc;
       }
 
-      document.getElementById('btn-length-minus').addEventListener('click', () => {
-        const cur = STATE.timeline.monthCount || 12;
-        if (cur <= 1) return;
+      document.getElementById('length-slider').addEventListener('input', (e) => {
+        const val = parseInt(e.target.value, 10);
         setState(s => {
-          s.timeline.monthCount = cur - 1;
+          s.timeline.monthCount = val;
           updateTimelineDates();
         });
-        updateLengthDisplay();
-      });
-
-      document.getElementById('btn-length-plus').addEventListener('click', () => {
-        const cur = STATE.timeline.monthCount || 12;
-        if (cur >= 12) return;
-        setState(s => {
-          s.timeline.monthCount = cur + 1;
-          updateTimelineDates();
-        });
-        updateLengthDisplay();
+        const el = document.getElementById('length-display');
+        if (el) el.textContent = val + ' mo';
       });
 
       document.getElementById('btn-add-item').addEventListener('click', () => {
