@@ -815,7 +815,8 @@
       transition: box-shadow 200ms var(--ease), transform 200ms var(--ease), opacity 150ms var(--ease);
     }
 
-    .item-bar:hover {
+    .item-bar:hover,
+    .item-bar.label-hovered {
       box-shadow: var(--shadow-item-hover);
       transform: translateY(-1px);
       z-index: 4;
@@ -844,8 +845,15 @@
     }
 
     .item-bar:hover,
-    .item-bar.selected {
+    .item-bar.selected,
+    .item-bar.label-hovered {
       box-shadow: 0 0 0 2px var(--bar-color), 0 0 16px var(--bar-color), var(--shadow-item-selected);
+    }
+
+    @keyframes jiggle {
+      0%, 100% { rotate: 0deg; }
+      25%      { rotate: 0.6deg; }
+      75%      { rotate: -0.6deg; }
     }
 
     .item-bar.dragging {
@@ -853,7 +861,7 @@
       cursor: grabbing;
       z-index: 100;
       box-shadow: var(--shadow-card);
-      transform: translateY(-2px);
+      animation: jiggle 300ms ease-in-out infinite;
     }
 
     .item-bar .resize-handle {
@@ -2232,7 +2240,8 @@
         const labelH = 22;
         const textPx = measureLabelText(labelText);
         const labelW = textPx + labelPadH;
-        const fitsInBar = labelW <= (w - 8);
+        const labelInset = 16;
+        const fitsInBar = labelW <= (w - labelInset * 2);
 
         const label = document.createElement('div');
         label.className = 'item-bar-label';
@@ -2241,7 +2250,7 @@
         label.style.top = (trackY + (ITEM_BAR_H - labelH) / 2) + 'px';
 
         if (fitsInBar) {
-          label.style.left = (x1 + 8) + 'px';
+          label.style.left = (x1 + labelInset) + 'px';
         } else {
           label.classList.add('label-overflow');
           // Prefer right of bar; fall back to left if it would overflow the timeline
@@ -2260,6 +2269,13 @@
           render();
           const lbl = document.querySelector(`.item-bar-label[data-item-id="${item.id}"]`);
           if (lbl) startRenameItem(item.id, lbl);
+        });
+
+        label.addEventListener('mouseenter', () => {
+          bar.classList.add('label-hovered');
+        });
+        label.addEventListener('mouseleave', () => {
+          bar.classList.remove('label-hovered');
         });
 
         wrapper.appendChild(label);
