@@ -753,6 +753,7 @@
     .timeline-col-header {
       border: var(--border-width) solid var(--color-border-disabled);
       margin-right: calc(-1 * var(--border-width));
+      flex-grow: 1;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -842,6 +843,7 @@
       caret-color: white;
     }
 
+    .item-bar:hover,
     .item-bar.selected {
       box-shadow: 0 0 0 2px var(--bar-color), 0 0 16px var(--bar-color), var(--shadow-item-selected);
     }
@@ -1276,8 +1278,8 @@
       font-size: var(--font-size-heading-lane);
       font-weight: var(--font-weight-medium);
       color: var(--color-text-inverse);
-      padding: 2px 6px;
-      border-radius: var(--radius-small);
+      padding: 0;
+      border-radius: 0;
       user-select: none;
       -webkit-user-select: none;
     }
@@ -1300,7 +1302,7 @@
       border: none;
       border-radius: 0;
       outline: none;
-      padding: 0 var(--space-050);
+      padding: 0;
       margin: 0;
       width: 100%;
       caret-color: white;
@@ -1720,52 +1722,38 @@
         return d;
       }
 
+      function columnWidthPct(col, tlStart, totalDays) {
+        const days = daysBetween(tlStart, col.end) - daysBetween(tlStart, col.start);
+        return (days / totalDays) * 100;
+      }
+
       function formatDateForTooltip(date) {
         return `${MONTH_NAMES[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`;
       }
 
-      function getGranularity(start, end) {
-        const days = daysBetween(start, end);
-        if (days <= 14) return 'day';
-        if (days <= 90) return 'week';
-        if (days <= 730) return 'month';
-        return 'quarter';
+      function getQuarters(start, end) {
+        const quarters = [];
+        let cur = new Date(start);
+        while (cur < end) {
+          const fi = getFiscalInfo(cur);
+          const nextQIdx = fi.fiscalQuarter + 1;
+          const nextCalMonth = (FY_START_MONTH + nextQIdx * 3) % 12;
+          const nextFyYear = nextQIdx >= 4 ? fi.fyYear + 1 : fi.fyYear;
+          const nextYear = nextCalMonth < FY_START_MONTH ? nextFyYear + 1 : nextFyYear;
+          const next = new Date(nextYear, nextCalMonth, 1);
+          quarters.push({
+            start: new Date(cur),
+            end: next > end ? new Date(end) : next,
+            label: `Q${fi.fiscalQuarter + 1} FY${String(fi.fyYear + 1).slice(2)}`
+          });
+          cur = next;
+        }
+        return quarters;
       }
 
       function getColumns(start, end, granularity) {
-        const cols = [];
-        let cur = new Date(start);
-        while (cur < end) {
-          let next;
-          let label;
-          if (granularity === 'day') {
-            next = addDays(cur, 1);
-            label = `${cur.getMonth() + 1}/${cur.getDate()}`;
-          } else if (granularity === 'week') {
-            next = addDays(cur, 7);
-            if (next > end) next = new Date(end);
-            label = `${cur.getMonth() + 1}/${cur.getDate()}`;
-          } else if (granularity === 'month') {
-            next = new Date(cur.getFullYear(), cur.getMonth() + 1, 1);
-            if (next > end) next = new Date(end);
-            label = `${MONTH_NAMES[cur.getMonth()]} ${cur.getFullYear()}`;
-          } else {
-            // Fiscal quarter
-            const fi = getFiscalInfo(cur);
-            const fiscalQ = fi.fiscalQuarter + 1; // 1-based
-            // Advance to next FY quarter boundary
-            const nextQIdx = fi.fiscalQuarter + 1;
-            const nextCalMonth = (FY_START_MONTH + nextQIdx * 3) % 12;
-            const nextFyYear = nextQIdx >= 4 ? fi.fyYear + 1 : fi.fyYear;
-            const nextYear = nextCalMonth < FY_START_MONTH ? nextFyYear + 1 : nextFyYear;
-            next = new Date(nextYear, nextCalMonth, 1);
-            if (next > end) next = new Date(end);
-            label = `Q${fiscalQ} FY${String(fi.fyYear + 1).slice(2)}`;
-          }
-          cols.push({ start: new Date(cur), end: next, label });
-          cur = next;
-        }
-        return cols;
+        const generators = { day: getDays, week: getWeeks, month: getMonths, quarter: getQuarters };
+        return generators[granularity](start, end);
       }
 
       function getMonths(start, end) {
@@ -1842,11 +1830,22 @@
         return CONTENT_W - getSidebarWidth();
       }
 
+      function getDisplayConfig(monthCount) {
+        return {
+          showQuarterRow: monthCount >= 4,
+          showSubMonthRow: monthCount <= 3,
+          subMonthMode: monthCount <= 1 ? 'day' : 'week',
+          topGranularity: monthCount <= 2 ? 'month' : 'quarter',
+          useFullMonthNames: monthCount < 6,
+          monthColorMode: monthCount < 4 ? 'gradient' : 'alternating',
+        };
+      }
+
       function getHeaderHeight() {
-        const mc = STATE.timeline.monthCount || 12;
+        const cfg = getDisplayConfig(STATE.timeline.monthCount || 12);
         let h = TITLE_ROW_H + MONTH_ROW_H;
-        if (mc >= 4) h += QUARTER_ROW_H;
-        if (mc <= 3) h += WEEK_ROW_H;
+        if (cfg.showQuarterRow) h += QUARTER_ROW_H;
+        if (cfg.showSubMonthRow) h += WEEK_ROW_H;
         return h;
       }
 
@@ -2202,8 +2201,6 @@
           e.stopPropagation();
           selectedItemId = item.id;
           render();
-          const lbl = document.querySelector(`.item-bar-label[data-item-id="${item.id}"]`);
-          if (lbl) startRenameItem(item.id, lbl);
         });
 
         bar.addEventListener('contextmenu', (e) => {
@@ -2245,8 +2242,6 @@
 
         if (fitsInBar) {
           label.style.left = (x1 + 8) + 'px';
-          label.style.width = (w - 16) + 'px';
-          label.style.background = item.color;
         } else {
           label.classList.add('label-overflow');
           // Prefer right of bar; fall back to left if it would overflow the timeline
@@ -2271,9 +2266,25 @@
         return wrapper;
       }
 
+      function buildHeaderRow(items, ctx, height, styleFn, options = {}) {
+        const { tlStart, totalDays } = ctx;
+        const row = document.createElement('div');
+        row.className = 'timeline-header-row' + (options.className ? ' ' + options.className : '');
+        row.style.height = height + 'px';
+        items.forEach((item, i) => {
+          const hd = document.createElement('div');
+          hd.className = 'timeline-col-header';
+          hd.style.width = columnWidthPct(item, tlStart, totalDays) + '%';
+          hd.style.background = styleFn(item, i, items.length);
+          hd.textContent = options.labelFn ? options.labelFn(item, i) : item.label;
+          row.appendChild(hd);
+        });
+        return row;
+      }
+
       function buildHeader(ctx) {
         const { tlStart, tlEnd, totalDays, cols } = ctx;
-        const mc = STATE.timeline.monthCount || 12;
+        const cfg = getDisplayConfig(STATE.timeline.monthCount || 12);
         const header = document.createElement('div');
         header.className = 'timeline-header';
         const months = getMonths(tlStart, tlEnd);
@@ -2301,72 +2312,38 @@
         titleRow.appendChild(logo);
         header.appendChild(titleRow);
 
-        // Quarter row (only when timeline spans >= 4 months)
-        if (mc >= 4) {
-          const quarterRow = document.createElement('div');
-          quarterRow.className = 'timeline-header-row';
-          quarterRow.style.height = QUARTER_ROW_H + 'px';
-          cols.forEach((col, i) => {
-            const days = daysBetween(tlStart, col.end) - daysBetween(tlStart, col.start);
-            const pct = (days / totalDays) * 100;
-            const hd = document.createElement('div');
-            hd.className = 'timeline-col-header';
-            hd.style.width = pct + '%';
-            hd.style.background = goldRamp(cols.length === 1 ? 1 : i / (cols.length - 1));
-            hd.textContent = col.label;
-            quarterRow.appendChild(hd);
-          });
-          header.appendChild(quarterRow);
+        // Quarter row
+        if (cfg.showQuarterRow) {
+          header.appendChild(buildHeaderRow(cols, ctx, QUARTER_ROW_H,
+            (_col, i, len) => goldRamp(len === 1 ? 1 : i / (len - 1))
+          ));
         }
 
         // Month row
-        const monthRow = document.createElement('div');
-        monthRow.className = 'timeline-header-row';
-        monthRow.style.height = MONTH_ROW_H + 'px';
-        months.forEach((month, i) => {
-          const days = daysBetween(tlStart, month.end) - daysBetween(tlStart, month.start);
-          const pct = (days / totalDays) * 100;
-          const hd = document.createElement('div');
-          hd.className = 'timeline-col-header';
-          hd.style.width = pct + '%';
-          hd.style.background = mc < 4
-            ? goldRamp(months.length === 1 ? 1 : i / (months.length - 1))
-            : i % 2 === 0 ? 'var(--canvas-row-even)' : 'var(--canvas-row-odd)';
-          hd.textContent = mc < 6 ? MONTH_NAMES_FULL[month.start.getMonth()] : month.label;
-          monthRow.appendChild(hd);
-        });
-        header.appendChild(monthRow);
+        const monthStyle = cfg.monthColorMode === 'gradient'
+          ? (_m, i, len) => goldRamp(len === 1 ? 1 : i / (len - 1))
+          : (_m, i) => i % 2 === 0 ? 'var(--canvas-row-even)' : 'var(--canvas-row-odd)';
+        const monthLabel = cfg.useFullMonthNames
+          ? (m) => MONTH_NAMES_FULL[m.start.getMonth()]
+          : undefined;
+        header.appendChild(buildHeaderRow(months, ctx, MONTH_ROW_H, monthStyle, { labelFn: monthLabel }));
 
-        // Sub-month row: days when <= 1 month, weeks when <= 3 months
-        if (mc <= 3) {
-          const subRow = document.createElement('div');
-          subRow.className = 'timeline-header-row timeline-week-header';
-          subRow.style.height = WEEK_ROW_H + 'px';
-          if (mc <= 1) {
-            getDays(tlStart, tlEnd).forEach((day) => {
-              const d = daysBetween(tlStart, day.end) - daysBetween(tlStart, day.start);
-              const pct = (d / totalDays) * 100;
-              const hd = document.createElement('div');
-              hd.className = 'timeline-col-header';
-              hd.style.width = pct + '%';
-              const dow = day.start.getDay(); // 0=Sun, 6=Sat
-              hd.style.background = (dow === 0 || dow === 6) ? 'var(--_N300)' : 'var(--canvas-row-even)';
-              hd.textContent = day.label;
-              subRow.appendChild(hd);
-            });
+        // Sub-month row (weeks or days)
+        if (cfg.showSubMonthRow) {
+          if (cfg.subMonthMode === 'day') {
+            header.appendChild(buildHeaderRow(getDays(tlStart, tlEnd), ctx, WEEK_ROW_H,
+              (day) => {
+                const dow = day.start.getDay();
+                return (dow === 0 || dow === 6) ? 'var(--_N300)' : 'var(--canvas-row-even)';
+              },
+              { className: 'timeline-week-header' }
+            ));
           } else {
-            getWeeks(tlStart, tlEnd).forEach((week, i) => {
-              const d = daysBetween(tlStart, week.end) - daysBetween(tlStart, week.start);
-              const pct = (d / totalDays) * 100;
-              const hd = document.createElement('div');
-              hd.className = 'timeline-col-header';
-              hd.style.width = pct + '%';
-              hd.style.background = i % 2 === 0 ? 'var(--canvas-row-even)' : 'var(--canvas-row-odd)';
-              hd.textContent = week.label;
-              subRow.appendChild(hd);
-            });
+            header.appendChild(buildHeaderRow(getWeeks(tlStart, tlEnd), ctx, WEEK_ROW_H,
+              (_w, i) => i % 2 === 0 ? 'var(--canvas-row-even)' : 'var(--canvas-row-odd)',
+              { className: 'timeline-week-header' }
+            ));
           }
-          header.appendChild(subRow);
         }
 
         return header;
@@ -2465,7 +2442,6 @@
           const gridRect = grid.getBoundingClientRect();
           const x = (e.clientX - gridRect.left) / scale;
 
-          selectedItemId = null;
           const startDate = xToDate(x, tlStart, totalDays, totalWidth);
 
           dragState = {
@@ -2520,9 +2496,8 @@
           const tlStart = parseDate(STATE.timeline.startDate);
           const tlEnd = parseDate(STATE.timeline.endDate);
           const totalDays = Math.max(daysBetween(tlStart, tlEnd), 1);
-          const mc = STATE.timeline.monthCount || 12;
-          const granularity = mc <= 2 ? 'month' : 'quarter';
-          const cols = getColumns(tlStart, tlEnd, granularity);
+          const cfg = getDisplayConfig(STATE.timeline.monthCount || 12);
+          const cols = getColumns(tlStart, tlEnd, cfg.topGranularity);
           const totalWidth = getTimelineWidth();
           const laneHeights = getLaneHeights();
           const ctx = { tlStart, tlEnd, totalDays, cols, totalWidth };
