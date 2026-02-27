@@ -320,6 +320,7 @@
       --title-row-height: 104px;
       --quarter-row-height: 32px;
       --month-row-height: 28px;
+      --week-row-height: 22px;
       --ease: cubic-bezier(0.25, 1, 0.5, 1);
     }
 
@@ -567,9 +568,8 @@
       font-weight: var(--font-weight-medium);
       white-space: normal;
       overflow-wrap: break-word;
-      cursor: text;
-      padding: var(--space-050) var(--space-400) var(--space-050) var(--space-100);
-      /* Extra right padding for the icon */
+      cursor: pointer;
+      padding: var(--space-050) var(--space-100);
       border-radius: var(--radius-small);
       position: relative;
       border: 1px solid transparent;
@@ -580,23 +580,6 @@
     .sidebar-row .lane-name:hover {
       background: transparent;
       border-color: transparent;
-    }
-
-    .sidebar-row .lane-name::after {
-      content: '✎';
-      position: absolute;
-      right: var(--space-100);
-      top: 50%;
-      transform: translateY(-50%);
-      font-size: var(--font-size-body-small);
-      color: var(--color-icon-subtlest);
-      opacity: 0.5;
-      transition: opacity 150ms var(--ease);
-      pointer-events: none;
-    }
-
-    .sidebar-row .lane-name:hover::after {
-      opacity: 0;
     }
 
     .sidebar-row .lane-name input {
@@ -705,9 +688,8 @@
       font-size: var(--font-size-heading-title);
       font-weight: var(--font-weight-semibold);
       color: var(--color-text);
-      cursor: text;
-      padding: var(--space-100) var(--space-500) var(--space-100) var(--space-200);
-      /* Extra right padding for the icon */
+      cursor: pointer;
+      padding: var(--space-100) var(--space-200);
       border-radius: var(--radius-small);
       letter-spacing: -0.01em;
       position: relative;
@@ -721,23 +703,6 @@
     .timeline-title:hover {
       background: transparent;
       border-color: transparent;
-    }
-
-    .timeline-title::after {
-      content: '✎';
-      position: absolute;
-      right: var(--space-200);
-      top: 50%;
-      transform: translateY(-50%);
-      font-size: var(--font-size-heading-small);
-      color: var(--color-icon-subtlest);
-      opacity: 0.5;
-      transition: opacity 150ms var(--ease);
-      pointer-events: none;
-    }
-
-    .timeline-title:hover::after {
-      opacity: 0;
     }
 
     .timeline-title input {
@@ -803,6 +768,7 @@
       z-index: 3;
       min-width: var(--space-150);
       box-shadow: var(--shadow-item);
+      pointer-events: auto;
       transition: box-shadow 200ms var(--ease), transform 200ms var(--ease), opacity 150ms var(--ease);
     }
 
@@ -815,44 +781,9 @@
     .item-bar-text {
       pointer-events: auto;
       flex: 1;
-      overflow: hidden;
-      text-overflow: ellipsis;
       cursor: pointer;
     }
 
-    .item-delete-btn {
-      display: none;
-      position: absolute;
-      top: -8px;
-      right: -8px;
-      width: 22px;
-      height: 22px;
-      border-radius: var(--radius-full);
-      background: var(--color-bg-danger-bold);
-      color: white;
-      border: 2px solid var(--elevation-surface);
-      cursor: pointer;
-      align-items: center;
-      justify-content: center;
-      z-index: 6;
-      padding: 0;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-      transition: transform 120ms var(--ease);
-    }
-
-    .item-delete-btn svg {
-      width: 12px;
-      height: 12px;
-    }
-
-    .item-delete-btn:hover {
-      transform: scale(1.15);
-    }
-
-    .item-bar:hover .item-delete-btn,
-    .item-bar.selected .item-delete-btn {
-      display: flex;
-    }
 
     .item-bar input {
       font-family: inherit;
@@ -889,6 +820,7 @@
       width: var(--space-100);
       cursor: ew-resize;
       z-index: 4;
+      pointer-events: auto;
       transition: background 150ms var(--ease);
     }
 
@@ -1005,35 +937,18 @@
       font-size: var(--font-size-heading-lane);
       font-weight: var(--font-weight-medium);
       color: var(--color-text);
-      cursor: text;
+      cursor: pointer;
       flex: 1;
-      padding: var(--space-050) var(--space-400) var(--space-050) var(--space-100);
+      padding: var(--space-050) var(--space-100);
       border-radius: var(--radius-small);
       border: 1px solid transparent;
       transition: all 150ms var(--ease);
       position: relative;
     }
 
-    .legend-label::after {
-      content: '✎';
-      position: absolute;
-      right: var(--space-100);
-      top: 50%;
-      transform: translateY(-50%);
-      font-size: var(--font-size-body-small);
-      color: var(--color-icon-subtlest);
-      opacity: 0.5;
-      transition: opacity 150ms var(--ease);
-      pointer-events: none;
-    }
-
     .legend-label:hover {
       background: transparent;
       border-color: transparent;
-    }
-
-    .legend-label:hover::after {
-      opacity: 0;
     }
 
     .legend-label input {
@@ -1183,6 +1098,173 @@
     .confirm-box .btn-danger:hover {
       filter: brightness(0.9);
     }
+
+    /* Sidebar resize handle */
+    .sidebar-resize-handle {
+      position: absolute;
+      top: 0;
+      right: -2px;
+      width: 4px;
+      height: 100%;
+      cursor: col-resize;
+      z-index: 11;
+      transition: background 150ms var(--ease);
+    }
+
+    .sidebar-resize-handle:hover,
+    .sidebar-resize-handle.active {
+      background: var(--eq-purple);
+    }
+
+    .sidebar {
+      position: relative;
+    }
+
+    /* Context menu */
+    .ctx-menu {
+      position: fixed;
+      background: var(--elevation-surface-overlay);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-medium);
+      box-shadow: var(--elevation-shadow-overlay);
+      z-index: 3000;
+      min-width: 148px;
+      padding: var(--space-050) 0;
+      animation: ctx-enter 120ms var(--ease) forwards;
+    }
+
+    .ctx-menu.ctx-exit {
+      animation: ctx-exit 100ms var(--ease) forwards;
+    }
+
+    @keyframes ctx-enter {
+      from { opacity: 0; transform: scale(0.96) translateY(-4px); }
+      to   { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
+    @keyframes ctx-exit {
+      from { opacity: 1; }
+      to   { opacity: 0; }
+    }
+
+    .ctx-menu-item {
+      display: flex;
+      align-items: center;
+      width: 100%;
+      padding: var(--space-100) var(--space-150);
+      font-size: var(--font-size-body);
+      font-family: var(--font-family-body);
+      font-weight: var(--font-weight-regular);
+      color: var(--color-text);
+      background: none;
+      border: none;
+      cursor: pointer;
+      text-align: left;
+      transition: background 80ms;
+      box-sizing: border-box;
+    }
+
+    .ctx-menu-item:hover {
+      background: var(--color-bg-neutral-subtle-hovered);
+    }
+
+    .ctx-menu-item.ctx-danger {
+      color: var(--color-text-danger);
+    }
+
+    .ctx-menu-item.ctx-danger:hover {
+      background: var(--color-bg-danger);
+    }
+
+    .ctx-menu-separator {
+      height: 1px;
+      background: var(--color-border);
+      margin: var(--space-050) 0;
+    }
+
+
+    /* Draggable bar label */
+    .item-bar-label {
+      position: absolute;
+      white-space: nowrap;
+      pointer-events: auto;
+      cursor: grab;
+      z-index: 5;
+      font-size: var(--font-size-heading-lane);
+      font-weight: var(--font-weight-medium);
+      color: var(--color-text-inverse);
+      padding: 2px 6px;
+      border-radius: var(--radius-small);
+      user-select: none;
+      -webkit-user-select: none;
+      transition: box-shadow 150ms var(--ease);
+    }
+
+    .item-bar-label:hover {
+      box-shadow: 0 0 0 1px rgba(255,255,255,0.4);
+    }
+
+    .item-bar-label.dragging-label {
+      cursor: grabbing;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+
+    .item-bar-label input {
+      font-family: inherit;
+      font-size: inherit;
+      font-weight: inherit;
+      color: inherit;
+      background: transparent;
+      border: none;
+      border-bottom: 2px solid rgba(255, 255, 255, 0.6);
+      border-radius: 0;
+      outline: none;
+      padding: 0 var(--space-050) 2px;
+      margin: 0;
+      caret-color: white;
+    }
+
+    /* Week row header */
+    .timeline-week-header {
+      display: flex;
+      width: 100%;
+      border-bottom: var(--border-width) solid var(--color-border-disabled);
+    }
+
+    .timeline-week-header .timeline-col-header {
+      font-size: var(--font-size-body-small);
+      color: var(--color-text-subtlest);
+      background: var(--_N100);
+      font-weight: var(--font-weight-regular);
+    }
+
+    /* Timeline length stepper */
+    .timeline-length-stepper {
+      display: flex;
+      align-items: center;
+      gap: var(--space-050);
+    }
+
+    .timeline-length-stepper button {
+      min-width: 28px !important;
+      width: 28px;
+      height: 28px;
+      padding: 0 !important;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      font-weight: var(--font-weight-bold);
+    }
+
+    .timeline-length-stepper .length-display {
+      min-width: 42px;
+      text-align: center;
+      color: var(--_N0);
+      font-size: var(--font-size-body-medium);
+      font-weight: var(--font-weight-medium);
+      font-variant-numeric: tabular-nums;
+    }
   </style>
 </head>
 
@@ -1195,6 +1277,11 @@
         <div class="section-content">
           <button id="btn-add-swimlane"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Add Group</button>
           <button id="btn-add-item"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Add Initiative</button>
+          <div class="timeline-length-stepper">
+            <button id="btn-length-minus" title="Fewer months">&minus;</button>
+            <span class="length-display" id="length-display">12 mo</span>
+            <button id="btn-length-plus" title="More months">+</button>
+          </div>
         </div>
       </div>
 
@@ -1264,7 +1351,9 @@
             startDate: fmt(start),
             endDate: fmt(end),
             zoomLevel: 1,
-            title: 'New Timeline'
+            title: 'New Timeline',
+            monthCount: 12,
+            sidebarWidth: 180
           },
           swimlanes: [],
           items: [],
@@ -1392,7 +1481,20 @@
         if (!STATE.legendLabels) {
           STATE.legendLabels = {};
         }
-        // Always update to current 4 quarters
+        if (!STATE.timeline.monthCount) {
+          STATE.timeline.monthCount = 12;
+        }
+        if (!STATE.timeline.sidebarWidth) {
+          STATE.timeline.sidebarWidth = 180;
+        }
+        // Migrate items: add label offsets if missing
+        if (STATE.items) {
+          STATE.items.forEach(item => {
+            if (item.labelOffsetX === undefined) item.labelOffsetX = 0;
+            if (item.labelOffsetY === undefined) item.labelOffsetY = 0;
+          });
+        }
+        // Update timeline dates based on monthCount
         updateTimelineDates();
         // Assign tracks after loading
         assignTracks();
@@ -1404,8 +1506,9 @@
       }
 
       function updateTimelineDates() {
-        const { start, end } = fiscalQuarterRange(new Date());
-        STATE.timeline.startDate = fmt(start);
+        const mc = STATE.timeline.monthCount || 12;
+        const start = parseDate(STATE.timeline.startDate);
+        const end = new Date(start.getFullYear(), start.getMonth() + mc, start.getDate());
         STATE.timeline.endDate = fmt(end);
       }
 
@@ -1585,16 +1688,31 @@
       const SLIDE_PAD = cssVar('--slide-pad');
       const CONTENT_W = SLIDE_W - SLIDE_PAD * 2;
       const CONTENT_H = SLIDE_H - SLIDE_PAD * 2;
-      const SIDEBAR_W = cssVar('--sidebar-width');
-      const HEADER_H = cssVar('--header-height');
-      const GRID_H = CONTENT_H - HEADER_H;
-      const TIMELINE_W = CONTENT_W - SIDEBAR_W;
       const TITLE_ROW_H = cssVar('--title-row-height');
       const QUARTER_ROW_H = cssVar('--quarter-row-height');
       const MONTH_ROW_H = cssVar('--month-row-height');
+      const WEEK_ROW_H = cssVar('--week-row-height');
       const ITEM_BAR_H = cssVar('--item-bar-height');
       const TRACK_GAP = cssVar('--track-gap');
       const LANE_PADDING = cssVar('--lane-padding');
+
+      function getSidebarWidth() {
+        return STATE.timeline.sidebarWidth || 180;
+      }
+
+      function getTimelineWidth() {
+        return CONTENT_W - getSidebarWidth();
+      }
+
+      function getHeaderHeight() {
+        const mc = STATE.timeline.monthCount || 12;
+        const base = TITLE_ROW_H + QUARTER_ROW_H + MONTH_ROW_H;
+        return mc <= 3 ? base + WEEK_ROW_H : base;
+      }
+
+      function getGridHeight() {
+        return CONTENT_H - getHeaderHeight();
+      }
 
       function getTrackCount(laneId) {
         const laneItems = STATE.items.filter(it => it.swimlaneId === laneId);
@@ -1610,9 +1728,9 @@
       function getLaneHeights() {
         const raw = STATE.swimlanes.map(lane => getLaneHeight(lane.id));
         const total = raw.reduce((sum, h) => sum + h, 0);
-        if (total <= GRID_H) return raw;
+        if (total <= getGridHeight()) return raw;
         // Scale proportionally to fit within available grid height
-        const scale = GRID_H / total;
+        const scale = getGridHeight() / total;
         return raw.map(h => Math.floor(h * scale));
       }
 
@@ -1622,11 +1740,11 @@
       }
 
       function getRowHeight() {
-        return GRID_H / Math.max(STATE.swimlanes.length, 1);
+        return getGridHeight() / Math.max(STATE.swimlanes.length, 1);
       }
 
       function getColWidth(cols) {
-        return TIMELINE_W / Math.max(cols.length, 1);
+        return getTimelineWidth() / Math.max(cols.length, 1);
       }
 
       function getItemBarHeight() {
@@ -1757,21 +1875,26 @@
         const nameEl = document.createElement('div');
         nameEl.className = 'lane-name';
         nameEl.textContent = lane.name;
-        nameEl.addEventListener('click', () => startRenameLane(lane.id));
-
-        const actions = document.createElement('div');
-        actions.className = 'lane-actions';
-        const delBtn = document.createElement('button');
-        delBtn.innerHTML = '&#x2715;';
-        delBtn.title = 'Delete group';
-        delBtn.addEventListener('click', (e) => {
+        nameEl.addEventListener('click', (e) => {
           e.stopPropagation();
-          deleteSwimlane(lane.id);
+          const laneItems = STATE.items.filter(it => it.swimlaneId === lane.id);
+          const itemCount = laneItems.length;
+          const deleteMsg = itemCount > 0
+            ? `Delete '${lane.name}' and ${itemCount} item(s)?`
+            : `Delete '${lane.name}'?`;
+          showMenu([
+            { label: 'Rename', onClick: () => startRenameLane(lane.id) },
+            { separator: true },
+            { label: 'Delete', danger: true, onClick: () => {
+              setState(s => {
+                s.swimlanes = s.swimlanes.filter(l => l.id !== lane.id);
+                s.items = s.items.filter(it => it.swimlaneId !== lane.id);
+              });
+            }},
+          ], nameEl);
         });
-        actions.appendChild(delBtn);
 
         row.appendChild(nameEl);
-        row.appendChild(actions);
         return row;
       }
 
@@ -1789,6 +1912,42 @@
           sideRows.appendChild(buildSidebarRow(lane, laneHeights[idx]));
         });
         sidebar.appendChild(sideRows);
+
+        // Resize handle
+        const resizeHandle = document.createElement('div');
+        resizeHandle.className = 'sidebar-resize-handle';
+        resizeHandle.addEventListener('pointerdown', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          resizeHandle.classList.add('active');
+          const slide = document.getElementById('slide');
+          const scale = getSlideScale();
+          const startX = e.clientX;
+          const startWidth = getSidebarWidth();
+
+          function onMove(me) {
+            const dx = (me.clientX - startX) / scale;
+            const newWidth = Math.max(180, Math.min(400, startWidth + dx));
+            STATE.timeline.sidebarWidth = Math.round(newWidth);
+            if (slide) {
+              slide.style.setProperty('--sidebar-width', Math.round(newWidth) + 'px');
+            }
+          }
+
+          function onUp() {
+            resizeHandle.classList.remove('active');
+            document.removeEventListener('pointermove', onMove);
+            document.removeEventListener('pointerup', onUp);
+            saveState();
+            pushHistory(STATE);
+            render();
+          }
+
+          document.addEventListener('pointermove', onMove);
+          document.addEventListener('pointerup', onUp);
+        });
+        sidebar.appendChild(resizeHandle);
+
         return sidebar;
       }
 
@@ -1801,6 +1960,10 @@
         const w = Math.max(x2 - x1, 12);
         const trackY = LANE_PADDING + item.track * (ITEM_BAR_H + TRACK_GAP);
 
+        // Wrapper to hold bar + floating label
+        const wrapper = document.createElement('div');
+        wrapper.style.cssText = 'position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;';
+
         const bar = document.createElement('div');
         bar.className = 'item-bar' + (selectedItemId === item.id ? ' selected' : '');
         bar.style.left = x1 + 'px';
@@ -1810,22 +1973,13 @@
         bar.dataset.itemId = item.id;
         bar.dataset.track = item.track;
 
+        // Hidden text for bar sizing (no visible text in bar itself)
         const textSpan = document.createElement('span');
         textSpan.className = 'item-bar-text';
+        textSpan.style.visibility = 'hidden';
         textSpan.textContent = item.name || 'Untitled';
         bar.appendChild(textSpan);
 
-        // Delete button (top-right)
-        const deleteBtn = document.createElement('button');
-        deleteBtn.className = 'item-delete-btn';
-        deleteBtn.title = 'Delete';
-        deleteBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`;
-        deleteBtn.addEventListener('pointerdown', (e) => e.stopPropagation());
-        deleteBtn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          deleteItem(item.id);
-        });
-        bar.appendChild(deleteBtn);
 
         const handleL = document.createElement('div');
         handleL.className = 'resize-handle left';
@@ -1846,7 +2000,6 @@
         bar.addEventListener('pointerdown', (e) => {
           if (e.target.classList.contains('resize-handle')) return;
           if (e.target.tagName === 'INPUT') return;
-          if (e.target.closest('.item-delete-btn')) return;
           e.stopPropagation();
 
           const startX = e.clientX;
@@ -1876,19 +2029,87 @@
           if (dragState && dragState.moved) return;
           if (e.target.tagName === 'INPUT') return;
           e.stopPropagation();
-          if (selectedItemId === item.id) {
-            startRenameItem(item.id, textSpan);
-          } else {
-            selectedItemId = item.id;
-            render();
-          }
+          selectedItemId = item.id;
+          showMenu([
+            { label: 'Rename', onClick: () => {
+              const label = document.querySelector(`.item-bar-label[data-item-id="${item.id}"]`);
+              if (label) startRenameItem(item.id, label);
+            }},
+            { separator: true },
+            { label: 'Delete', danger: true, onClick: () => deleteItem(item.id) },
+          ], bar);
         });
 
-        return bar;
+        wrapper.appendChild(bar);
+
+        // Floating draggable label
+        const labelOffX = item.labelOffsetX || 0;
+        const labelOffY = item.labelOffsetY || 0;
+        const label = document.createElement('div');
+        label.className = 'item-bar-label';
+        label.dataset.itemId = item.id;
+        label.textContent = item.name || 'Untitled';
+        label.style.left = (x1 + 8 + labelOffX) + 'px';
+        label.style.top = (trackY + (ITEM_BAR_H - 22) / 2 + labelOffY) + 'px';
+        label.style.background = item.color;
+        label.style.pointerEvents = 'auto';
+
+        // Drag label to reposition
+        label.addEventListener('pointerdown', (e) => {
+          if (e.target.tagName === 'INPUT') return;
+          e.stopPropagation();
+          e.preventDefault();
+          label.classList.add('dragging-label');
+          const scale = getSlideScale();
+          const startMX = e.clientX;
+          const startMY = e.clientY;
+          const startOffX = item.labelOffsetX || 0;
+          const startOffY = item.labelOffsetY || 0;
+          let moved = false;
+
+          function onMove(me) {
+            moved = true;
+            const dx = (me.clientX - startMX) / scale;
+            const dy = (me.clientY - startMY) / scale;
+            label.style.left = (x1 + 8 + startOffX + dx) + 'px';
+            label.style.top = (trackY + (ITEM_BAR_H - 22) / 2 + startOffY + dy) + 'px';
+          }
+
+          function onUp(me) {
+            label.classList.remove('dragging-label');
+            document.removeEventListener('pointermove', onMove);
+            document.removeEventListener('pointerup', onUp);
+            if (moved) {
+              const dx = (me.clientX - startMX) / scale;
+              const dy = (me.clientY - startMY) / scale;
+              setState(s => {
+                const it = s.items.find(i => i.id === item.id);
+                if (it) {
+                  it.labelOffsetX = Math.round(startOffX + dx);
+                  it.labelOffsetY = Math.round(startOffY + dy);
+                }
+              });
+            }
+          }
+
+          document.addEventListener('pointermove', onMove);
+          document.addEventListener('pointerup', onUp);
+        });
+
+        // Double-click to rename
+        label.addEventListener('dblclick', (e) => {
+          e.stopPropagation();
+          selectedItemId = item.id;
+          startRenameItem(item.id, label);
+        });
+
+        wrapper.appendChild(label);
+        return wrapper;
       }
 
       function buildHeader(ctx) {
         const { tlStart, tlEnd, totalDays, cols } = ctx;
+        const mc = STATE.timeline.monthCount || 12;
         const header = document.createElement('div');
         header.className = 'timeline-header';
         const months = getMonths(tlStart, tlEnd);
@@ -1900,7 +2121,12 @@
         const titleEl = document.createElement('div');
         titleEl.className = 'timeline-title';
         titleEl.textContent = STATE.timeline.title || 'New Timeline';
-        titleEl.addEventListener('click', () => startRenameTitle());
+        titleEl.addEventListener('click', (e) => {
+          e.stopPropagation();
+          showMenu([
+            { label: 'Rename', onClick: () => startRenameTitle() },
+          ], titleEl);
+        });
         titleRow.appendChild(titleEl);
 
         const logo = document.createElement('img');
@@ -1911,19 +2137,28 @@
         titleRow.appendChild(logo);
         header.appendChild(titleRow);
 
-        // Quarter row
-        const quarterRow = document.createElement('div');
-        quarterRow.className = 'timeline-header-row';
-        quarterRow.style.height = QUARTER_ROW_H + 'px';
-        cols.forEach((col, i) => {
-          const hd = document.createElement('div');
-          hd.className = 'timeline-col-header';
-          hd.style.flex = '1';
-          hd.style.background = goldRamp(cols.length === 1 ? 1 : i / (cols.length - 1));
-          hd.textContent = col.label;
-          quarterRow.appendChild(hd);
-        });
-        header.appendChild(quarterRow);
+        // Quarter row (skip for very short timelines <= 2 months)
+        if (mc > 2) {
+          const quarterRow = document.createElement('div');
+          quarterRow.className = 'timeline-header-row';
+          quarterRow.style.height = QUARTER_ROW_H + 'px';
+          cols.forEach((col, i) => {
+            const hd = document.createElement('div');
+            hd.className = 'timeline-col-header';
+            hd.style.flex = '1';
+            hd.style.background = goldRamp(cols.length === 1 ? 1 : i / (cols.length - 1));
+            hd.textContent = col.label;
+            quarterRow.appendChild(hd);
+          });
+          header.appendChild(quarterRow);
+        } else {
+          // For 1-2 month timelines, add an empty spacer with gold ramp
+          const spacerRow = document.createElement('div');
+          spacerRow.className = 'timeline-header-row';
+          spacerRow.style.height = QUARTER_ROW_H + 'px';
+          spacerRow.style.background = goldRamp(1);
+          header.appendChild(spacerRow);
+        }
 
         // Month row
         const monthRow = document.createElement('div');
@@ -1940,6 +2175,24 @@
           monthRow.appendChild(hd);
         });
         header.appendChild(monthRow);
+
+        // Week row (shown when <= 3 months)
+        if (mc <= 3) {
+          const weeks = getWeeks(tlStart, tlEnd);
+          const weekRow = document.createElement('div');
+          weekRow.className = 'timeline-header-row timeline-week-header';
+          weekRow.style.height = WEEK_ROW_H + 'px';
+          weeks.forEach((week) => {
+            const days = daysBetween(tlStart, week.end) - daysBetween(tlStart, week.start);
+            const pct = (days / totalDays) * 100;
+            const hd = document.createElement('div');
+            hd.className = 'timeline-col-header';
+            hd.style.width = pct + '%';
+            hd.textContent = week.label;
+            weekRow.appendChild(hd);
+          });
+          header.appendChild(weekRow);
+        }
 
         return header;
       }
@@ -2002,7 +2255,13 @@
           const labelEl = document.createElement('div');
           labelEl.className = 'legend-label';
           labelEl.textContent = STATE.legendLabels[color] || 'Category';
-          labelEl.addEventListener('click', () => startRenameLegend(color, labelEl));
+          labelEl.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const labelName = STATE.legendLabels[color] || 'Category';
+            showMenu([
+              { label: 'Rename', onClick: () => startRenameLegend(color, labelEl) },
+            ], labelEl);
+          });
 
           itemEl.appendChild(colorDot);
           itemEl.appendChild(labelEl);
@@ -2024,7 +2283,7 @@
 
         // Click-drag to create on grid
         grid.addEventListener('pointerdown', (e) => {
-          if (e.target.closest('.item-bar')) return;
+          if (e.target.closest('.item-bar') || e.target.closest('.item-bar-label')) return;
           if (e.button !== 0) return;
           const targetRow = e.target.closest('.timeline-grid-row');
           if (!targetRow) return;
@@ -2076,6 +2335,8 @@
         if (slide) {
           slide.style.setProperty('--row-height', rowHeight + 'px');
           slide.style.setProperty('--item-bar-height', ITEM_BAR_H + 'px');
+          slide.style.setProperty('--sidebar-width', getSidebarWidth() + 'px');
+          slide.style.setProperty('--header-height', getHeaderHeight() + 'px');
         }
 
         app.className = 'main';
@@ -2087,8 +2348,10 @@
           const tlStart = parseDate(STATE.timeline.startDate);
           const tlEnd = parseDate(STATE.timeline.endDate);
           const totalDays = Math.max(daysBetween(tlStart, tlEnd), 1);
-          const cols = getColumns(tlStart, tlEnd, 'quarter');
-          const totalWidth = TIMELINE_W;
+          const mc = STATE.timeline.monthCount || 12;
+          const granularity = mc <= 2 ? 'month' : 'quarter';
+          const cols = getColumns(tlStart, tlEnd, granularity);
+          const totalWidth = getTimelineWidth();
           const laneHeights = getLaneHeights();
           const ctx = { tlStart, tlEnd, totalDays, cols, totalWidth };
 
@@ -2097,6 +2360,7 @@
         }
 
         renderColorSwatches();
+        updateLengthDisplay();
         updateSlideScale();
       }
 
@@ -2246,23 +2510,62 @@
         });
       }
 
-      function deleteSwimlane(laneId) {
-        const laneItems = STATE.items.filter(it => it.swimlaneId === laneId);
-        if (laneItems.length > 0) {
-          showConfirm(`This group has ${laneItems.length} item(s). Delete it and all its items?`, () => {
-            setState(s => {
-              s.swimlanes = s.swimlanes.filter(l => l.id !== laneId);
-              s.items = s.items.filter(it => it.swimlaneId !== laneId);
-            });
-          });
-        } else {
-          setState(s => {
-            s.swimlanes = s.swimlanes.filter(l => l.id !== laneId);
-          });
+
+      // ---- Context menu ----
+      let activeMenu = null;
+
+      function dismissMenu() {
+        if (activeMenu) {
+          activeMenu.classList.add('ctx-exit');
+          const el = activeMenu;
+          activeMenu = null;
+          setTimeout(() => el.remove(), 100);
         }
       }
 
-      // ---- Confirm dialog ----
+      function showMenu(items, anchorEl) {
+        dismissMenu();
+        const menu = document.createElement('div');
+        menu.className = 'ctx-menu';
+
+        items.forEach(item => {
+          if (item.separator) {
+            const sep = document.createElement('div');
+            sep.className = 'ctx-menu-separator';
+            menu.appendChild(sep);
+            return;
+          }
+          const btn = document.createElement('button');
+          btn.className = 'ctx-menu-item' + (item.danger ? ' ctx-danger' : '');
+          btn.textContent = item.label;
+          btn.addEventListener('click', () => {
+            dismissMenu();
+            if (item.onClick) item.onClick();
+          });
+          menu.appendChild(btn);
+        });
+
+        menu.style.visibility = 'hidden';
+        menu.style.top = '0';
+        menu.style.left = '0';
+        document.body.appendChild(menu);
+
+        const rect = anchorEl.getBoundingClientRect();
+        const mw = menu.offsetWidth;
+        const mh = menu.offsetHeight;
+        const margin = 4;
+        let top = rect.bottom + margin;
+        if (top + mh > window.innerHeight - 8) top = rect.top - mh - margin;
+        let left = rect.left;
+        if (left + mw > window.innerWidth - 8) left = window.innerWidth - mw - 8;
+        if (left < 8) left = 8;
+        menu.style.top = top + 'px';
+        menu.style.left = left + 'px';
+        menu.style.visibility = '';
+        activeMenu = menu;
+      }
+
+      // ---- Confirm dialog (legacy, kept for restart) ----
       function showInfo(message) {
         const overlay = document.createElement('div');
         overlay.className = 'confirm-overlay';
@@ -2438,7 +2741,9 @@
             startDate: fmt(startDate),
             endDate: fmt(endDate),
             color: PALETTE[STATE.items.length % PALETTE.length],
-            track: 0
+            track: 0,
+            labelOffsetX: 0,
+            labelOffsetY: 0
           };
 
           selectedItemId = newItem.id;
@@ -2565,6 +2870,32 @@
       document.getElementById('btn-redo').addEventListener('click', redo);
       document.getElementById('btn-add-swimlane').addEventListener('click', addSwimlane);
 
+      // Timeline length stepper
+      function updateLengthDisplay() {
+        const el = document.getElementById('length-display');
+        if (el) el.textContent = (STATE.timeline.monthCount || 12) + ' mo';
+      }
+
+      document.getElementById('btn-length-minus').addEventListener('click', () => {
+        const cur = STATE.timeline.monthCount || 12;
+        if (cur <= 1) return;
+        setState(s => {
+          s.timeline.monthCount = cur - 1;
+          updateTimelineDates();
+        });
+        updateLengthDisplay();
+      });
+
+      document.getElementById('btn-length-plus').addEventListener('click', () => {
+        const cur = STATE.timeline.monthCount || 12;
+        if (cur >= 12) return;
+        setState(s => {
+          s.timeline.monthCount = cur + 1;
+          updateTimelineDates();
+        });
+        updateLengthDisplay();
+      });
+
       document.getElementById('btn-add-item').addEventListener('click', () => {
         if (STATE.swimlanes.length === 0) {
           showInfo('Please add a group first.');
@@ -2583,7 +2914,9 @@
             startDate: fmt(startDate),
             endDate: fmt(endDate),
             color: PALETTE[s.items.length % PALETTE.length],
-            track: 0
+            track: 0,
+            labelOffsetX: 0,
+            labelOffsetY: 0
           };
           s.items.push(newItem);
           selectedItemId = newItem.id;
@@ -2625,12 +2958,17 @@
 
       // Deselect on click outside
       document.addEventListener('click', (e) => {
-        if (!e.target.closest('.item-bar')) {
+        if (activeMenu && !e.target.closest('.ctx-menu')) dismissMenu();
+        if (!e.target.closest('.item-bar') && !e.target.closest('.item-bar-label') && !e.target.closest('.ctx-menu')) {
           if (selectedItemId) {
             selectedItemId = null;
             render();
           }
         }
+      });
+
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') dismissMenu();
       });
 
       // ---- PNG Export ----
@@ -2658,6 +2996,7 @@
 
       // ---- Init ----
       loadState();
+      updateLengthDisplay();
       render();
       window.addEventListener('resize', updateSlideScale);
 
