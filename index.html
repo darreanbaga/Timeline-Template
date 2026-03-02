@@ -525,6 +525,35 @@
       transform: translateY(-1px);
     }
 
+    /* ── Responsive toolbar ───────────────────────────────────── */
+    @media (max-width: 1200px) {
+      .control-ribbon button .btn-label {
+        display: none;
+      }
+      .control-ribbon button:not(.btn-icon-only) {
+        padding: 0;
+        min-width: 32px;
+        width: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .ribbon-label {
+        display: none;
+      }
+      .control-ribbon {
+        gap: var(--space-150);
+        padding: var(--space-150);
+      }
+    }
+
+    @media (max-width: 1000px) {
+      .control-ribbon {
+        gap: var(--space-100);
+        padding: var(--space-100) var(--space-150);
+      }
+    }
+
     /* Slide viewport */
     .slide-viewport {
       flex: 1;
@@ -1159,6 +1188,8 @@
       position: fixed;
       bottom: var(--space-300);
       left: var(--space-300);
+      right: var(--space-300);
+      max-width: 720px;
       z-index: 2000;
       display: flex;
       align-items: center;
@@ -1402,13 +1433,13 @@
       display: flex;
       flex-direction: row;
       align-items: center;
-      gap: var(--space-300);
+      gap: var(--space-150);
     }
 
     .chevron-stepper {
       display: flex;
       align-items: center;
-      gap: var(--space-075);
+      gap: 4px;
     }
 
     .chevron-stepper .stepper-label {
@@ -1417,7 +1448,7 @@
       font-weight: var(--font-weight-medium);
       font-variant-numeric: tabular-nums;
       white-space: nowrap;
-      min-width: 80px;
+      min-width: 64px;
       text-align: center;
       user-select: none;
     }
@@ -1441,8 +1472,7 @@
     <div class="control-ribbon" id="control-sidebar">
       <div class="control-section">
         <div class="section-content">
-          <button id="btn-add-swimlane" class="btn-primary"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Add Group</button>
-          <button id="btn-add-item" class="btn-primary"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Add Initiative</button>
+          <button id="btn-add" class="btn-primary" title="Add"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><span class="btn-label"> Add</span></button>
         </div>
       </div>
 
@@ -1491,7 +1521,7 @@
 
       <div class="control-section">
         <div class="section-content">
-          <button id="btn-import-csv"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg> Import CSV</button>
+          <button id="btn-import-csv" title="Import CSV"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg><span class="btn-label"> Import CSV</span></button>
           <input type="file" id="csv-file-input" accept=".csv" style="display:none">
         </div>
       </div>
@@ -1500,8 +1530,8 @@
 
       <div class="control-section">
         <div class="section-content">
-          <button id="btn-export"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Export PNG</button>
-          <button id="btn-export-csv"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg> Export CSV</button>
+          <button id="btn-export" title="Export PNG"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg><span class="btn-label"> Export PNG</span></button>
+          <button id="btn-export-csv" title="Export CSV"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg><span class="btn-label"> Export CSV</span></button>
         </div>
       </div>
 
@@ -1509,7 +1539,7 @@
 
       <div class="control-section">
         <div class="section-content">
-          <button id="btn-reset" class="btn-danger"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg> Restart</button>
+          <button id="btn-reset" class="btn-danger" title="Restart"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg><span class="btn-label"> Restart</span></button>
         </div>
       </div>
 
@@ -2663,10 +2693,8 @@
         updateStartDateDisplay();
         updateSlideScale();
 
-        const addBtn = document.getElementById('btn-add-swimlane');
-        if (addBtn) addBtn.disabled = STATE.swimlanes.length >= MAX_SWIMLANES || getTotalRows() >= MAX_TOTAL_ROWS;
-        const addItemBtn = document.getElementById('btn-add-item');
-        if (addItemBtn) addItemBtn.disabled = STATE.swimlanes.length === 0 || getTotalRows() >= MAX_TOTAL_ROWS;
+        const addBtn = document.getElementById('btn-add');
+        if (addBtn) addBtn.disabled = getTotalRows() >= MAX_TOTAL_ROWS;
       }
 
       // ---- Inline edit utility ----
@@ -3205,7 +3233,13 @@
       // ---- Control sidebar events ----
       document.getElementById('btn-undo').addEventListener('click', undo);
       document.getElementById('btn-redo').addEventListener('click', redo);
-      document.getElementById('btn-add-swimlane').addEventListener('click', addSwimlane);
+      document.getElementById('btn-add').addEventListener('click', function(e) {
+        e.stopPropagation();
+        showMenu([
+          { label: 'Add Group', onClick: addSwimlane },
+          { label: 'Add Initiative', onClick: addItem },
+        ], this);
+      });
 
       // Timeline length stepper
       function updateLengthDisplay() {
@@ -3250,7 +3284,7 @@
       document.getElementById('btn-start-prev').addEventListener('click', () => shiftStartDate(-1));
       document.getElementById('btn-start-next').addEventListener('click', () => shiftStartDate(1));
 
-      document.getElementById('btn-add-item').addEventListener('click', () => {
+      function addItem() {
         if (STATE.swimlanes.length === 0) {
           showInfo('Please add a group first.');
           return;
@@ -3290,7 +3324,7 @@
           s.items.push(newItem);
           selectedItemId = newItem.id;
         });
-      });
+      }
 
       function exportCSV() {
         const laneMap = {};
