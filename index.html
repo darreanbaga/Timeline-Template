@@ -1335,6 +1335,11 @@
       caret-color: white;
     }
 
+    /* Month row when it's the primary header (no quarter row above) */
+    .timeline-month-primary .timeline-col-header {
+      font-weight: var(--font-weight-semibold);
+    }
+
     /* Week row header */
     .timeline-week-header {
       display: flex;
@@ -1342,8 +1347,8 @@
     }
 
     .timeline-week-header .timeline-col-header {
-      color: var(--color-text-subtlest);
-      font-weight: var(--font-weight-regular);
+      color: var(--color-text);
+      font-weight: var(--font-weight-medium);
     }
 
     /* Timeline length slider */
@@ -1440,8 +1445,17 @@
 
       <div class="control-section">
         <div class="section-content">
-          <button id="btn-export"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> PNG</button>
-          <button id="btn-export-csv"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg> CSV</button>
+          <button id="btn-import-csv"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg> Import CSV</button>
+          <input type="file" id="csv-file-input" accept=".csv" style="display:none">
+        </div>
+      </div>
+
+      <div class="control-section-divider"></div>
+
+      <div class="control-section">
+        <div class="section-content">
+          <button id="btn-export"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Export PNG</button>
+          <button id="btn-export-csv"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg> Export CSV</button>
         </div>
       </div>
 
@@ -2420,7 +2434,7 @@
         const monthLabel = cfg.useFullMonthNames
           ? (m) => MONTH_NAMES_FULL[m.start.getMonth()]
           : undefined;
-        header.appendChild(buildHeaderRow(months, ctx, MONTH_ROW_H, monthStyle, { labelFn: monthLabel }));
+        header.appendChild(buildHeaderRow(months, ctx, MONTH_ROW_H, monthStyle, { labelFn: monthLabel, className: cfg.showQuarterRow ? '' : 'timeline-month-primary' }));
 
         // Sub-month row (weeks or days)
         if (cfg.showSubMonthRow) {
@@ -3253,6 +3267,105 @@
         URL.revokeObjectURL(a.href);
       }
 
+      function importCSV() {
+        const fileInput = document.getElementById('csv-file-input');
+        fileInput.value = '';
+        fileInput.click();
+      }
+
+      document.getElementById('csv-file-input').addEventListener('change', function (e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        if (!file.name.toLowerCase().endsWith('.csv')) {
+          showInfo('Please select a CSV file.');
+          return;
+        }
+        const reader = new FileReader();
+        reader.onload = function (evt) {
+          const text = evt.target.result.trim();
+          if (!text) { showInfo('The file is empty.'); return; }
+          const lines = text.split(/\r?\n/);
+          // Validate header
+          const header = lines[0].replace(/"/g, '').split(',').map(h => h.trim());
+          if (header.length < 4 ||
+              header[0] !== 'Group' || header[1] !== 'Initiative' ||
+              header[2] !== 'Start Date' || header[3] !== 'End Date') {
+            showInfo('Invalid CSV format. Expected columns: Group, Initiative, Start Date, End Date');
+            return;
+          }
+          const dataRows = lines.slice(1).filter(l => l.trim());
+          if (dataRows.length === 0) { showInfo('The CSV file has no data rows.'); return; }
+          // Parse rows
+          const parseCSVRow = (row) => {
+            const result = [];
+            let current = '';
+            let inQuotes = false;
+            for (let i = 0; i < row.length; i++) {
+              const ch = row[i];
+              if (inQuotes) {
+                if (ch === '"' && row[i + 1] === '"') { current += '"'; i++; }
+                else if (ch === '"') { inQuotes = false; }
+                else { current += ch; }
+              } else {
+                if (ch === '"') { inQuotes = true; }
+                else if (ch === ',') { result.push(current.trim()); current = ''; }
+                else { current += ch; }
+              }
+            }
+            result.push(current.trim());
+            return result;
+          };
+          const dateRe = /^\d{4}-\d{2}-\d{2}$/;
+          const newItems = [];
+          const errors = [];
+          dataRows.forEach((row, i) => {
+            const cols = parseCSVRow(row);
+            if (cols.length < 4) { errors.push('Row ' + (i + 2) + ': not enough columns'); return; }
+            const group = cols[0], name = cols[1], startDate = cols[2], endDate = cols[3];
+            if (!name) { errors.push('Row ' + (i + 2) + ': missing initiative name'); return; }
+            if (!dateRe.test(startDate) || !dateRe.test(endDate)) {
+              errors.push('Row ' + (i + 2) + ': invalid date format (expected YYYY-MM-DD)');
+              return;
+            }
+            if (new Date(endDate) <= new Date(startDate)) {
+              errors.push('Row ' + (i + 2) + ': end date must be after start date');
+              return;
+            }
+            newItems.push({ group, name, startDate, endDate });
+          });
+          if (newItems.length === 0) {
+            showInfo('No valid rows found.\n' + errors.join('\n'));
+            return;
+          }
+          setState(s => {
+            const laneByName = {};
+            s.swimlanes.forEach(l => { laneByName[l.name.toLowerCase()] = l; });
+            let maxOrder = Math.max(0, ...s.swimlanes.map(l => l.order));
+            newItems.forEach(row => {
+              let lane = laneByName[row.group.toLowerCase()];
+              if (!lane) {
+                lane = { id: uid(), name: row.group || 'Imported', order: ++maxOrder, minRows: 1 };
+                s.swimlanes.push(lane);
+                laneByName[lane.name.toLowerCase()] = lane;
+              }
+              s.items.push({
+                id: uid(),
+                swimlaneId: lane.id,
+                name: row.name,
+                startDate: row.startDate,
+                endDate: row.endDate,
+                color: PALETTE[0],
+                track: 0
+              });
+            });
+          });
+          let msg = 'Imported ' + newItems.length + ' initiative' + (newItems.length === 1 ? '' : 's') + '.';
+          if (errors.length) msg += '\n' + errors.length + ' row(s) skipped:\n' + errors.join('\n');
+          showInfo(msg);
+        };
+        reader.readAsText(file);
+      });
+
       // Legend layout toggles
       function updateLegendToggleUI() {
         const isHorizontal = STATE.timeline.legendOrientation === 'horizontal';
@@ -3281,6 +3394,7 @@
 
       document.getElementById('btn-export').addEventListener('click', exportPNG);
       document.getElementById('btn-export-csv').addEventListener('click', exportCSV);
+      document.getElementById('btn-import-csv').addEventListener('click', importCSV);
 
       document.getElementById('btn-reset').addEventListener('click', () => {
         showConfirm('Delete all groups and initiatives?', () => {
@@ -3366,6 +3480,33 @@
         toast.appendChild(btn);
         document.body.appendChild(toast);
       }
+
+      // Show save-tip toast on first real session
+      if (!STATE.isExample && !localStorage.getItem('timeline_tip_dismissed')) {
+        const tip = document.createElement('div');
+        tip.className = 'welcome-toast';
+        const span = document.createElement('span');
+        span.textContent = 'Your work saves automatically in this browser. Use Export CSV to back up or share.';
+        tip.appendChild(span);
+        const gotIt = document.createElement('button');
+        gotIt.className = 'btn-primary';
+        gotIt.textContent = 'Got it';
+        gotIt.onclick = () => {
+          localStorage.setItem('timeline_tip_dismissed', '1');
+          tip.classList.add('toast-exit');
+          tip.addEventListener('animationend', () => tip.remove());
+        };
+        tip.appendChild(gotIt);
+        document.body.appendChild(tip);
+      }
+
+      // Nudge user before closing tab if they have real data
+      window.addEventListener('beforeunload', (e) => {
+        if (!STATE.isExample && STATE.items.length > 0) {
+          e.preventDefault();
+          e.returnValue = '';
+        }
+      });
 
     })();
   </script>
