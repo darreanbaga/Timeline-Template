@@ -20,11 +20,9 @@ Interactive browser-based timeline/Gantt-chart tool for planning and visualizing
 6. **Preserve export fidelity** — any visual change must look correct in both the live view and the html2canvas PNG export.
 7. **localStorage contract** — the storage key is `timeline_tmpl_v1`. Do not change the schema without migration logic.
 
-## Docs (consult when working in these areas)
+## Reference Docs
 
-| Area | File |
-|------|------|
-| Architecture & data model | [docs/architecture.md](docs/architecture.md) |
-| CSS design tokens & styling | [docs/styling-conventions.md](docs/styling-conventions.md) |
-| JS patterns & state management | [docs/vanilla-js-patterns.md](docs/vanilla-js-patterns.md) |
-| Deployment & workflow | [docs/workflow.md](docs/workflow.md) |
+- When adding features, changing the state shape, or modifying swimlane/item data structures → read [docs/architecture.md](docs/architecture.md) first.
+- When adding or changing colors, spacing, borders, fonts, or any CSS rule → read [docs/styling-conventions.md](docs/styling-conventions.md) first.
+- When writing event handlers, modifying drag/drop, editing the render loop, or adding date logic → read [docs/vanilla-js-patterns.md](docs/vanilla-js-patterns.md) first.
+- When deploying, updating bundled dependencies, or running the app locally → read [docs/workflow.md](docs/workflow.md) first.
