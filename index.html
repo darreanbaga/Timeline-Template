@@ -7573,6 +7573,185 @@
         border-left: 1px solid var(--color-border);
       }
 
+      /* Display mode toggle (Timeline / Calendar) */
+      .display-mode-toggle {
+        display: flex;
+        border: 1px solid var(--color-border);
+        border-radius: 4px;
+        overflow: hidden;
+      }
+
+      .display-mode-btn {
+        background: var(--color-bg-neutral);
+        color: var(--color-text-subtle);
+        border: none;
+        padding: 4px 10px;
+        font-size: var(--font-size-body-small);
+        font-weight: var(--font-weight-medium);
+        cursor: pointer;
+        white-space: nowrap;
+        line-height: 1.4;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+
+      .display-mode-btn:hover {
+        background: var(--color-bg-neutral-hovered);
+      }
+
+      .display-mode-btn.active {
+        background: var(--eq-purple);
+        color: var(--_N0);
+      }
+
+      .display-mode-btn + .display-mode-btn {
+        border-left: 1px solid var(--color-border);
+      }
+
+      /* Calendar view */
+      .calendar-view {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+      }
+
+      .calendar-title-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px 20px 8px 20px;
+        border-bottom: 1px solid var(--color-border);
+        background: var(--elevation-surface);
+      }
+
+      .calendar-title-row .timeline-title {
+        font-size: 22px;
+        font-weight: var(--font-weight-semibold);
+        color: var(--color-text);
+        cursor: pointer;
+      }
+
+      .calendar-months-grid {
+        flex: 1;
+        display: grid;
+        overflow: hidden;
+        gap: 0;
+      }
+
+      .calendar-month-card {
+        border-right: 1px solid var(--color-border);
+        border-bottom: 1px solid var(--color-border);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        min-width: 0;
+      }
+
+      .calendar-month-card:nth-child(4n) {
+        border-right: none;
+      }
+
+      .calendar-month-header {
+        padding: 6px 8px 4px 8px;
+        font-size: 13px;
+        font-weight: var(--font-weight-semibold);
+        color: var(--color-text);
+        border-bottom: 1px solid var(--color-border-disabled);
+        flex-shrink: 0;
+      }
+
+      .calendar-weekday-row {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        text-align: center;
+        font-size: 9px;
+        font-weight: var(--font-weight-medium);
+        color: var(--color-text-subtlest);
+        padding: 2px 4px;
+        border-bottom: 1px solid var(--color-border-disabled);
+        flex-shrink: 0;
+      }
+
+      .calendar-days-grid {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        flex: 1;
+        padding: 2px 4px;
+        gap: 0;
+        align-content: start;
+      }
+
+      .calendar-day {
+        text-align: center;
+        font-size: 10px;
+        padding: 1px 0;
+        color: var(--color-text-subtle);
+        position: relative;
+        min-height: 14px;
+        line-height: 14px;
+      }
+
+      .calendar-day.outside {
+        color: var(--color-text-disabled);
+      }
+
+      .calendar-day.today {
+        font-weight: var(--font-weight-bold);
+        color: var(--eq-purple);
+      }
+
+      .calendar-day.has-items {
+        background: rgba(101, 84, 192, 0.08);
+        border-radius: 2px;
+      }
+
+      .calendar-item-dots {
+        display: flex;
+        justify-content: center;
+        gap: 1px;
+        margin-top: 1px;
+        min-height: 4px;
+      }
+
+      .calendar-item-dot {
+        width: 4px;
+        height: 4px;
+        border-radius: 50%;
+        flex-shrink: 0;
+      }
+
+      .calendar-month-items {
+        flex-shrink: 0;
+        padding: 2px 4px 4px;
+        border-top: 1px solid var(--color-border-disabled);
+        overflow: hidden;
+        max-height: 60px;
+      }
+
+      .calendar-month-item {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        padding: 1px 4px;
+        font-size: 9px;
+        color: var(--color-text);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        border-radius: 2px;
+        line-height: 1.4;
+      }
+
+      .calendar-month-item-color {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        flex-shrink: 0;
+      }
+
       .stepper-label-clickable {
         cursor: pointer;
         border-bottom: 1px dashed var(--color-border);
@@ -7611,6 +7790,49 @@
         <div class="control-section-divider"></div>
 
         <div class="control-section">
+          <div class="section-content">
+            <div class="display-mode-toggle">
+              <button id="btn-display-timeline" class="display-mode-btn active" title="Timeline view">
+                <svg
+                  width="12"
+                  height="12"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2.5"
+                  stroke-linecap="round"
+                >
+                  <line x1="3" y1="6" x2="21" y2="6" />
+                  <line x1="3" y1="12" x2="15" y2="12" />
+                  <line x1="3" y1="18" x2="18" y2="18" />
+                </svg>
+                Timeline
+              </button>
+              <button id="btn-display-calendar" class="display-mode-btn" title="Calendar view">
+                <svg
+                  width="12"
+                  height="12"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2.5"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <rect x="3" y="4" width="18" height="18" rx="2" />
+                  <line x1="16" y1="2" x2="16" y2="6" />
+                  <line x1="8" y1="2" x2="8" y2="6" />
+                  <line x1="3" y1="10" x2="21" y2="10" />
+                </svg>
+                Calendar
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="control-section-divider"></div>
+
+        <div class="control-section" id="section-timeline-controls">
           <div class="section-content">
             <div class="timeline-controls">
               <div class="view-mode-toggle">
@@ -7964,6 +8186,7 @@
               title: 'New Timeline',
               monthCount: 12,
               viewMode: 'month',
+              displayMode: 'timeline',
               weekCount: 2,
               sidebarWidth: DEFAULT_SIDEBAR_W,
               legendOrientation: 'vertical',
@@ -7989,6 +8212,7 @@
               title: 'Q1 Product Launch Campaign',
               monthCount: 12,
               viewMode: 'month',
+              displayMode: 'timeline',
               weekCount: 2,
               sidebarWidth: DEFAULT_SIDEBAR_W,
               legendOrientation: 'horizontal',
@@ -8354,6 +8578,9 @@
           }
           if (!STATE.timeline.viewMode) {
             STATE.timeline.viewMode = 'month';
+          }
+          if (!STATE.timeline.displayMode) {
+            STATE.timeline.displayMode = 'timeline';
           }
           if (!STATE.timeline.weekCount) {
             STATE.timeline.weekCount = 2;
@@ -9275,11 +9502,231 @@
           return tlArea;
         }
 
+        // ---- Calendar View ----
+        function buildCalendarView() {
+          const view = document.createElement('div');
+          view.className = 'calendar-view';
+
+          // Title row
+          const titleRow = document.createElement('div');
+          titleRow.className = 'calendar-title-row';
+          const titleEl = document.createElement('div');
+          titleEl.className = 'timeline-title';
+          titleEl.textContent = STATE.timeline.title || 'New Timeline';
+          titleEl.addEventListener('click', (e) => {
+            e.stopPropagation();
+            showMenu([{ label: 'Rename', onClick: () => startRenameTitle() }], titleEl);
+          });
+          titleRow.appendChild(titleEl);
+
+          const logo = document.createElement('img');
+          logo.className = 'slide-logo';
+          logo.crossOrigin = 'anonymous';
+          logo.src =
+            'data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTE2Ij8+DQo8c3ZnIGlkPSJMYXllcl8xIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMzAuMDQgMTAwIj4NCiAgPGRlZnM+DQogICAgPHN0eWxlPi5jbHMtMXtmaWxsOiNmZmNiMzE7fS5jbHMtMntmaWxsOiM2NjY4Njg7fTwvc3R5bGU+DQogIDwvZGVmcz4NCiAgPHBhdGggY2xhc3M9ImNscy0xIiBkPSJNOC4xOSw5OUg1NC41NmM1LjYsMCwxMi44NS0yLjgsMTYuMjYtNi4yLDMtMywxMy0xMy40NiwxOS43NC0yMC41MWEyMS44MiwyMS44MiwwLDAsMCw2LjM4LTE2LjFWOC4zNkE3LjM2LDcuMzYsMCwwLDAsODkuNTgsMUg0My4wNUMzNi42MSwxLDMwLjMzLDMuNzgsMjYuODYsNy4yOGMtMywzLTEyLjg1LDEzLjQtMTkuNjMsMjAuNDFBMjEuNywyMS43LDAsMCwwLC44Myw0My43NlY5MS42NEE3LjM1LDcuMzUsMCwwLDAsOC4xOSw5OSIgLz4NCiAgPHBhdGggY2xhc3M9ImNscy0yIiBkPSJNMjIuMzcsMzUuNjl2MFoiIC8+DQogIDxwYXRoIGQ9Ik03Ny45Miw1OS45NGEyMi4wOSwyMi4wOSwwLDAsMCwyLjItMTAuMzhxMC04Ljc1LTQuMjktMTMuNDFUNjMuNDUsMzEuNXEtOC4wOSwwLTEyLjQzLDQuNjJUNDYuNjksNDkuNTFRNDYuNjksNTguMjcsNTEsNjN0MTIuNCw0LjY4SDY0bDEuNDgsMS44MWgwbC44NSwxaDBsMCwuMDYuMzYuNDRhNS4yMiw1LjIyLDAsMCwwLC41OC41N2wuNDcuMzZhOC41OSw4LjU5LDAsMCwwLDMuNzMsMS40Mkg3OGwtNi40OS03LjI2QTEzLjM3LDEzLjM3LDAsMCwwLDc3LjkyLDU5Ljk0Wk02My40MSw2MS40YTcuODMsNy44MywwLDAsMS02LjY4LTNxLTIuMjMtMy0yLjI0LTguODZjMC0zLjkzLjc2LTYuODgsMi4yNi04Ljg4YTcuODgsNy44OCwwLDAsMSw2LjctM3E4Ljg2LDAsOC44NywxMS44N1Q2My40MSw2MS40WiIgLz4NCiAgPHBhdGggZD0iTTExNS40NSw2MS4yNXYwaDBaIiAvPg0KICA8cGF0aCBkPSJNMTM1LjIsNDguNzZ2LS4yNGE1LjkzLDUuOTMsMCwwLDAsMy45My0yLjQyLDguNTcsOC41NywwLDAsMCwxLjQ3LTUuMTdxMC00LjYzLTMuMzctNi43NnQtMTAuODUtMi4xMkgxMTUuNDZWNjEuMzFhNS45MSw1LjkxLDAsMCwwLDUuOCw1Ljg1aDcuMzNxNiwwLDkuNDMtMi42OUE4LjkyLDguOTIsMCwwLDAsMTQxLjQ5LDU3LDksOSwwLDAsMCwxNDAsNTEuNTUsNy43Miw3LjcyLDAsMCwwLDEzNS4yLDQ4Ljc2Wk0xMjIuOSwzOC4xNWgzLjkyYTkuNTYsOS41NiwwLDAsMSw0LjY3Ljg3LDMuMTIsMy4xMiwwLDAsMSwxLjQ4LDIuOSwzLjUyLDMuNTIsMCwwLDEtMS4zNiwzLjEsOCw4LDAsMCwxLTQuMzguOTNIMTIyLjlabTkuMzksMjEuNjlBNy4yMiw3LjIyLDAsMCwxLDEyNy43NSw2MUgxMjIuOVY1MS44Nmg0LjYxcTYuMjYsMCw2LjI1LDQuMzdBNC4zNiw0LjM2LDAsMCwxLDEzMi4yOSw1OS44NFoiIC8+DQogIDxwYXRoIGQ9Ik0yMTcuOSw1MmwxMC42Ni0xMS42NUgyMjAuM2wtNy41Miw4LjE3LTMuMTksNC4wOGgtLjFsLjM5LTYuMVYyOS43OWgtNy4zM1Y2Ny4xNmg3LjMzVjU4LjhMMjEzLDU2LjI4bDQsNS42OCwxLjgsMi41NywwLDBhNS45Miw1LjkyLDAsMCwwLDQuODIsMi42NWg1LjUxWiIgLz4NCiAgPHBhdGggZD0iTTE5NS4zMiw0Mi4zNHEtMi40MS0yLjU0LTcuMTEtMi41M2ExMS41MywxMS41MywwLDAsMC00Ljg4LDEsNy44Miw3LjgyLDAsMCwwLTMuMDcsMi41MnYtM2gtNy4zMlY1MS42N2gwVjY3LjE2aDcuMzNWNTQuNTNjMC0zLjE3LjQ1LTUuNDQsMS4zNy02LjgxYTQuOTMsNC45MywwLDAsMSw0LjQ0LTIsMy43NiwzLjc2LDAsMCwxLDMuMjksMS40NSw3LjUyLDcuNTIsMCwwLDEsMSw0LjM2VjY3LjE2aDcuMzNWNDkuNjVRMTk3Ljc1LDQ0Ljg4LDE5NS4zMiw0Mi4zNFoiIC8+DQogIDxwYXRoIGQ9Ik0zOCwzOC4yYTUuOTMsNS45MywwLDAsMCw1Ljc0LTUuNTl2LS41NkgyNS4yNGE1LjkxLDUuOTEsMCwwLDAtNS44LDUuOVY2Ny4xNkgzOGE1LjkxLDUuOTEsMCwwLDAsNS43NC01LjU4di0uNTJIMjYuODhWNTIuNzVIMzcuMTVhNS45MSw1LjkxLDAsMCwwLDUuNzItNS41NXYtLjU1aC0xNlYzOC4yWiIgLz4NCiAgPHBhdGggZD0iTTE2NS4xOSw0Mi4xMXEtMi44OC0yLjM2LTguMjktMi4zNWEyMS45MiwyMS45MiwwLDAsMC05LjU0LDIuMDdsMS43Miw1LjI5YTE5LDE5LDAsMCwxLDcuNTQtMS45M2MyLjc4LDAsNC4xOCwxLjM2LDQuMTgsNC4wOHYxLjE4bC00LjY2LjE0cS02LC4yMS05LDIuMjRjLTIsMS4zNi0zLDMuNDYtMyw2LjMxYTguNDgsOC40OCwwLDAsMCwyLjIyLDYuMjksOC4yMiw4LjIyLDAsMCwwLDYuMDksMi4yMSwxMi4zLDEyLjMsMCwwLDAsNS4xLS45LDkuODUsOS44NSwwLDAsMCwzLjIxLTIuNTR2M2g3LjMyVjQ5LjI3UTE2OC4wNyw0NC40NywxNjUuMTksNDIuMTFaTTE2MC44LDU1LjI1aC0uMDV2Mi4yMmE1LDUsMCwwLDEtMS40OCwzLjM1LDUuNjIsNS42MiwwLDAsMS00LjA3LDEuNDdjLTIuMzcsMC0zLjU2LTEtMy41Ni0zLjFBMy42MywzLjYzLDAsMCwxLDE1My4yMSw1Niw5LDksMCwwLDEsMTU4LDU0LjgybDIuODQtLjFaIiAvPg0KPC9zdmc+';
+          logo.alt = 'EQ Bank';
+          titleRow.appendChild(logo);
+          view.appendChild(titleRow);
+
+          // Determine month range from state
+          const tlStart = parseDate(STATE.timeline.startDate);
+          const tlEnd = parseDate(STATE.timeline.endDate);
+          const months = [];
+          const cur = new Date(tlStart.getFullYear(), tlStart.getMonth(), 1);
+          while (cur < tlEnd) {
+            months.push(new Date(cur));
+            cur.setMonth(cur.getMonth() + 1);
+          }
+
+          // Determine grid layout based on month count
+          const count = months.length;
+          let gridCols = 4;
+          let gridRows = Math.ceil(count / gridCols);
+          if (count <= 3) {
+            gridCols = count;
+            gridRows = 1;
+          } else if (count <= 6) {
+            gridCols = 3;
+            gridRows = Math.ceil(count / 3);
+          }
+
+          const monthsGrid = document.createElement('div');
+          monthsGrid.className = 'calendar-months-grid';
+          monthsGrid.style.gridTemplateColumns = `repeat(${gridCols}, 1fr)`;
+          monthsGrid.style.gridTemplateRows = `repeat(${gridRows}, 1fr)`;
+
+          const today = new Date();
+          const todayStr = fmt(today);
+          const WEEKDAYS = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+
+          months.forEach((monthDate) => {
+            const card = document.createElement('div');
+            card.className = 'calendar-month-card';
+            card.style.background = goldRamp(monthDate.getMonth() % 2 === 0 ? 0.05 : 0.15);
+
+            // Month header
+            const header = document.createElement('div');
+            header.className = 'calendar-month-header';
+            header.textContent = MONTH_NAMES_FULL[monthDate.getMonth()] + ' ' + monthDate.getFullYear();
+            card.appendChild(header);
+
+            // Weekday labels
+            const weekdayRow = document.createElement('div');
+            weekdayRow.className = 'calendar-weekday-row';
+            WEEKDAYS.forEach((d) => {
+              const cell = document.createElement('div');
+              cell.textContent = d;
+              weekdayRow.appendChild(cell);
+            });
+            card.appendChild(weekdayRow);
+
+            // Days grid
+            const daysGrid = document.createElement('div');
+            daysGrid.className = 'calendar-days-grid';
+
+            const year = monthDate.getFullYear();
+            const month = monthDate.getMonth();
+            const firstDay = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+            // Items active during this month
+            const monthStart = new Date(year, month, 1);
+            const monthEnd = new Date(year, month + 1, 0, 23, 59, 59);
+            const activeItems = STATE.items.filter((it) => {
+              const iStart = parseDate(it.startDate);
+              const iEnd = parseDate(it.endDate);
+              return iStart <= monthEnd && iEnd >= monthStart;
+            });
+
+            // Build a set of days that have items
+            const itemDays = new Set();
+            activeItems.forEach((it) => {
+              const iStart = parseDate(it.startDate);
+              const iEnd = parseDate(it.endDate);
+              for (
+                let d = Math.max(
+                  1,
+                  iStart.getDate() * (iStart.getMonth() === month && iStart.getFullYear() === year ? 1 : 0) || 1,
+                );
+                d <= daysInMonth;
+                d++
+              ) {
+                const dayDate = new Date(year, month, d);
+                if (dayDate >= iStart && dayDate <= iEnd) {
+                  itemDays.add(d);
+                }
+              }
+            });
+
+            // Get items per day for dot coloring
+            function getItemsForDay(day) {
+              const dayDate = new Date(year, month, day);
+              return activeItems.filter((it) => {
+                const iStart = parseDate(it.startDate);
+                const iEnd = parseDate(it.endDate);
+                return dayDate >= iStart && dayDate <= iEnd;
+              });
+            }
+
+            // Leading empty cells
+            for (let i = 0; i < firstDay; i++) {
+              const empty = document.createElement('div');
+              empty.className = 'calendar-day outside';
+              daysGrid.appendChild(empty);
+            }
+
+            // Day cells
+            for (let d = 1; d <= daysInMonth; d++) {
+              const dayEl = document.createElement('div');
+              const dateStr = fmt(new Date(year, month, d));
+              dayEl.className = 'calendar-day';
+              if (dateStr === todayStr) dayEl.classList.add('today');
+
+              const dayItems = getItemsForDay(d);
+              if (dayItems.length > 0) dayEl.classList.add('has-items');
+
+              const num = document.createElement('div');
+              num.textContent = d;
+              dayEl.appendChild(num);
+
+              if (dayItems.length > 0) {
+                const dots = document.createElement('div');
+                dots.className = 'calendar-item-dots';
+                const shown = dayItems.slice(0, 3);
+                shown.forEach((it) => {
+                  const dot = document.createElement('div');
+                  dot.className = 'calendar-item-dot';
+                  dot.style.background = it.color;
+                  dots.appendChild(dot);
+                });
+                dayEl.appendChild(dots);
+              }
+
+              daysGrid.appendChild(dayEl);
+            }
+
+            card.appendChild(daysGrid);
+
+            // Items list below calendar
+            if (activeItems.length > 0) {
+              const itemsList = document.createElement('div');
+              itemsList.className = 'calendar-month-items';
+              activeItems.slice(0, 4).forEach((it) => {
+                const itemEl = document.createElement('div');
+                itemEl.className = 'calendar-month-item';
+                const colorDot = document.createElement('div');
+                colorDot.className = 'calendar-month-item-color';
+                colorDot.style.background = it.color;
+                itemEl.appendChild(colorDot);
+                const nameEl = document.createElement('span');
+                nameEl.textContent = it.name || 'Untitled';
+                itemEl.appendChild(nameEl);
+                itemsList.appendChild(itemEl);
+              });
+              if (activeItems.length > 4) {
+                const more = document.createElement('div');
+                more.className = 'calendar-month-item';
+                more.style.color = 'var(--color-text-subtle)';
+                more.textContent = '+' + (activeItems.length - 4) + ' more';
+                itemsList.appendChild(more);
+              }
+              card.appendChild(itemsList);
+            }
+
+            monthsGrid.appendChild(card);
+          });
+
+          view.appendChild(monthsGrid);
+
+          // Legend
+          const legend = buildLegend();
+          if (legend) {
+            legend.style.position = 'absolute';
+            legend.style.bottom = '12px';
+            view.style.position = 'relative';
+            view.appendChild(legend);
+          }
+
+          return view;
+        }
+
         // ---- Render ----
         function render() {
           if (dragState) return;
           const app = document.getElementById('app');
           const slide = document.getElementById('slide');
+          const dm = STATE.timeline.displayMode || 'timeline';
+
+          if (dm === 'calendar') {
+            app.className = 'main';
+            app.innerHTML = '';
+            app.style.display = 'block';
+            app.appendChild(buildCalendarView());
+            updateDisplayModeUI();
+            updateSlideScale();
+            return;
+          }
+
           const rowHeight = getRowHeight();
           if (slide) {
             slide.style.setProperty('--row-height', rowHeight + 'px');
@@ -9289,6 +9736,7 @@
           }
 
           app.className = 'main';
+          app.style.display = '';
           app.innerHTML = '';
 
           const tlStart = parseDate(STATE.timeline.startDate);
@@ -9307,6 +9755,7 @@
           updateLengthDisplay();
           updateStartDateDisplay();
           updateViewModeUI();
+          updateDisplayModeUI();
           updateSlideScale();
 
           const addBtn = document.getElementById('btn-add');
@@ -10031,6 +10480,36 @@
         document.getElementById('btn-mode-week').addEventListener('click', () => setViewMode('week'));
         document.getElementById('btn-mode-month').addEventListener('click', () => setViewMode('month'));
 
+        // Display mode toggle (Timeline / Calendar)
+        function updateDisplayModeUI() {
+          const dm = STATE.timeline.displayMode || 'timeline';
+          const btnTimeline = document.getElementById('btn-display-timeline');
+          const btnCalendar = document.getElementById('btn-display-calendar');
+          btnTimeline.classList.toggle('active', dm === 'timeline');
+          btnCalendar.classList.toggle('active', dm === 'calendar');
+
+          // Hide timeline-specific controls in calendar mode
+          const timelineControls = document.getElementById('section-timeline-controls');
+          if (timelineControls) {
+            timelineControls.style.display = dm === 'calendar' ? 'none' : '';
+          }
+          // Also hide the divider before it
+          const prev = timelineControls && timelineControls.previousElementSibling;
+          if (prev && prev.classList.contains('control-section-divider')) {
+            prev.style.display = dm === 'calendar' ? 'none' : '';
+          }
+        }
+
+        function setDisplayMode(mode) {
+          if (STATE.timeline.displayMode === mode) return;
+          setState((s) => {
+            s.timeline.displayMode = mode;
+          });
+        }
+
+        document.getElementById('btn-display-timeline').addEventListener('click', () => setDisplayMode('timeline'));
+        document.getElementById('btn-display-calendar').addEventListener('click', () => setDisplayMode('calendar'));
+
         function addItem() {
           if (STATE.swimlanes.length === 0) {
             showInfo('Please add a group first.');
@@ -10343,6 +10822,7 @@
         updateLengthDisplay();
         updateStartDateDisplay();
         updateViewModeUI();
+        updateDisplayModeUI();
         updateLegendToggleUI();
         render();
         window.addEventListener('resize', updateSlideScale);
@@ -10369,6 +10849,7 @@
             updateLengthDisplay();
             updateStartDateDisplay();
             updateViewModeUI();
+            updateDisplayModeUI();
             updateLegendToggleUI();
             render();
           };
