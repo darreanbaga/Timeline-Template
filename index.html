@@ -7584,7 +7584,7 @@
         border-radius: 0 var(--radius-medium) var(--radius-medium) 0;
       }
 
-      /* Calendar view */
+      /* Calendar view — single month at a time */
       .calendar-view {
         display: flex;
         flex-direction: column;
@@ -7597,9 +7597,10 @@
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: 0 20px;
+        padding: 0 24px;
         height: 48px;
         min-height: 48px;
+        flex-shrink: 0;
         border-bottom: 1px solid var(--color-border);
         background: var(--elevation-surface);
       }
@@ -7611,122 +7612,106 @@
         cursor: pointer;
       }
 
-      .calendar-months-grid {
-        flex: 1;
-        display: grid;
-        overflow: hidden;
-        gap: 0;
-      }
-
-      .calendar-month-card {
-        border-right: 1px solid var(--color-border);
-        border-bottom: 1px solid var(--color-border);
-        display: flex;
-        flex-direction: column;
-        overflow: hidden;
-        min-width: 0;
-      }
-
-      .calendar-month-card:nth-child(4n) {
-        border-right: none;
-      }
-
-      .calendar-month-header {
-        padding: 6px 8px 4px 8px;
-        font-size: 13px;
+      .calendar-month-label {
+        font-size: 20px;
         font-weight: var(--font-weight-semibold);
         color: var(--color-text);
-        border-bottom: 1px solid var(--color-border-disabled);
-        flex-shrink: 0;
+        text-align: center;
       }
 
       .calendar-weekday-row {
         display: grid;
         grid-template-columns: repeat(7, 1fr);
-        text-align: center;
-        font-size: 9px;
-        font-weight: var(--font-weight-medium);
-        color: var(--color-text-subtlest);
-        padding: 2px 4px;
-        border-bottom: 1px solid var(--color-border-disabled);
+        border-bottom: 1px solid var(--color-border);
         flex-shrink: 0;
+      }
+
+      .calendar-weekday-cell {
+        padding: 8px 12px;
+        font-size: 13px;
+        font-weight: var(--font-weight-semibold);
+        color: var(--color-text-subtlest);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        text-align: left;
       }
 
       .calendar-days-grid {
         display: grid;
         grid-template-columns: repeat(7, 1fr);
         flex: 1;
-        padding: 2px 4px;
-        gap: 0;
         align-content: start;
       }
 
       .calendar-day {
-        text-align: center;
-        font-size: 10px;
-        padding: 1px 0;
-        color: var(--color-text-subtle);
-        position: relative;
-        min-height: 14px;
-        line-height: 14px;
+        border-right: 1px solid var(--color-border-disabled);
+        border-bottom: 1px solid var(--color-border-disabled);
+        padding: 4px 6px;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
       }
 
-      .calendar-day.outside {
+      .calendar-day:nth-child(7n) {
+        border-right: none;
+      }
+
+      .calendar-day-number {
+        font-size: 13px;
+        font-weight: var(--font-weight-medium);
+        color: var(--color-text-subtle);
+        margin-bottom: 3px;
+        line-height: 1;
+      }
+
+      .calendar-day.outside .calendar-day-number {
         color: var(--color-text-disabled);
       }
 
-      .calendar-day.today {
-        font-weight: var(--font-weight-bold);
-        color: var(--eq-purple);
-      }
-
-      .calendar-day.has-items {
-        background: rgba(101, 84, 192, 0.08);
-        border-radius: 2px;
-      }
-
-      .calendar-item-dots {
-        display: flex;
-        justify-content: center;
-        gap: 1px;
-        margin-top: 1px;
-        min-height: 4px;
-      }
-
-      .calendar-item-dot {
-        width: 4px;
-        height: 4px;
+      .calendar-day.today .calendar-day-number {
+        color: var(--_N0);
+        background: var(--eq-purple);
         border-radius: 50%;
-        flex-shrink: 0;
+        width: 22px;
+        height: 22px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
       }
 
-      .calendar-month-items {
-        flex-shrink: 0;
-        padding: 2px 4px 4px;
-        border-top: 1px solid var(--color-border-disabled);
+      .calendar-day.weekend {
+        background: var(--canvas-row-weekend);
+      }
+
+      .calendar-day-items {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
         overflow: hidden;
-        max-height: 60px;
+        flex: 1;
       }
 
-      .calendar-month-item {
+      .calendar-day-item {
         display: flex;
         align-items: center;
         gap: 4px;
-        padding: 1px 4px;
-        font-size: 9px;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: var(--font-weight-medium);
         color: var(--color-text);
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
-        border-radius: 2px;
         line-height: 1.4;
+        cursor: default;
       }
 
-      .calendar-month-item-color {
-        width: 6px;
-        height: 6px;
-        border-radius: 50%;
-        flex-shrink: 0;
+      .calendar-day-more {
+        font-size: 11px;
+        color: var(--color-text-subtle);
+        padding: 0 6px;
       }
 
       .stepper-label-clickable {
@@ -9447,14 +9432,15 @@
           return tlArea;
         }
 
-        // ---- Calendar View ----
+        // ---- Calendar View (single month) ----
         function buildCalendarView() {
           const view = document.createElement('div');
           view.className = 'calendar-view';
 
-          // Title row
+          // Title row with month label and logo
           const titleRow = document.createElement('div');
           titleRow.className = 'calendar-title-row';
+
           const titleEl = document.createElement('div');
           titleEl.className = 'timeline-title';
           titleEl.textContent = STATE.timeline.title || 'New Timeline';
@@ -9463,6 +9449,12 @@
             showMenu([{ label: 'Rename', onClick: () => startRenameTitle() }], titleEl);
           });
           titleRow.appendChild(titleEl);
+
+          const sd = parseDate(STATE.timeline.startDate);
+          const monthLabel = document.createElement('div');
+          monthLabel.className = 'calendar-month-label';
+          monthLabel.textContent = MONTH_NAMES_FULL[sd.getMonth()] + ' ' + sd.getFullYear();
+          titleRow.appendChild(monthLabel);
 
           const logo = document.createElement('img');
           logo.className = 'slide-logo';
@@ -9473,184 +9465,113 @@
           titleRow.appendChild(logo);
           view.appendChild(titleRow);
 
-          // Determine month range from state
-          const tlStart = parseDate(STATE.timeline.startDate);
-          const tlEnd = parseDate(STATE.timeline.endDate);
-          const months = [];
-          const cur = new Date(tlStart.getFullYear(), tlStart.getMonth(), 1);
-          while (cur < tlEnd) {
-            months.push(new Date(cur));
-            cur.setMonth(cur.getMonth() + 1);
-          }
-
-          // Determine grid layout based on month count
-          const count = months.length;
-          let gridCols = 4;
-          let gridRows = Math.ceil(count / gridCols);
-          if (count <= 3) {
-            gridCols = count;
-            gridRows = 1;
-          } else if (count <= 6) {
-            gridCols = 3;
-            gridRows = Math.ceil(count / 3);
-          }
-
-          const monthsGrid = document.createElement('div');
-          monthsGrid.className = 'calendar-months-grid';
-          monthsGrid.style.gridTemplateColumns = `repeat(${gridCols}, 1fr)`;
-          monthsGrid.style.gridTemplateRows = `repeat(${gridRows}, 1fr)`;
+          // Current month from start date
+          const year = sd.getFullYear();
+          const month = sd.getMonth();
+          const firstDayOfWeek = new Date(year, month, 1).getDay();
+          const daysInMonth = new Date(year, month + 1, 0).getDate();
+          const totalCells = firstDayOfWeek + daysInMonth;
+          const numWeeks = Math.ceil(totalCells / 7);
 
           const today = new Date();
           const todayStr = fmt(today);
-          const WEEKDAYS = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+          const WEEKDAYS_FULL = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
-          months.forEach((monthDate) => {
-            const card = document.createElement('div');
-            card.className = 'calendar-month-card';
-            card.style.background = goldRamp(monthDate.getMonth() % 2 === 0 ? 0.05 : 0.15);
+          // Weekday header
+          const weekdayRow = document.createElement('div');
+          weekdayRow.className = 'calendar-weekday-row';
+          WEEKDAYS_FULL.forEach((d) => {
+            const cell = document.createElement('div');
+            cell.className = 'calendar-weekday-cell';
+            cell.textContent = d;
+            weekdayRow.appendChild(cell);
+          });
+          view.appendChild(weekdayRow);
 
-            // Month header
-            const header = document.createElement('div');
-            header.className = 'calendar-month-header';
-            header.textContent = MONTH_NAMES_FULL[monthDate.getMonth()] + ' ' + monthDate.getFullYear();
-            card.appendChild(header);
-
-            // Weekday labels
-            const weekdayRow = document.createElement('div');
-            weekdayRow.className = 'calendar-weekday-row';
-            WEEKDAYS.forEach((d) => {
-              const cell = document.createElement('div');
-              cell.textContent = d;
-              weekdayRow.appendChild(cell);
-            });
-            card.appendChild(weekdayRow);
-
-            // Days grid
-            const daysGrid = document.createElement('div');
-            daysGrid.className = 'calendar-days-grid';
-
-            const year = monthDate.getFullYear();
-            const month = monthDate.getMonth();
-            const firstDay = new Date(year, month, 1).getDay();
-            const daysInMonth = new Date(year, month + 1, 0).getDate();
-
-            // Items active during this month
-            const monthStart = new Date(year, month, 1);
-            const monthEnd = new Date(year, month + 1, 0, 23, 59, 59);
-            const activeItems = STATE.items.filter((it) => {
-              const iStart = parseDate(it.startDate);
-              const iEnd = parseDate(it.endDate);
-              return iStart <= monthEnd && iEnd >= monthStart;
-            });
-
-            // Build a set of days that have items
-            const itemDays = new Set();
-            activeItems.forEach((it) => {
-              const iStart = parseDate(it.startDate);
-              const iEnd = parseDate(it.endDate);
-              for (
-                let d = Math.max(
-                  1,
-                  iStart.getDate() * (iStart.getMonth() === month && iStart.getFullYear() === year ? 1 : 0) || 1,
-                );
-                d <= daysInMonth;
-                d++
-              ) {
-                const dayDate = new Date(year, month, d);
-                if (dayDate >= iStart && dayDate <= iEnd) {
-                  itemDays.add(d);
-                }
-              }
-            });
-
-            // Get items per day for dot coloring
-            function getItemsForDay(day) {
-              const dayDate = new Date(year, month, day);
-              return activeItems.filter((it) => {
-                const iStart = parseDate(it.startDate);
-                const iEnd = parseDate(it.endDate);
-                return dayDate >= iStart && dayDate <= iEnd;
-              });
-            }
-
-            // Leading empty cells
-            for (let i = 0; i < firstDay; i++) {
-              const empty = document.createElement('div');
-              empty.className = 'calendar-day outside';
-              daysGrid.appendChild(empty);
-            }
-
-            // Day cells
-            for (let d = 1; d <= daysInMonth; d++) {
-              const dayEl = document.createElement('div');
-              const dateStr = fmt(new Date(year, month, d));
-              dayEl.className = 'calendar-day';
-              if (dateStr === todayStr) dayEl.classList.add('today');
-
-              const dayItems = getItemsForDay(d);
-              if (dayItems.length > 0) dayEl.classList.add('has-items');
-
-              const num = document.createElement('div');
-              num.textContent = d;
-              dayEl.appendChild(num);
-
-              if (dayItems.length > 0) {
-                const dots = document.createElement('div');
-                dots.className = 'calendar-item-dots';
-                const shown = dayItems.slice(0, 3);
-                shown.forEach((it) => {
-                  const dot = document.createElement('div');
-                  dot.className = 'calendar-item-dot';
-                  dot.style.background = it.color;
-                  dots.appendChild(dot);
-                });
-                dayEl.appendChild(dots);
-              }
-
-              daysGrid.appendChild(dayEl);
-            }
-
-            card.appendChild(daysGrid);
-
-            // Items list below calendar
-            if (activeItems.length > 0) {
-              const itemsList = document.createElement('div');
-              itemsList.className = 'calendar-month-items';
-              activeItems.slice(0, 4).forEach((it) => {
-                const itemEl = document.createElement('div');
-                itemEl.className = 'calendar-month-item';
-                const colorDot = document.createElement('div');
-                colorDot.className = 'calendar-month-item-color';
-                colorDot.style.background = it.color;
-                itemEl.appendChild(colorDot);
-                const nameEl = document.createElement('span');
-                nameEl.textContent = it.name || 'Untitled';
-                itemEl.appendChild(nameEl);
-                itemsList.appendChild(itemEl);
-              });
-              if (activeItems.length > 4) {
-                const more = document.createElement('div');
-                more.className = 'calendar-month-item';
-                more.style.color = 'var(--color-text-subtle)';
-                more.textContent = '+' + (activeItems.length - 4) + ' more';
-                itemsList.appendChild(more);
-              }
-              card.appendChild(itemsList);
-            }
-
-            monthsGrid.appendChild(card);
+          // Items active this month
+          const monthStart = new Date(year, month, 1);
+          const monthEnd = new Date(year, month + 1, 0, 23, 59, 59);
+          const activeItems = STATE.items.filter((it) => {
+            const iStart = parseDate(it.startDate);
+            const iEnd = parseDate(it.endDate);
+            return iStart <= monthEnd && iEnd >= monthStart;
           });
 
-          view.appendChild(monthsGrid);
-
-          // Legend
-          const legend = buildLegend();
-          if (legend) {
-            legend.style.position = 'absolute';
-            legend.style.bottom = '12px';
-            view.style.position = 'relative';
-            view.appendChild(legend);
+          function getItemsForDay(day) {
+            const dayDate = new Date(year, month, day);
+            const nextDay = new Date(year, month, day + 1);
+            return activeItems.filter((it) => {
+              const iStart = parseDate(it.startDate);
+              const iEnd = parseDate(it.endDate);
+              return iStart < nextDay && iEnd >= dayDate;
+            });
           }
+
+          // Days grid
+          const daysGrid = document.createElement('div');
+          daysGrid.className = 'calendar-days-grid';
+          daysGrid.style.gridTemplateRows = `repeat(${numWeeks}, 1fr)`;
+
+          const maxItemsPerCell = numWeeks <= 5 ? 4 : 3;
+
+          // Leading empty cells
+          for (let i = 0; i < firstDayOfWeek; i++) {
+            const empty = document.createElement('div');
+            empty.className = 'calendar-day outside';
+            if (i === 0 || i === 6) empty.classList.add('weekend');
+            daysGrid.appendChild(empty);
+          }
+
+          // Day cells
+          for (let d = 1; d <= daysInMonth; d++) {
+            const dayEl = document.createElement('div');
+            const dateStr = fmt(new Date(year, month, d));
+            const dow = (firstDayOfWeek + d - 1) % 7;
+            dayEl.className = 'calendar-day';
+            if (dateStr === todayStr) dayEl.classList.add('today');
+            if (dow === 0 || dow === 6) dayEl.classList.add('weekend');
+
+            const num = document.createElement('div');
+            num.className = 'calendar-day-number';
+            num.textContent = d;
+            dayEl.appendChild(num);
+
+            const dayItems = getItemsForDay(d);
+            if (dayItems.length > 0) {
+              const itemsContainer = document.createElement('div');
+              itemsContainer.className = 'calendar-day-items';
+              const shown = dayItems.slice(0, maxItemsPerCell);
+              shown.forEach((it) => {
+                const itemEl = document.createElement('div');
+                itemEl.className = 'calendar-day-item';
+                itemEl.style.background = it.color;
+                itemEl.style.opacity = '0.85';
+                itemEl.textContent = it.name || 'Untitled';
+                itemsContainer.appendChild(itemEl);
+              });
+              if (dayItems.length > maxItemsPerCell) {
+                const more = document.createElement('div');
+                more.className = 'calendar-day-more';
+                more.textContent = '+' + (dayItems.length - maxItemsPerCell) + ' more';
+                itemsContainer.appendChild(more);
+              }
+              dayEl.appendChild(itemsContainer);
+            }
+
+            daysGrid.appendChild(dayEl);
+          }
+
+          // Trailing empty cells
+          const trailing = numWeeks * 7 - totalCells;
+          for (let i = 0; i < trailing; i++) {
+            const empty = document.createElement('div');
+            empty.className = 'calendar-day outside';
+            const dow = (totalCells + i) % 7;
+            if (dow === 0 || dow === 6) empty.classList.add('weekend');
+            daysGrid.appendChild(empty);
+          }
+
+          view.appendChild(daysGrid);
 
           return view;
         }
