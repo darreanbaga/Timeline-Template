@@ -7634,64 +7634,106 @@
         cursor: pointer;
       }
 
-      .calendar-months-grid {
-        flex: 1;
-        display: grid;
-        overflow: hidden;
-        gap: 0;
+      .calendar-nav-row {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 16px;
+        padding: 8px 20px;
+        border-bottom: 1px solid var(--color-border);
+        background: var(--elevation-surface);
+        flex-shrink: 0;
       }
 
-      .calendar-month-card {
-        border-right: 1px solid var(--color-border);
-        border-bottom: 1px solid var(--color-border);
+      .calendar-nav-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 28px;
+        height: 28px;
+        border: 1px solid var(--color-border);
+        border-radius: 4px;
+        background: var(--elevation-surface);
+        cursor: pointer;
+        color: var(--color-text);
+      }
+
+      .calendar-nav-btn:hover {
+        background: var(--color-bg-neutral-hovered);
+      }
+
+      .calendar-nav-label {
+        font-size: 15px;
+        font-weight: var(--font-weight-semibold);
+        color: var(--color-text);
+        min-width: 160px;
+        text-align: center;
+      }
+
+      .calendar-slides-container {
+        flex: 1;
+        overflow-x: auto;
+        overflow-y: hidden;
+        scroll-snap-type: x mandatory;
+        display: flex;
+        scroll-behavior: smooth;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      .calendar-slides-container::-webkit-scrollbar {
+        display: none;
+      }
+
+      .calendar-slide {
+        flex: 0 0 100%;
+        scroll-snap-align: start;
         display: flex;
         flex-direction: column;
-        overflow: hidden;
+        overflow-y: auto;
         min-width: 0;
       }
 
-      .calendar-month-card:nth-child(4n) {
-        border-right: none;
-      }
-
       .calendar-month-header {
-        padding: 6px 8px 4px 8px;
+        padding: 6px 12px 4px 12px;
         font-size: 13px;
         font-weight: var(--font-weight-semibold);
         color: var(--color-text);
         border-bottom: 1px solid var(--color-border-disabled);
         flex-shrink: 0;
+        display: none;
       }
 
       .calendar-weekday-row {
         display: grid;
         grid-template-columns: repeat(7, 1fr);
         text-align: center;
-        font-size: 9px;
+        font-size: 11px;
         font-weight: var(--font-weight-medium);
         color: var(--color-text-subtlest);
-        padding: 2px 4px;
+        padding: 6px 12px;
         border-bottom: 1px solid var(--color-border-disabled);
         flex-shrink: 0;
       }
 
-      .calendar-days-grid {
+      .calendar-weeks-container {
+        flex: 1;
+        padding: 4px 12px 8px 12px;
+      }
+
+      .calendar-week-row {
         display: grid;
         grid-template-columns: repeat(7, 1fr);
-        flex: 1;
-        padding: 2px 4px;
-        gap: 0;
-        align-content: start;
+        position: relative;
       }
 
       .calendar-day {
         text-align: center;
-        font-size: 10px;
-        padding: 1px 0;
+        font-size: 12px;
+        padding: 4px 0 2px 0;
         color: var(--color-text-subtle);
         position: relative;
-        min-height: 14px;
-        line-height: 14px;
+        min-height: 20px;
+        line-height: 20px;
       }
 
       .calendar-day.outside {
@@ -7703,53 +7745,57 @@
         color: var(--eq-purple);
       }
 
-      .calendar-day.has-items {
-        background: rgba(101, 84, 192, 0.08);
-        border-radius: 2px;
-      }
-
-      .calendar-item-dots {
-        display: flex;
-        justify-content: center;
-        gap: 1px;
-        margin-top: 1px;
-        min-height: 4px;
-      }
-
-      .calendar-item-dot {
-        width: 4px;
-        height: 4px;
+      .calendar-day.today .calendar-day-num {
+        background: var(--eq-purple);
+        color: #fff;
         border-radius: 50%;
-        flex-shrink: 0;
+        display: inline-block;
+        width: 22px;
+        height: 22px;
+        line-height: 22px;
+        text-align: center;
       }
 
-      .calendar-month-items {
-        flex-shrink: 0;
-        padding: 2px 4px 4px;
-        border-top: 1px solid var(--color-border-disabled);
-        overflow: hidden;
-        max-height: 60px;
+      .calendar-item-bars-row {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 2px 0;
+        min-height: 0;
+        padding-bottom: 4px;
       }
 
-      .calendar-month-item {
-        display: flex;
-        align-items: center;
-        gap: 4px;
-        padding: 1px 4px;
-        font-size: 9px;
-        color: var(--color-text);
+      .calendar-item-bar {
+        height: 18px;
+        border-radius: 4px;
+        font-size: 10px;
+        line-height: 18px;
+        padding: 0 4px;
+        color: #fff;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
-        border-radius: 2px;
-        line-height: 1.4;
+        cursor: default;
+        margin: 1px 1px;
       }
 
-      .calendar-month-item-color {
-        width: 6px;
-        height: 6px;
-        border-radius: 50%;
-        flex-shrink: 0;
+      .calendar-item-bar.bar-start {
+        border-top-left-radius: 4px;
+        border-bottom-left-radius: 4px;
+        margin-left: 2px;
+      }
+
+      .calendar-item-bar.bar-end {
+        border-top-right-radius: 4px;
+        border-bottom-right-radius: 4px;
+        margin-right: 2px;
+      }
+
+      .calendar-item-bar.bar-mid {
+        border-radius: 0;
+      }
+
+      .calendar-item-bar-spacer {
+        height: 20px;
       }
 
       .stepper-label-clickable {
@@ -9537,38 +9583,48 @@
             months.push(new Date(cur));
             cur.setMonth(cur.getMonth() + 1);
           }
+          if (months.length === 0) months.push(new Date(tlStart.getFullYear(), tlStart.getMonth(), 1));
 
-          // Determine grid layout based on month count
-          const count = months.length;
-          let gridCols = 4;
-          let gridRows = Math.ceil(count / gridCols);
-          if (count <= 3) {
-            gridCols = count;
-            gridRows = 1;
-          } else if (count <= 6) {
-            gridCols = 3;
-            gridRows = Math.ceil(count / 3);
-          }
+          // Navigation row
+          const navRow = document.createElement('div');
+          navRow.className = 'calendar-nav-row';
 
-          const monthsGrid = document.createElement('div');
-          monthsGrid.className = 'calendar-months-grid';
-          monthsGrid.style.gridTemplateColumns = `repeat(${gridCols}, 1fr)`;
-          monthsGrid.style.gridTemplateRows = `repeat(${gridRows}, 1fr)`;
+          const prevBtn = document.createElement('button');
+          prevBtn.className = 'calendar-nav-btn';
+          prevBtn.innerHTML =
+            '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>';
+
+          const navLabel = document.createElement('div');
+          navLabel.className = 'calendar-nav-label';
+
+          const nextBtn = document.createElement('button');
+          nextBtn.className = 'calendar-nav-btn';
+          nextBtn.innerHTML =
+            '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>';
+
+          navRow.appendChild(prevBtn);
+          navRow.appendChild(navLabel);
+          navRow.appendChild(nextBtn);
+          view.appendChild(navRow);
+
+          // Slides container
+          const slidesContainer = document.createElement('div');
+          slidesContainer.className = 'calendar-slides-container';
 
           const today = new Date();
           const todayStr = fmt(today);
-          const WEEKDAYS = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+          const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
+          // Build a slide for each month
           months.forEach((monthDate) => {
-            const card = document.createElement('div');
-            card.className = 'calendar-month-card';
-            card.style.background = goldRamp(monthDate.getMonth() % 2 === 0 ? 0.05 : 0.15);
+            const slide = document.createElement('div');
+            slide.className = 'calendar-slide';
+            slide.style.background = goldRamp(monthDate.getMonth() % 2 === 0 ? 0.03 : 0.08);
 
-            // Month header
-            const header = document.createElement('div');
-            header.className = 'calendar-month-header';
-            header.textContent = MONTH_NAMES_FULL[monthDate.getMonth()] + ' ' + monthDate.getFullYear();
-            card.appendChild(header);
+            const year = monthDate.getFullYear();
+            const month = monthDate.getMonth();
+            const firstDay = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
 
             // Weekday labels
             const weekdayRow = document.createElement('div');
@@ -9578,16 +9634,7 @@
               cell.textContent = d;
               weekdayRow.appendChild(cell);
             });
-            card.appendChild(weekdayRow);
-
-            // Days grid
-            const daysGrid = document.createElement('div');
-            daysGrid.className = 'calendar-days-grid';
-
-            const year = monthDate.getFullYear();
-            const month = monthDate.getMonth();
-            const firstDay = new Date(year, month, 1).getDay();
-            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            slide.appendChild(weekdayRow);
 
             // Items active during this month
             const monthStart = new Date(year, month, 1);
@@ -9598,105 +9645,253 @@
               return iStart <= monthEnd && iEnd >= monthStart;
             });
 
-            // Build a set of days that have items
-            const itemDays = new Set();
-            activeItems.forEach((it) => {
-              const iStart = parseDate(it.startDate);
-              const iEnd = parseDate(it.endDate);
-              for (
-                let d = Math.max(
-                  1,
-                  iStart.getDate() * (iStart.getMonth() === month && iStart.getFullYear() === year ? 1 : 0) || 1,
-                );
-                d <= daysInMonth;
-                d++
-              ) {
-                const dayDate = new Date(year, month, d);
-                if (dayDate >= iStart && dayDate <= iEnd) {
-                  itemDays.add(d);
+            // Build weeks structure: each week is an array of 7 day numbers (0 = empty)
+            const weeks = [];
+            let week = new Array(7).fill(0);
+            // Leading empty cells
+            for (let d = 1; d <= daysInMonth; d++) {
+              const dayOfWeek = new Date(year, month, d).getDay();
+              if (d === 1) {
+                week = new Array(7).fill(0);
+              }
+              week[dayOfWeek] = d;
+              if (dayOfWeek === 6 || d === daysInMonth) {
+                weeks.push(week);
+                week = new Array(7).fill(0);
+              }
+            }
+
+            // Assign items to tracks within weeks for bar layout
+            // For each week, determine which items are active and assign vertical slots
+            const weeksContainer = document.createElement('div');
+            weeksContainer.className = 'calendar-weeks-container';
+
+            weeks.forEach((weekDays) => {
+              // Find the date range for this week within the month
+              const weekStart = weekDays.find((d) => d > 0);
+              const weekEnd = weekDays
+                .slice()
+                .reverse()
+                .find((d) => d > 0);
+              if (!weekStart) return;
+
+              const weekStartDate = new Date(year, month, weekStart);
+              const weekEndDate = new Date(year, month, weekEnd, 23, 59, 59);
+
+              // Day number row
+              const dayRow = document.createElement('div');
+              dayRow.className = 'calendar-week-row';
+              for (let col = 0; col < 7; col++) {
+                const dayEl = document.createElement('div');
+                dayEl.className = 'calendar-day';
+                if (weekDays[col] === 0) {
+                  dayEl.classList.add('outside');
+                } else {
+                  const dateStr = fmt(new Date(year, month, weekDays[col]));
+                  if (dateStr === todayStr) dayEl.classList.add('today');
+                  const num = document.createElement('div');
+                  num.className = 'calendar-day-num';
+                  num.textContent = weekDays[col];
+                  dayEl.appendChild(num);
+                }
+                dayRow.appendChild(dayEl);
+              }
+              weeksContainer.appendChild(dayRow);
+
+              // Find items active in this week
+              const weekItems = activeItems.filter((it) => {
+                const iStart = parseDate(it.startDate);
+                const iEnd = parseDate(it.endDate);
+                return iStart <= weekEndDate && iEnd >= weekStartDate;
+              });
+
+              if (weekItems.length > 0) {
+                // Sort items: longer items first, then by start date
+                weekItems.sort((a, b) => {
+                  const aDays = daysBetween(parseDate(a.startDate), parseDate(a.endDate));
+                  const bDays = daysBetween(parseDate(b.startDate), parseDate(b.endDate));
+                  if (bDays !== aDays) return bDays - aDays;
+                  return a.startDate.localeCompare(b.startDate);
+                });
+
+                // Assign tracks (vertical slots) to avoid overlaps
+                const tracks = []; // tracks[i] = array of items on track i
+                const itemTrackMap = new Map();
+
+                weekItems.forEach((item) => {
+                  const iStart = parseDate(item.startDate);
+                  const iEnd = parseDate(item.endDate);
+                  // Determine column range in this week
+                  let colStart = 0;
+                  let colEnd = 6;
+                  for (let c = 0; c < 7; c++) {
+                    if (weekDays[c] > 0) {
+                      const cd = new Date(year, month, weekDays[c]);
+                      if (cd >= iStart && colStart === 0 && c > 0 && weekDays[c - 1] === 0) colStart = c;
+                      if (cd < iStart) colStart = c + 1;
+                      if (cd <= iEnd) colEnd = c;
+                    }
+                  }
+                  // Clamp to actual day cells
+                  const firstCol = weekDays.findIndex((d) => d > 0);
+                  const lastCol =
+                    weekDays.length -
+                    1 -
+                    weekDays
+                      .slice()
+                      .reverse()
+                      .findIndex((d) => d > 0);
+                  colStart = Math.max(colStart, firstCol);
+                  colEnd = Math.min(colEnd, lastCol);
+
+                  // Find available track
+                  let placed = false;
+                  for (let t = 0; t < tracks.length; t++) {
+                    const conflict = tracks[t].some((entry) => {
+                      return !(colEnd < entry.colStart || colStart > entry.colEnd);
+                    });
+                    if (!conflict) {
+                      tracks[t].push({ item, colStart, colEnd });
+                      itemTrackMap.set(item.id, t);
+                      placed = true;
+                      break;
+                    }
+                  }
+                  if (!placed) {
+                    tracks.push([{ item, colStart, colEnd }]);
+                    itemTrackMap.set(item.id, tracks.length - 1);
+                  }
+                });
+
+                // Render item bar rows (one row per track)
+                const maxTracks = Math.min(tracks.length, 4);
+                for (let t = 0; t < maxTracks; t++) {
+                  const barRow = document.createElement('div');
+                  barRow.className = 'calendar-item-bars-row';
+
+                  // Fill the 7 columns - place bars spanning the right columns
+                  const entries = tracks[t];
+                  // Sort by column start
+                  entries.sort((a, b) => a.colStart - b.colStart);
+
+                  let currentCol = 0;
+                  entries.forEach((entry) => {
+                    // Add spacer cells for gap before this bar
+                    if (entry.colStart > currentCol) {
+                      const spacer = document.createElement('div');
+                      spacer.className = 'calendar-item-bar-spacer';
+                      spacer.style.gridColumn = currentCol + 1 + ' / ' + (entry.colStart + 1);
+                      barRow.appendChild(spacer);
+                    }
+
+                    const bar = document.createElement('div');
+                    bar.className = 'calendar-item-bar';
+                    bar.style.gridColumn = entry.colStart + 1 + ' / ' + (entry.colEnd + 2);
+                    bar.style.background = entry.item.color;
+                    bar.title =
+                      (entry.item.name || 'Untitled') + ' (' + entry.item.startDate + ' to ' + entry.item.endDate + ')';
+
+                    // Determine if this is start/end/mid of a multi-week bar
+                    const iStart = parseDate(entry.item.startDate);
+                    const iEnd = parseDate(entry.item.endDate);
+                    const firstDayDate = new Date(year, month, weekDays[entry.colStart]);
+                    const lastDayDate = new Date(year, month, weekDays[entry.colEnd]);
+
+                    const isStart =
+                      firstDayDate.getTime() === iStart.getTime() ||
+                      (iStart < new Date(year, month, 1) && weekDays[entry.colStart] === 1);
+                    const isEnd =
+                      lastDayDate.getTime() === iEnd.getTime() ||
+                      (iEnd > monthEnd && weekDays[entry.colEnd] === daysInMonth);
+
+                    if (isStart && isEnd) {
+                      bar.classList.add('bar-start', 'bar-end');
+                    } else if (isStart) {
+                      bar.classList.add('bar-start');
+                      bar.style.borderTopRightRadius = '0';
+                      bar.style.borderBottomRightRadius = '0';
+                      bar.style.marginRight = '0';
+                    } else if (isEnd) {
+                      bar.classList.add('bar-end');
+                      bar.style.borderTopLeftRadius = '0';
+                      bar.style.borderBottomLeftRadius = '0';
+                      bar.style.marginLeft = '0';
+                    } else {
+                      bar.classList.add('bar-mid');
+                      bar.style.marginLeft = '0';
+                      bar.style.marginRight = '0';
+                    }
+
+                    bar.textContent = isStart ? entry.item.name || 'Untitled' : '';
+                    barRow.appendChild(bar);
+
+                    currentCol = entry.colEnd + 1;
+                  });
+
+                  weeksContainer.appendChild(barRow);
+                }
+
+                // Show overflow indicator if more tracks than displayed
+                if (tracks.length > maxTracks) {
+                  const overflow = document.createElement('div');
+                  overflow.style.cssText =
+                    'font-size:9px;color:var(--color-text-subtle);padding:0 4px 2px;text-align:right;';
+                  overflow.textContent = '+' + (tracks.length - maxTracks) + ' more';
+                  weeksContainer.appendChild(overflow);
                 }
               }
             });
 
-            // Get items per day for dot coloring
-            function getItemsForDay(day) {
-              const dayDate = new Date(year, month, day);
-              return activeItems.filter((it) => {
-                const iStart = parseDate(it.startDate);
-                const iEnd = parseDate(it.endDate);
-                return dayDate >= iStart && dayDate <= iEnd;
-              });
-            }
-
-            // Leading empty cells
-            for (let i = 0; i < firstDay; i++) {
-              const empty = document.createElement('div');
-              empty.className = 'calendar-day outside';
-              daysGrid.appendChild(empty);
-            }
-
-            // Day cells
-            for (let d = 1; d <= daysInMonth; d++) {
-              const dayEl = document.createElement('div');
-              const dateStr = fmt(new Date(year, month, d));
-              dayEl.className = 'calendar-day';
-              if (dateStr === todayStr) dayEl.classList.add('today');
-
-              const dayItems = getItemsForDay(d);
-              if (dayItems.length > 0) dayEl.classList.add('has-items');
-
-              const num = document.createElement('div');
-              num.textContent = d;
-              dayEl.appendChild(num);
-
-              if (dayItems.length > 0) {
-                const dots = document.createElement('div');
-                dots.className = 'calendar-item-dots';
-                const shown = dayItems.slice(0, 3);
-                shown.forEach((it) => {
-                  const dot = document.createElement('div');
-                  dot.className = 'calendar-item-dot';
-                  dot.style.background = it.color;
-                  dots.appendChild(dot);
-                });
-                dayEl.appendChild(dots);
-              }
-
-              daysGrid.appendChild(dayEl);
-            }
-
-            card.appendChild(daysGrid);
-
-            // Items list below calendar
-            if (activeItems.length > 0) {
-              const itemsList = document.createElement('div');
-              itemsList.className = 'calendar-month-items';
-              activeItems.slice(0, 4).forEach((it) => {
-                const itemEl = document.createElement('div');
-                itemEl.className = 'calendar-month-item';
-                const colorDot = document.createElement('div');
-                colorDot.className = 'calendar-month-item-color';
-                colorDot.style.background = it.color;
-                itemEl.appendChild(colorDot);
-                const nameEl = document.createElement('span');
-                nameEl.textContent = it.name || 'Untitled';
-                itemEl.appendChild(nameEl);
-                itemsList.appendChild(itemEl);
-              });
-              if (activeItems.length > 4) {
-                const more = document.createElement('div');
-                more.className = 'calendar-month-item';
-                more.style.color = 'var(--color-text-subtle)';
-                more.textContent = '+' + (activeItems.length - 4) + ' more';
-                itemsList.appendChild(more);
-              }
-              card.appendChild(itemsList);
-            }
-
-            monthsGrid.appendChild(card);
+            slide.appendChild(weeksContainer);
+            slidesContainer.appendChild(slide);
           });
 
-          view.appendChild(monthsGrid);
+          view.appendChild(slidesContainer);
+
+          // Update nav label based on visible slide
+          function updateNavLabel() {
+            const scrollLeft = slidesContainer.scrollLeft;
+            const slideWidth = slidesContainer.clientWidth;
+            const idx = Math.round(scrollLeft / slideWidth);
+            const clampedIdx = Math.max(0, Math.min(idx, months.length - 1));
+            const m = months[clampedIdx];
+            navLabel.textContent = MONTH_NAMES_FULL[m.getMonth()] + ' ' + m.getFullYear();
+          }
+
+          // Scroll to a month that contains today or start with first slide
+          let initialIdx = 0;
+          for (let i = 0; i < months.length; i++) {
+            if (months[i].getFullYear() === today.getFullYear() && months[i].getMonth() === today.getMonth()) {
+              initialIdx = i;
+              break;
+            }
+          }
+
+          // After DOM is attached, scroll to initial month
+          requestAnimationFrame(() => {
+            slidesContainer.scrollLeft = initialIdx * slidesContainer.clientWidth;
+            updateNavLabel();
+          });
+
+          slidesContainer.addEventListener('scroll', updateNavLabel);
+
+          prevBtn.addEventListener('click', () => {
+            const slideWidth = slidesContainer.clientWidth;
+            const currentIdx = Math.round(slidesContainer.scrollLeft / slideWidth);
+            if (currentIdx > 0) {
+              slidesContainer.scrollLeft = (currentIdx - 1) * slideWidth;
+            }
+          });
+
+          nextBtn.addEventListener('click', () => {
+            const slideWidth = slidesContainer.clientWidth;
+            const currentIdx = Math.round(slidesContainer.scrollLeft / slideWidth);
+            if (currentIdx < months.length - 1) {
+              slidesContainer.scrollLeft = (currentIdx + 1) * slideWidth;
+            }
+          });
+
+          updateNavLabel();
 
           // Legend
           const legend = buildLegend();
@@ -9720,7 +9915,7 @@
           if (dm === 'calendar') {
             app.className = 'main';
             app.innerHTML = '';
-            app.style.display = 'block';
+            app.style.display = '';
             app.appendChild(buildCalendarView());
             updateDisplayModeUI();
             updateSlideScale();
