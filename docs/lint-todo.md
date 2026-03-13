@@ -1,28 +1,43 @@
-# Lint Fix To-Do
+# Tabled Items
 
-> Existing lint warnings to clean up. Check items off as they're resolved.
+> Things we've identified but deferred. Check items off as they're resolved.
 
-## Unused variables (`no-unused-vars`)
+## Conventions requiring manual review
 
-- [ ] **Line 2061** — `getTotalGridHeight` is defined but never used. Remove or use it.
-- [ ] **Line 2070** — `getColWidth` is defined but never used. Remove or use it.
-- [ ] **Line 2471** — `totalDays` is assigned but never read. Remove the assignment.
-- [ ] **Line 2538** — `totalWidth` is assigned but never read. Remove the assignment.
-- [ ] **Line 2596** — `labelName` is assigned but never read. Remove the assignment.
-- [ ] **Line 3056** — callback parameter `e` is unused. Rename to `_e`.
+These cannot be enforced by ESLint and need human review when working in the relevant area.
 
-## Direct STATE mutation (`no-restricted-syntax`)
+- [ ] CSS design tokens over raw `#hex`/`rgb()` values — verify no hard-coded colors in `<style>`
+- [ ] html2canvas PNG export fidelity — manually verify after any CSS or DOM change
+- [ ] localStorage schema migration — any STATE shape change needs migration logic in `loadState()`
+- [ ] `render()` idempotency — must produce identical DOM when called twice with same state
+- [ ] Primitive tokens (`--_X###`) only in the semantic layer, never in component CSS
+- [ ] `findFreeTrack()` used for all new item track assignment
 
-- [ ] **Line 1797** — `STATE.legendLabels = {}` in `loadState()`. This is migration logic and intentional. Add `// eslint-disable-next-line no-restricted-syntax` above it.
+## Deferred lint warnings
 
-## `.onclick` assignment (`no-restricted-syntax`)
+Existing warnings in `index.html` to clean up when touching nearby code.
 
-- [ ] **Line 2924** — `showInfo()` OK button: refactor to `addEventListener('click', ...)`.
-- [ ] **Lines 2943–2944** — `showConfirm()` Cancel/Delete buttons: refactor to `addEventListener`.
-- [ ] **Line 3367** — CSV file input `onload` handler: refactor to `addEventListener`.
-- [ ] **Line 3555** — Welcome toast "Get Started" button: refactor to `addEventListener`.
-- [ ] **Line 3583** — Save-tip toast "Got it" button: refactor to `addEventListener`.
+### Unused variables
 
-## Function complexity (`max-params`)
+- [ ] Line 2061 — `getTotalGridHeight` defined but never used
+- [ ] Line 2070 — `getColWidth` defined but never used
+- [ ] Line 2471 — `totalDays` assigned but never read
+- [ ] Line 2538 — `totalWidth` assigned but never read
+- [ ] Line 2596 — `labelName` assigned but never read
+- [ ] Line 3056 — callback param `e` unused (rename to `_e`)
 
-- [ ] **Line 3180** — `startResize(e, item, type, tlStart, totalDays, totalWidth)` has 6 params (max 5). Bundle related args into an options object, e.g. `startResize(e, item, type, { tlStart, totalDays, totalWidth })`.
+### Direct STATE mutation
+
+- [ ] Line 1797 — `STATE.legendLabels = {}` in `loadState()` migration logic. Add `eslint-disable-next-line` comment.
+
+### `.onclick` assignment → `addEventListener`
+
+- [ ] Line 2924 — `showInfo()` OK button
+- [ ] Lines 2943–2944 — `showConfirm()` Cancel/Delete buttons
+- [ ] Line 3367 — CSV file input `onload` handler
+- [ ] Line 3555 — Welcome toast "Get Started" button
+- [ ] Line 3583 — Save-tip toast "Got it" button
+
+### Function complexity
+
+- [ ] Line 3180 — `startResize` has 6 params (max 5). Bundle into options object.
