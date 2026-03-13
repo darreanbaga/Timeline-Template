@@ -24,11 +24,11 @@
 
 Run `npm install` once to set up dev dependencies, then:
 
-| Command | What it does |
-|---------|-------------|
-| `npm run lint` | Check JS for errors and convention violations |
-| `npm run lint:fix` | Auto-fix what ESLint can (e.g. `var` → `const`) |
-| `npm run format` | Run Prettier on all HTML, CSS, JS, JSON, and MD files |
+| Command            | What it does                                          |
+| ------------------ | ----------------------------------------------------- |
+| `npm run lint`     | Check JS for errors and convention violations         |
+| `npm run lint:fix` | Auto-fix what ESLint can (e.g. `var` → `const`)       |
+| `npm run format`   | Run Prettier on all HTML, CSS, JS, JSON, and MD files |
 
 ESLint extracts `<script>` blocks from `index.html` via `eslint-plugin-html`. The vendored html2canvas block is skipped with `/* eslint-disable */`.
 
@@ -63,9 +63,9 @@ No automated test suite exists. Manual verification checklist:
 
 ## Dependencies
 
-| Dependency | Version | How included |
-|------------|---------|--------------|
-| html2canvas | 1.4.1 | Inline minified IIFE in `<script>` |
-| Inter font | — | Base64-encoded woff2 in `<style>` `@font-face` |
+| Dependency  | Version | How included                                   |
+| ----------- | ------- | ---------------------------------------------- |
+| html2canvas | 1.4.1   | Inline minified IIFE in `<script>`             |
+| Inter font  | —       | Base64-encoded woff2 in `<style>` `@font-face` |
 
 Dev tooling (ESLint, Prettier) is in `package.json` — these are dev-only and not shipped. To update html2canvas, replace the minified block between the `html2canvas` comment markers.

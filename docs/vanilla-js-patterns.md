@@ -36,12 +36,12 @@ setState(s => {
 
 All dates are stored as `"YYYY-MM-DD"` strings in state. Helper functions:
 
-| Function | Purpose |
-|----------|---------|
-| `parseDate(str)` | String → `Date` object |
-| `fmt(date)` | `Date` → `"YYYY-MM-DD"` string |
-| `addDays(date, n)` | Returns new `Date` offset by `n` days |
-| `daysBetween(a, b)` | Integer day count between two dates |
+| Function                   | Purpose                                                         |
+| -------------------------- | --------------------------------------------------------------- |
+| `parseDate(str)`           | String → `Date` object                                          |
+| `fmt(date)`                | `Date` → `"YYYY-MM-DD"` string                                  |
+| `addDays(date, n)`         | Returns new `Date` offset by `n` days                           |
+| `daysBetween(a, b)`        | Integer day count between two dates                             |
 | `fiscalQuarterRange(date)` | Returns `{start, end}` for the fiscal quarter containing `date` |
 
 Fiscal year starts November 1 (`FY_START_MONTH = 10`, 0-indexed).
