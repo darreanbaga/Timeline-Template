@@ -10432,17 +10432,6 @@
           const btnCalendar = document.getElementById('btn-display-calendar');
           btnTimeline.classList.toggle('active', dm === 'timeline');
           btnCalendar.classList.toggle('active', dm === 'calendar');
-
-          // Hide timeline-specific controls in calendar mode
-          const timelineControls = document.getElementById('section-timeline-controls');
-          if (timelineControls) {
-            timelineControls.style.display = dm === 'calendar' ? 'none' : '';
-          }
-          // Also hide the divider before it
-          const prev = timelineControls && timelineControls.previousElementSibling;
-          if (prev && prev.classList.contains('control-section-divider')) {
-            prev.style.display = dm === 'calendar' ? 'none' : '';
-          }
         }
 
         function setDisplayMode(mode) {
