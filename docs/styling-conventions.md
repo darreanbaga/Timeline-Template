@@ -8,17 +8,17 @@
 
 Raw color values in the `:root` block. Named by hue initial + shade number.
 
-| Prefix | Hue |
-|--------|-----|
+| Prefix | Hue          |
+| ------ | ------------ |
 | `--_N` | Neutral/grey |
-| `--_B` | Blue |
-| `--_R` | Red |
-| `--_O` | Orange |
-| `--_L` | Lime/green |
-| `--_P` | Purple |
-| `--_T` | Teal |
-| `--_Y` | Yellow |
-| `--_M` | Magenta |
+| `--_B` | Blue         |
+| `--_R` | Red          |
+| `--_O` | Orange       |
+| `--_L` | Lime/green   |
+| `--_P` | Purple       |
+| `--_T` | Teal         |
+| `--_Y` | Yellow       |
+| `--_M` | Magenta      |
 
 **Never reference primitives directly in component CSS.** They exist only to feed the semantic layer.
 
@@ -51,6 +51,7 @@ Eight bar colors for timeline items. Items store `var(--palette-N)` as their `co
 ## html2canvas Compatibility
 
 When adding CSS, verify it renders correctly in the PNG export. Known limitations:
+
 - `backdrop-filter` is not supported
 - Complex `clip-path` may not render
 - CSS `filter` has partial support
