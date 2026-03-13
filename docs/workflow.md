@@ -34,23 +34,7 @@ ESLint extracts `<script>` blocks from `index.html` via `eslint-plugin-html`. Th
 
 **Baseline**: 0 errors, warnings only. Keep it that way — do not merge new errors.
 
-### Convention rules enforced by ESLint
-
-- **`no-restricted-syntax`**: warns on direct `STATE.x =` mutation (use `setState`) and `.onclick =` assignment (use `addEventListener`)
-- **`no-restricted-globals`**: errors on `React`, `ReactDOM`, `Vue`, `Alpine` — no frameworks allowed
-- **`no-eval` / `no-implied-eval` / `no-new-func`**: errors on eval-family calls
-- **`max-depth: 6` / `max-params: 5`**: warns on overly nested or parameter-heavy functions
-
-### Conventions requiring manual review
-
-These are documented as comments in `eslint.config.js` but cannot be auto-linted:
-
-1. CSS design tokens over raw `#hex`/`rgb()` values
-2. html2canvas PNG export fidelity after visual changes
-3. localStorage schema migration when STATE shape changes
-4. `render()` idempotency
-5. Primitive tokens (`--_X###`) only used in the semantic layer, not in component CSS
-6. `findFreeTrack()` used for new item track assignment
+See `eslint.config.js` for project-specific rules and `docs/lint-todo.md` for outstanding warnings to fix.
 
 ## Testing Changes
 
