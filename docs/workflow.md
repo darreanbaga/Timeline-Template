@@ -20,6 +20,38 @@
 2. Open `http://localhost:<port>/` in a browser.
 3. There is no hot-reload — refresh the page after editing `index.html`.
 
+## Linting & Formatting
+
+Run `npm install` once to set up dev dependencies, then:
+
+| Command | What it does |
+|---------|-------------|
+| `npm run lint` | Check JS for errors and convention violations |
+| `npm run lint:fix` | Auto-fix what ESLint can (e.g. `var` → `const`) |
+| `npm run format` | Run Prettier on all HTML, CSS, JS, JSON, and MD files |
+
+ESLint extracts `<script>` blocks from `index.html` via `eslint-plugin-html`. The vendored html2canvas block is skipped with `/* eslint-disable */`.
+
+**Baseline**: 0 errors, warnings only. Keep it that way — do not merge new errors.
+
+### Convention rules enforced by ESLint
+
+- **`no-restricted-syntax`**: warns on direct `STATE.x =` mutation (use `setState`) and `.onclick =` assignment (use `addEventListener`)
+- **`no-restricted-globals`**: errors on `React`, `ReactDOM`, `Vue`, `Alpine` — no frameworks allowed
+- **`no-eval` / `no-implied-eval` / `no-new-func`**: errors on eval-family calls
+- **`max-depth: 6` / `max-params: 5`**: warns on overly nested or parameter-heavy functions
+
+### Conventions requiring manual review
+
+These are documented as comments in `eslint.config.js` but cannot be auto-linted:
+
+1. CSS design tokens over raw `#hex`/`rgb()` values
+2. html2canvas PNG export fidelity after visual changes
+3. localStorage schema migration when STATE shape changes
+4. `render()` idempotency
+5. Primitive tokens (`--_X###`) only used in the semantic layer, not in component CSS
+6. `findFreeTrack()` used for new item track assignment
+
 ## Testing Changes
 
 No automated test suite exists. Manual verification checklist:
@@ -45,4 +77,4 @@ No automated test suite exists. Manual verification checklist:
 | html2canvas | 1.4.1 | Inline minified IIFE in `<script>` |
 | Inter font | — | Base64-encoded woff2 in `<style>` `@font-face` |
 
-No `package.json`, no `node_modules`, no npm dependencies. To update html2canvas, replace the minified block between the `html2canvas` comment markers.
+Dev tooling (ESLint, Prettier) is in `package.json` — these are dev-only and not shipped. To update html2canvas, replace the minified block between the `html2canvas` comment markers.
