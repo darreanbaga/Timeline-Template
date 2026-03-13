@@ -1,0 +1,26 @@
+{
+  "name": "timeline-template",
+  "version": "1.0.0",
+  "description": "Interactive browser-based timeline/Gantt-chart tool",
+  "type": "module",
+  "scripts": {
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write \"**/*.{html,css,js,json,md}\""
+  },
+  "repository": {
+    "type": "git",
+    "url": "http://local_proxy@127.0.0.1:42035/git/darreanbaga/Timeline-Template"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@html-eslint/eslint-plugin": "^0.58.1",
+    "@html-eslint/parser": "^0.58.1",
+    "eslint": "^10.0.3",
+    "eslint-plugin-html": "^8.1.4",
+    "prettier": "^3.8.1"
+  }
+}
