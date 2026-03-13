@@ -31,6 +31,7 @@ Before finishing any multi-file task, run `npm run session-check` to verify the 
 
 ## Reference Docs
 
+- When starting any task → read [docs/agent-engineering-standards.md](docs/agent-engineering-standards.md) first.
 - When adding features, changing the state shape, or modifying swimlane/item data structures → read [docs/architecture.md](docs/architecture.md) first.
 - When adding or changing colors, spacing, borders, fonts, or any CSS rule → read [docs/styling-conventions.md](docs/styling-conventions.md) first.
 - When writing event handlers, modifying drag/drop, editing the render loop, or adding date logic → read [docs/vanilla-js-patterns.md](docs/vanilla-js-patterns.md) first.
