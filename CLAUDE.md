@@ -20,6 +20,10 @@ Interactive browser-based timeline/Gantt-chart tool for planning and visualizing
 6. **Preserve export fidelity** — any visual change must look correct in both the live view and the html2canvas PNG export.
 7. **localStorage contract** — the storage key is `timeline_tmpl_v1`. Do not change the schema without migration logic.
 
+## Session Check
+
+Before finishing any multi-file task, run `npm run session-check` to verify the entire repo passes ESLint and Prettier. Fix any errors before committing.
+
 ## Reference Docs
 
 - When adding features, changing the state shape, or modifying swimlane/item data structures → read [docs/architecture.md](docs/architecture.md) first.

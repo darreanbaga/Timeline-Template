@@ -6,7 +6,17 @@
   "scripts": {
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "format": "prettier --write \"**/*.{html,css,js,json,md}\""
+    "format": "prettier --write \"**/*.{html,css,js,json,md}\"",
+    "session-check": "eslint . && prettier --check \"**/*.{html,css,js,json,md}\"",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "*.{html,js}": [
+      "eslint --fix"
+    ],
+    "*.{html,css,js,json,md}": [
+      "prettier --write"
+    ]
   },
   "repository": {
     "type": "git",
@@ -21,6 +31,8 @@
     "@html-eslint/parser": "^0.58.1",
     "eslint": "^10.0.3",
     "eslint-plugin-html": "^8.1.4",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.3.3",
     "prettier": "^3.8.1"
   }
 }
