@@ -7540,6 +7540,48 @@
         justify-content: center;
         flex-shrink: 0;
       }
+
+      .view-mode-toggle {
+        display: flex;
+        border: 1px solid var(--color-border);
+        border-radius: 4px;
+        overflow: hidden;
+      }
+
+      .view-mode-btn {
+        background: var(--color-bg-neutral);
+        color: var(--color-text-subtle);
+        border: none;
+        padding: 4px 10px;
+        font-size: var(--font-size-body-small);
+        font-weight: var(--font-weight-medium);
+        cursor: pointer;
+        white-space: nowrap;
+        line-height: 1.4;
+      }
+
+      .view-mode-btn:hover {
+        background: var(--color-bg-neutral-hovered);
+      }
+
+      .view-mode-btn.active {
+        background: var(--eq-purple);
+        color: var(--_N0);
+      }
+
+      .view-mode-btn + .view-mode-btn {
+        border-left: 1px solid var(--color-border);
+      }
+
+      .stepper-label-clickable {
+        cursor: pointer;
+        border-bottom: 1px dashed var(--color-border);
+      }
+
+      .stepper-label-clickable:hover {
+        color: var(--eq-purple);
+        border-bottom-color: var(--eq-purple);
+      }
     </style>
   </head>
 
@@ -7571,8 +7613,17 @@
         <div class="control-section">
           <div class="section-content">
             <div class="timeline-controls">
+              <div class="view-mode-toggle">
+                <button id="btn-mode-week" class="view-mode-btn" title="Week view">Weeks</button>
+                <button id="btn-mode-month" class="view-mode-btn active" title="Month view">Months</button>
+              </div>
+              <input
+                type="date"
+                id="start-date-picker"
+                style="position: absolute; opacity: 0; pointer-events: none; width: 0; height: 0"
+              />
               <div class="chevron-stepper">
-                <button id="btn-start-prev" class="btn-icon-only" title="Previous month">
+                <button id="btn-start-prev" class="btn-icon-only" title="Previous">
                   <svg
                     width="12"
                     height="12"
@@ -7586,8 +7637,8 @@
                     <polyline points="15 18 9 12 15 6" />
                   </svg>
                 </button>
-                <span class="stepper-label" id="start-date-label">Oct 2025</span>
-                <button id="btn-start-next" class="btn-icon-only" title="Next month">
+                <span class="stepper-label stepper-label-clickable" id="start-date-label">Oct 2025</span>
+                <button id="btn-start-next" class="btn-icon-only" title="Next">
                   <svg
                     width="12"
                     height="12"
@@ -7912,6 +7963,8 @@
               zoomLevel: 1,
               title: 'New Timeline',
               monthCount: 12,
+              viewMode: 'month',
+              weekCount: 2,
               sidebarWidth: DEFAULT_SIDEBAR_W,
               legendOrientation: 'vertical',
               legendAlign: 'right',
@@ -7935,6 +7988,8 @@
               zoomLevel: 1,
               title: 'Q1 Product Launch Campaign',
               monthCount: 12,
+              viewMode: 'month',
+              weekCount: 2,
               sidebarWidth: DEFAULT_SIDEBAR_W,
               legendOrientation: 'horizontal',
               legendAlign: 'right',
@@ -8297,7 +8352,13 @@
           if (!STATE.timeline.legendAlign) {
             STATE.timeline.legendAlign = 'right';
           }
-          // Update timeline dates based on monthCount
+          if (!STATE.timeline.viewMode) {
+            STATE.timeline.viewMode = 'month';
+          }
+          if (!STATE.timeline.weekCount) {
+            STATE.timeline.weekCount = 2;
+          }
+          // Update timeline dates based on monthCount/weekCount
           updateTimelineDates();
           // Assign tracks after loading
           assignTracks();
@@ -8309,9 +8370,15 @@
         }
 
         function updateTimelineDates() {
-          const mc = STATE.timeline.monthCount || 12;
           const start = parseDate(STATE.timeline.startDate);
-          const end = new Date(start.getFullYear(), start.getMonth() + mc, start.getDate());
+          let end;
+          if (STATE.timeline.viewMode === 'week') {
+            const wc = STATE.timeline.weekCount || 2;
+            end = addDays(start, wc * 7);
+          } else {
+            const mc = STATE.timeline.monthCount || 12;
+            end = new Date(start.getFullYear(), start.getMonth() + mc, start.getDate());
+          }
           STATE.timeline.endDate = fmt(end);
         }
 
@@ -8493,6 +8560,18 @@
         }
 
         function getDisplayConfig(monthCount) {
+          const vm = STATE.timeline.viewMode || 'month';
+          if (vm === 'week') {
+            const wc = STATE.timeline.weekCount || 2;
+            return {
+              showQuarterRow: false,
+              showSubMonthRow: true,
+              subMonthMode: wc <= 2 ? 'day' : 'week',
+              topGranularity: 'month',
+              useFullMonthNames: true,
+              monthColorMode: 'gradient',
+            };
+          }
           return {
             showQuarterRow: monthCount >= 4,
             showSubMonthRow: monthCount <= 3,
@@ -9227,6 +9306,7 @@
 
           updateLengthDisplay();
           updateStartDateDisplay();
+          updateViewModeUI();
           updateSlideScale();
 
           const addBtn = document.getElementById('btn-add');
@@ -9816,20 +9896,39 @@
         // Timeline length stepper
         function updateLengthDisplay() {
           const el = document.getElementById('length-display');
-          const mc = STATE.timeline.monthCount || 12;
-          if (el) el.textContent = mc + ' mo';
-          document.getElementById('btn-length-prev').disabled = mc <= 1;
-          document.getElementById('btn-length-next').disabled = mc >= 24;
+          const vm = STATE.timeline.viewMode || 'month';
+          if (vm === 'week') {
+            const wc = STATE.timeline.weekCount || 2;
+            if (el) el.textContent = wc + ' wk';
+            document.getElementById('btn-length-prev').disabled = wc <= 1;
+            document.getElementById('btn-length-next').disabled = wc >= 8;
+          } else {
+            const mc = STATE.timeline.monthCount || 12;
+            if (el) el.textContent = mc + ' mo';
+            document.getElementById('btn-length-prev').disabled = mc <= 1;
+            document.getElementById('btn-length-next').disabled = mc >= 24;
+          }
         }
 
         function shiftLength(delta) {
-          const mc = STATE.timeline.monthCount || 12;
-          const next = Math.max(1, Math.min(24, mc + delta));
-          if (next === mc) return;
-          setState((s) => {
-            s.timeline.monthCount = next;
-            updateTimelineDates();
-          });
+          const vm = STATE.timeline.viewMode || 'month';
+          if (vm === 'week') {
+            const wc = STATE.timeline.weekCount || 2;
+            const next = Math.max(1, Math.min(8, wc + delta));
+            if (next === wc) return;
+            setState((s) => {
+              s.timeline.weekCount = next;
+              updateTimelineDates();
+            });
+          } else {
+            const mc = STATE.timeline.monthCount || 12;
+            const next = Math.max(1, Math.min(24, mc + delta));
+            if (next === mc) return;
+            setState((s) => {
+              s.timeline.monthCount = next;
+              updateTimelineDates();
+            });
+          }
         }
 
         document.getElementById('btn-length-prev').addEventListener('click', () => shiftLength(-1));
@@ -9840,21 +9939,97 @@
           const label = document.getElementById('start-date-label');
           if (!label) return;
           const d = parseDate(STATE.timeline.startDate);
-          label.textContent = MONTH_NAMES[d.getMonth()] + ' ' + d.getFullYear();
+          const vm = STATE.timeline.viewMode || 'month';
+          if (vm === 'week') {
+            label.textContent = MONTH_NAMES[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear();
+          } else {
+            label.textContent = MONTH_NAMES[d.getMonth()] + ' ' + d.getFullYear();
+          }
         }
 
-        function shiftStartDate(deltaMonths) {
+        function shiftStartDate(delta) {
+          const vm = STATE.timeline.viewMode || 'month';
           setState((s) => {
             const d = parseDate(s.timeline.startDate);
-            d.setMonth(d.getMonth() + deltaMonths);
-            d.setDate(1);
+            if (vm === 'week') {
+              d.setDate(d.getDate() + delta * 7);
+              // Snap to Monday
+              const day = d.getDay();
+              const diff = day === 0 ? -6 : 1 - day;
+              d.setDate(d.getDate() + diff);
+            } else {
+              d.setMonth(d.getMonth() + delta);
+              d.setDate(1);
+            }
             s.timeline.startDate = fmt(d);
             updateTimelineDates();
           });
         }
 
+        // Date picker for start date
+        const startDatePicker = document.getElementById('start-date-picker');
+        document.getElementById('start-date-label').addEventListener('click', () => {
+          startDatePicker.value = STATE.timeline.startDate;
+          if (startDatePicker.showPicker) {
+            startDatePicker.showPicker();
+          } else {
+            startDatePicker.click();
+          }
+        });
+        startDatePicker.addEventListener('change', () => {
+          const val = startDatePicker.value;
+          if (!val) return;
+          setState((s) => {
+            const d = parseDate(val);
+            const vm = s.timeline.viewMode || 'month';
+            if (vm === 'week') {
+              // Snap to Monday
+              const day = d.getDay();
+              const diff = day === 0 ? -6 : 1 - day;
+              d.setDate(d.getDate() + diff);
+            } else {
+              d.setDate(1);
+            }
+            s.timeline.startDate = fmt(d);
+            updateTimelineDates();
+          });
+        });
+
         document.getElementById('btn-start-prev').addEventListener('click', () => shiftStartDate(-1));
         document.getElementById('btn-start-next').addEventListener('click', () => shiftStartDate(1));
+
+        // View mode toggle
+        function updateViewModeUI() {
+          const vm = STATE.timeline.viewMode || 'month';
+          const btnWeek = document.getElementById('btn-mode-week');
+          const btnMonth = document.getElementById('btn-mode-month');
+          btnWeek.classList.toggle('active', vm === 'week');
+          btnMonth.classList.toggle('active', vm === 'month');
+        }
+
+        function setViewMode(mode) {
+          if (STATE.timeline.viewMode === mode) return;
+          setState((s) => {
+            s.timeline.viewMode = mode;
+            if (mode === 'week') {
+              // Snap start date to Monday
+              const d = parseDate(s.timeline.startDate);
+              const day = d.getDay();
+              const diff = day === 0 ? -6 : 1 - day;
+              d.setDate(d.getDate() + diff);
+              s.timeline.startDate = fmt(d);
+            } else {
+              // Snap start date to 1st of month
+              const d = parseDate(s.timeline.startDate);
+              d.setDate(1);
+              s.timeline.startDate = fmt(d);
+            }
+            updateTimelineDates();
+          });
+        }
+
+        document.getElementById('btn-mode-week').addEventListener('click', () => setViewMode('week'));
+        document.getElementById('btn-mode-month').addEventListener('click', () => setViewMode('month'));
 
         function addItem() {
           if (STATE.swimlanes.length === 0) {
@@ -10167,6 +10342,7 @@
         loadState();
         updateLengthDisplay();
         updateStartDateDisplay();
+        updateViewModeUI();
         updateLegendToggleUI();
         render();
         window.addEventListener('resize', updateSlideScale);
@@ -10192,6 +10368,7 @@
             updateUndoRedoUI();
             updateLengthDisplay();
             updateStartDateDisplay();
+            updateViewModeUI();
             updateLegendToggleUI();
             render();
           };
