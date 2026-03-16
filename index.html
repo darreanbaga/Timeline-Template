@@ -6603,6 +6603,18 @@
         background: #f0ece5;
       }
 
+      .slide-viewport.calendar-mode {
+        padding: 0;
+        align-items: stretch;
+        justify-content: stretch;
+      }
+
+      .slide-viewport.calendar-mode > .calendar-view {
+        flex: 1;
+        border-radius: 0;
+        background: var(--elevation-surface);
+      }
+
       .slide {
         width: 1920px;
         height: 1080px;
@@ -7336,7 +7348,7 @@
       }
 
       .calendar-item-bar.bar-new {
-        animation: calendar-bar-pulse 0.8s ease-out;
+        animation: calendar-bar-pulse 0.6s ease-out 3;
       }
 
       @keyframes toast-in {
@@ -7775,12 +7787,10 @@
 
       .calendar-slides-container {
         flex: 1;
-        overflow-x: auto;
+        overflow-x: hidden;
         overflow-y: hidden;
-        scroll-snap-type: x mandatory;
         display: flex;
         scroll-behavior: smooth;
-        -webkit-overflow-scrolling: touch;
       }
 
       .calendar-slides-container::-webkit-scrollbar {
@@ -7789,7 +7799,6 @@
 
       .calendar-slide {
         flex: 0 0 100%;
-        scroll-snap-align: start;
         display: flex;
         flex-direction: column;
         overflow-y: auto;
@@ -7882,10 +7891,11 @@
       }
 
       .calendar-item-bar {
-        height: 20px;
+        position: relative;
+        height: 22px;
         border-radius: 4px;
-        font-size: 11px;
-        line-height: 20px;
+        font-size: 12px;
+        line-height: 22px;
         padding: 0 6px;
         color: #fff;
         white-space: nowrap;
@@ -7899,10 +7909,32 @@
           transform 0.15s;
       }
 
-      .calendar-item-bar:hover {
+      .calendar-item-bar:hover,
+      .calendar-item-bar:focus-visible {
         opacity: 0.9;
         box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
         transform: translateY(-1px);
+        z-index: 2;
+        outline: none;
+      }
+
+      .calendar-item-bar:focus-visible {
+        box-shadow:
+          0 0 0 2px var(--eq-purple),
+          0 1px 4px rgba(0, 0, 0, 0.25);
+      }
+
+      .cal-tooltip {
+        position: fixed;
+        background: var(--color-text);
+        color: #fff;
+        font-size: 11px;
+        line-height: 1.4;
+        padding: 4px 8px;
+        border-radius: 4px;
+        white-space: nowrap;
+        pointer-events: none;
+        z-index: 1001;
       }
 
       .calendar-item-bar.bar-start {
@@ -7981,6 +8013,60 @@
         color: var(--color-text-subtle);
         margin-left: auto;
         white-space: nowrap;
+      }
+
+      /* Calendar responsive */
+      @media (max-width: 768px) {
+        .calendar-title-row {
+          padding: 8px 12px 6px 12px;
+        }
+        .calendar-title-row .timeline-title {
+          font-size: 16px;
+        }
+        .calendar-nav-row {
+          padding: 6px 12px;
+          gap: 8px;
+        }
+        .calendar-weekday-row {
+          padding: 4px 8px;
+          font-size: 10px;
+        }
+        .calendar-weeks-container {
+          padding: 2px 8px 4px 8px;
+        }
+        .calendar-day {
+          font-size: 11px;
+          padding: 4px 0 2px 0;
+          min-height: 20px;
+          line-height: 20px;
+        }
+        .calendar-item-bar {
+          height: 16px;
+          font-size: 9px;
+          line-height: 16px;
+          padding: 0 3px;
+        }
+        .calendar-day.today .calendar-day-num {
+          width: 18px;
+          height: 18px;
+          line-height: 18px;
+        }
+      }
+
+      @media (max-width: 480px) {
+        .calendar-title-row .slide-logo {
+          display: none;
+        }
+        .calendar-nav-label {
+          font-size: 13px;
+          min-width: 120px;
+        }
+        .calendar-item-bar {
+          height: 14px;
+          font-size: 8px;
+          line-height: 14px;
+          padding: 0 2px;
+        }
       }
 
       .stepper-label-clickable {
@@ -10010,8 +10096,12 @@
                     bar.dataset.itemId = entry.item.id;
                     bar.style.gridColumn = entry.colStart + 1 + ' / ' + (entry.colEnd + 2);
                     bar.style.background = entry.item.color;
-                    bar.title =
-                      (entry.item.name || 'Untitled') + ' (' + entry.item.startDate + ' to ' + entry.item.endDate + ')';
+                    bar.dataset.tipText =
+                      (entry.item.name || 'Untitled') +
+                      '  \u2022  ' +
+                      entry.item.startDate +
+                      ' \u2013 ' +
+                      entry.item.endDate;
 
                     // Determine if this is start/end/mid of a multi-week bar
                     const iStart = parseDate(entry.item.startDate);
@@ -10045,9 +10135,26 @@
                     }
 
                     bar.textContent = entry.item.name || 'Untitled';
+                    bar.setAttribute('tabindex', '0');
+                    bar.setAttribute('role', 'button');
+                    bar.setAttribute(
+                      'aria-label',
+                      (entry.item.name || 'Untitled') + ', ' + entry.item.startDate + ' to ' + entry.item.endDate,
+                    );
                     (function (item, barEl) {
+                      barEl.addEventListener('mouseenter', function () {
+                        showCalTooltip(barEl);
+                      });
+                      barEl.addEventListener('mouseleave', hideCalTooltip);
+                      barEl.addEventListener('keydown', function (e) {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          barEl.click();
+                        }
+                      });
                       barEl.addEventListener('click', function (e) {
                         e.stopPropagation();
+                        hideCalTooltip();
                         showMenu(
                           [
                             {
@@ -10186,19 +10293,30 @@
         function render() {
           if (dragState) return;
           dismissCalendarPopover();
+          hideCalTooltip();
           const app = document.getElementById('app');
           const slide = document.getElementById('slide');
           const dm = STATE.timeline.displayMode || 'timeline';
 
           if (dm === 'calendar') {
-            app.className = 'main';
-            app.innerHTML = '';
-            app.style.display = '';
-            app.appendChild(buildCalendarView());
+            // Break out of the slide container — render calendar directly in viewport
+            const viewport = document.querySelector('.slide-viewport');
+            if (slide) slide.style.display = 'none';
+            // Remove any previous calendar view from viewport
+            const prevCal = viewport.querySelector('.calendar-view');
+            if (prevCal) prevCal.remove();
+            viewport.classList.add('calendar-mode');
+            viewport.appendChild(buildCalendarView());
             updateDisplayModeUI();
-            updateSlideScale();
             return;
           }
+
+          // Ensure slide is visible when returning to timeline mode
+          const viewport = document.querySelector('.slide-viewport');
+          if (slide) slide.style.display = '';
+          viewport.classList.remove('calendar-mode');
+          const prevCal = viewport.querySelector('.calendar-view');
+          if (prevCal) prevCal.remove();
 
           const rowHeight = getRowHeight();
           if (slide) {
@@ -10395,6 +10513,34 @@
         }
 
         // ---- Calendar popover ----
+        // ---- Calendar tooltip ----
+        let calTooltipEl = null;
+        function showCalTooltip(anchorEl) {
+          hideCalTooltip();
+          const text = anchorEl.dataset.tipText;
+          if (!text) return;
+          const tip = document.createElement('div');
+          tip.className = 'cal-tooltip';
+          tip.textContent = text;
+          document.body.appendChild(tip);
+          const rect = anchorEl.getBoundingClientRect();
+          const tipRect = tip.getBoundingClientRect();
+          let top = rect.top - tipRect.height - 4;
+          if (top < 4) top = rect.bottom + 4;
+          let left = rect.left;
+          if (left + tipRect.width > window.innerWidth - 8) left = window.innerWidth - tipRect.width - 8;
+          if (left < 4) left = 4;
+          tip.style.top = top + 'px';
+          tip.style.left = left + 'px';
+          calTooltipEl = tip;
+        }
+        function hideCalTooltip() {
+          if (calTooltipEl) {
+            calTooltipEl.remove();
+            calTooltipEl = null;
+          }
+        }
+
         let activeCalendarPopover = null;
         function dismissCalendarPopover() {
           if (activeCalendarPopover) {
