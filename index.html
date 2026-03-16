@@ -9907,9 +9907,10 @@
 
           // Update nav label based on visible slide
           function updateNavLabel() {
-            const scrollLeft = slidesContainer.scrollLeft;
+            if (months.length === 0) return;
             const slideWidth = slidesContainer.clientWidth;
-            const idx = Math.round(scrollLeft / slideWidth);
+            if (slideWidth === 0) return;
+            const idx = Math.round(slidesContainer.scrollLeft / slideWidth);
             const clampedIdx = Math.max(0, Math.min(idx, months.length - 1));
             const m = months[clampedIdx];
             navLabel.textContent = MONTH_NAMES_FULL[m.getMonth()] + ' ' + m.getFullYear();
