@@ -7668,6 +7668,14 @@
         padding: 12px 20px 8px 20px;
         border-bottom: 1px solid var(--color-border);
         background: var(--elevation-surface);
+        flex-shrink: 0;
+      }
+
+      .calendar-title-row .slide-logo {
+        max-height: 40px;
+        width: auto;
+        height: auto;
+        flex-shrink: 1;
       }
 
       .calendar-title-row .timeline-title {
@@ -7772,11 +7780,11 @@
       .calendar-day {
         text-align: center;
         font-size: 12px;
-        padding: 4px 0 2px 0;
+        padding: 6px 0 4px 0;
         color: var(--color-text-subtle);
         position: relative;
-        min-height: 20px;
-        line-height: 20px;
+        min-height: 24px;
+        line-height: 24px;
       }
 
       .calendar-day.outside {
@@ -7808,17 +7816,22 @@
       }
 
       .calendar-item-bar {
-        height: 18px;
+        height: 20px;
         border-radius: 4px;
-        font-size: 10px;
-        line-height: 18px;
-        padding: 0 4px;
+        font-size: 11px;
+        line-height: 20px;
+        padding: 0 6px;
         color: #fff;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
-        cursor: default;
+        cursor: pointer;
         margin: 1px 1px;
+        transition: opacity 0.15s;
+      }
+
+      .calendar-item-bar:hover {
+        opacity: 0.85;
       }
 
       .calendar-item-bar.bar-start {
@@ -7838,7 +7851,65 @@
       }
 
       .calendar-item-bar-spacer {
-        height: 20px;
+        height: 22px;
+      }
+
+      .calendar-overflow-indicator {
+        font-size: 10px;
+        color: var(--color-text-subtle);
+        padding: 2px 4px 4px;
+        text-align: right;
+        cursor: pointer;
+        user-select: none;
+      }
+
+      .calendar-overflow-indicator:hover {
+        color: var(--color-text);
+        text-decoration: underline;
+      }
+
+      .calendar-popover {
+        position: fixed;
+        z-index: 1000;
+        background: var(--elevation-surface);
+        border: 1px solid var(--color-border);
+        border-radius: 8px;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+        padding: 12px;
+        min-width: 220px;
+        max-width: 320px;
+        max-height: 280px;
+        overflow-y: auto;
+      }
+
+      .calendar-popover-title {
+        font-size: 12px;
+        font-weight: var(--font-weight-semibold);
+        color: var(--color-text);
+        margin-bottom: 8px;
+      }
+
+      .calendar-popover-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 4px 0;
+        font-size: 12px;
+        color: var(--color-text);
+      }
+
+      .calendar-popover-swatch {
+        width: 10px;
+        height: 10px;
+        border-radius: 2px;
+        flex-shrink: 0;
+      }
+
+      .calendar-popover-dates {
+        font-size: 10px;
+        color: var(--color-text-subtle);
+        margin-left: auto;
+        white-space: nowrap;
       }
 
       .stepper-label-clickable {
@@ -9880,6 +9951,12 @@
                     }
 
                     bar.textContent = isStart ? entry.item.name || 'Untitled' : '';
+                    (function (item) {
+                      bar.addEventListener('click', function (e) {
+                        e.stopPropagation();
+                        showCalendarPopover([item], bar, item.name || 'Untitled');
+                      });
+                    })(entry.item);
                     barRow.appendChild(bar);
 
                     currentCol = entry.colEnd + 1;
@@ -9890,10 +9967,19 @@
 
                 // Show overflow indicator if more tracks than displayed
                 if (tracks.length > maxTracks) {
+                  const hiddenItems = [];
+                  for (let t = maxTracks; t < tracks.length; t++) {
+                    tracks[t].forEach(function (entry) {
+                      hiddenItems.push(entry.item);
+                    });
+                  }
                   const overflow = document.createElement('div');
-                  overflow.style.cssText =
-                    'font-size:9px;color:var(--color-text-subtle);padding:0 4px 2px;text-align:right;';
+                  overflow.className = 'calendar-overflow-indicator';
                   overflow.textContent = '+' + (tracks.length - maxTracks) + ' more';
+                  overflow.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                    showCalendarPopover(hiddenItems, overflow, 'Hidden items');
+                  });
                   weeksContainer.appendChild(overflow);
                 }
               }
@@ -9966,6 +10052,7 @@
         // ---- Render ----
         function render() {
           if (dragState) return;
+          dismissCalendarPopover();
           const app = document.getElementById('app');
           const slide = document.getElementById('slide');
           const dm = STATE.timeline.displayMode || 'timeline';
@@ -10172,6 +10259,56 @@
             activeMenu = null;
             setTimeout(() => el.remove(), 100);
           }
+        }
+
+        // ---- Calendar popover ----
+        let activeCalendarPopover = null;
+        function dismissCalendarPopover() {
+          if (activeCalendarPopover) {
+            activeCalendarPopover.remove();
+            activeCalendarPopover = null;
+          }
+        }
+        function showCalendarPopover(items, anchorEl, title) {
+          dismissCalendarPopover();
+          const pop = document.createElement('div');
+          pop.className = 'calendar-popover';
+          if (title) {
+            const h = document.createElement('div');
+            h.className = 'calendar-popover-title';
+            h.textContent = title;
+            pop.appendChild(h);
+          }
+          items.forEach(function (it) {
+            const row = document.createElement('div');
+            row.className = 'calendar-popover-item';
+            const swatch = document.createElement('div');
+            swatch.className = 'calendar-popover-swatch';
+            swatch.style.background = it.color;
+            row.appendChild(swatch);
+            const nameEl = document.createElement('span');
+            nameEl.textContent = it.name || 'Untitled';
+            row.appendChild(nameEl);
+            const dates = document.createElement('span');
+            dates.className = 'calendar-popover-dates';
+            dates.textContent = it.startDate + ' \u2013 ' + it.endDate;
+            row.appendChild(dates);
+            pop.appendChild(row);
+          });
+          document.body.appendChild(pop);
+          const rect = anchorEl.getBoundingClientRect();
+          let top = rect.bottom + 4;
+          let left = rect.left;
+          const popRect = pop.getBoundingClientRect();
+          if (top + popRect.height > window.innerHeight) top = rect.top - popRect.height - 4;
+          if (left + popRect.width > window.innerWidth) left = window.innerWidth - popRect.width - 8;
+          if (left < 4) left = 4;
+          pop.style.top = top + 'px';
+          pop.style.left = left + 'px';
+          activeCalendarPopover = pop;
+          setTimeout(function () {
+            document.addEventListener('click', dismissCalendarPopover, { once: true });
+          }, 0);
         }
 
         function showMenu(items, anchorEl) {
