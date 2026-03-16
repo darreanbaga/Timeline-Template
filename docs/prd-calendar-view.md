@@ -1,6 +1,6 @@
 # PRD: Calendar View Enhancements
 
-**Status:** Draft
+**Status:** Final
 **Date:** 2026-03-16
 **Author:** AI-assisted
 
@@ -42,6 +42,11 @@ The calendar view is **read-only** — users cannot create, edit, move, resize, 
 - Recurring event support
 - External calendar integration (iCal, Google Calendar)
 - Drag-and-drop between swimlanes (calendar has no swimlane axis)
+- Swimlane selection or assignment UI in calendar view (new items silently use the first swimlane)
+- Multi-month side-by-side layout (one month per slide, always)
+- Configurable week start day (Sunday is fixed)
+- Hourly granularity (daily only)
+- Click-to-open edit popovers (interactions use click-and-drag like the timeline view)
 
 ---
 
@@ -67,9 +72,8 @@ The calendar view is **read-only** — users cannot create, edit, move, resize, 
 | ED-1 | Click on an item bar to select it (visual highlight with outline or glow) | P0 |
 | ED-2 | Double-click on an item bar to inline-edit its name | P0 |
 | ED-3 | Right-click / long-press on an item bar to open a context menu | P0 |
-| ED-4 | Context menu options: Rename, Change Color, Change Swimlane, Delete | P0 |
+| ED-4 | Context menu options: Rename, Change Color, Delete | P0 |
 | ED-5 | Color picker submenu shows the 8 palette colors (same as timeline view) | P0 |
-| ED-6 | Swimlane picker submenu lists all existing swimlanes | P1 |
 
 ### 3.3 Item Moving (Drag & Drop)
 
@@ -102,12 +106,11 @@ The calendar view is **read-only** — users cannot create, edit, move, resize, 
 | ID | Requirement | Priority |
 |----|-------------|----------|
 | UX-1 | Hover state on item bars (subtle brightness/elevation change) | P0 |
-| UX-2 | Tooltip on hover showing: item name, date range, swimlane name, duration in days | P0 |
+| UX-2 | Tooltip on hover showing: item name, date range, duration in days | P0 |
 | UX-3 | "Today" button in nav row to quickly scroll to the current month | P1 |
 | UX-4 | Show all item tracks (remove the 4-track cap) with scrollable week rows if needed | P2 |
 | UX-5 | Click on "+N more" overflow indicator to expand and show all items for that week | P1 |
 | UX-6 | Keyboard navigation: arrow keys to move between months when calendar is focused | P2 |
-| UX-7 | Item bars show swimlane name as a subtle secondary label or color-coded left border | P2 |
 
 ### 3.7 Data Consistency
 
@@ -161,13 +164,11 @@ These constraints derive from the existing architecture (see `docs/architecture.
 - Cross-week and cross-month drag support
 - "Today" nav button
 - "+N more" expand behavior
-- Swimlane picker in context menu
 
 ### Phase 3: Polish (P2)
 - Drag ghost/preview visuals
 - Remove 4-track cap (scrollable week rows)
 - Keyboard navigation between months
-- Swimlane name labels on bars
 - PNG export verification and fixes
 
 ---
@@ -181,9 +182,9 @@ These constraints derive from the existing architecture (see `docs/architecture.
 
 ---
 
-## 7. Open Questions
+## 7. Resolved Decisions
 
-1. **Swimlane assignment for new items** — Should click-to-create always use the first swimlane, or should there be a way to pick which swimlane? A dropdown selector in the calendar nav row could work.
-2. **Multi-month view** — Should the calendar support showing 2-3 months side-by-side on wider screens instead of one-at-a-time scrolling?
-3. **Week start day** — Currently hardcoded to Sunday. Should this be configurable (Monday start is common in many regions)?
-4. **Item bar click behavior** — Should single-click open an edit popover (like Google Calendar) rather than just selecting? This would be richer but more complex.
+1. **Swimlane assignment** — Ignored in calendar view. New items silently use the first swimlane. No swimlane picker UI.
+2. **Multi-month view** — No. One month per slide, always.
+3. **Week start day** — No. Sunday is fixed (not configurable).
+4. **Interaction model** — Click-and-drag like the timeline view. No edit popovers or hourly granularity — daily only.
