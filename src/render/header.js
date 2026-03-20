@@ -1,20 +1,7 @@
-import { MONTH_NAMES_FULL, ZOOM_CONFIG } from '../constants.js';
-import {
-  columnWidthPct,
-  getMonths,
-  getDays,
-  getWeeks,
-  getFiscalInfo,
-  goldRamp,
-} from '../utils/date.js';
+import { MONTH_NAMES_FULL } from '../constants.js';
+import { columnWidthPct, getMonths, getDays, getWeeks, getFiscalInfo, goldRamp } from '../utils/date.js';
 import { getState } from '../state.js';
-import {
-  TITLE_ROW_H,
-  QUARTER_ROW_H,
-  MONTH_ROW_H,
-  WEEK_ROW_H,
-  getDisplayConfig,
-} from '../utils/layout.js';
+import { TITLE_ROW_H, QUARTER_ROW_H, MONTH_ROW_H, WEEK_ROW_H, getDisplayConfig } from '../utils/layout.js';
 import { showMenu } from '../interactions/menus.js';
 import { startRenameTitle } from '../interactions/inline-edit.js';
 import { LOGO_SRC } from './logo.js';
@@ -37,7 +24,7 @@ export function buildHeaderRow(items, ctx, height, styleFn, options = {}) {
 
 export function buildHeader(ctx) {
   const STATE = getState();
-  const { tlStart, tlEnd, totalDays, cols } = ctx;
+  const { tlStart, tlEnd, cols } = ctx;
   const cfg = getDisplayConfig();
   const header = document.createElement('div');
   header.className = 'timeline-header';
@@ -67,9 +54,7 @@ export function buildHeader(ctx) {
   // Quarter row
   if (cfg.showQuarterRow) {
     header.appendChild(
-      buildHeaderRow(cols, ctx, QUARTER_ROW_H, (col) =>
-        goldRamp((getFiscalInfo(col.start).fiscalQuarter + 1) / 4),
-      ),
+      buildHeaderRow(cols, ctx, QUARTER_ROW_H, (col) => goldRamp((getFiscalInfo(col.start).fiscalQuarter + 1) / 4)),
     );
   }
 

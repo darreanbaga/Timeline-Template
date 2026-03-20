@@ -36,7 +36,7 @@ export function getActiveRibbonDropdown() {
 
 export function buildZoomDropdown(container, setZoomLevel) {
   const STATE = getState();
-  container.innerHTML = '';  
+  container.innerHTML = '';
   const currentZoom = STATE.timeline.zoomLevel || 'month';
   [
     { label: 'Days', value: 'day' },
@@ -61,7 +61,7 @@ export function buildZoomDropdown(container, setZoomLevel) {
 
 export function buildLegendDropdown(container) {
   const STATE = getState();
-  container.innerHTML = '';  
+  container.innerHTML = '';
   const isHorizontal = STATE.timeline.legendOrientation === 'horizontal';
   const currentAlign = STATE.timeline.legendAlign || 'right';
 
@@ -112,7 +112,7 @@ export function buildLegendDropdown(container) {
 }
 
 export function buildFileDropdown(container, importCSV, exportPNG, exportCSV) {
-  container.innerHTML = '';  
+  container.innerHTML = '';
   const items = [
     {
       label: 'Import CSV...',

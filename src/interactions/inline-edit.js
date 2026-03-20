@@ -11,8 +11,7 @@ export function startInlineEdit(el, currentValue, onSave, options = {}) {
   let sizer = null;
   if (autoSize) {
     sizer = document.createElement('span');
-    sizer.style.cssText =
-      'position:absolute;visibility:hidden;white-space:pre;font:inherit;pointer-events:none;';
+    sizer.style.cssText = 'position:absolute;visibility:hidden;white-space:pre;font:inherit;pointer-events:none;';
     el.appendChild(sizer);
     const resizeInput = () => {
       sizer.textContent = input.value || input.placeholder || '';

@@ -1,13 +1,6 @@
 import { getState } from '../state.js';
 import { cssVar } from './dom.js';
-import {
-  DEFAULT_SIDEBAR_W,
-  SLIDE_W,
-  SLIDE_H,
-  LEGEND_RESERVE,
-  MIN_LANE_SCALE,
-  ZOOM_CONFIG,
-} from '../constants.js';
+import { DEFAULT_SIDEBAR_W, SLIDE_W, SLIDE_H, LEGEND_RESERVE, MIN_LANE_SCALE, ZOOM_CONFIG } from '../constants.js';
 import { getTrackCount } from './tracks.js';
 import { daysBetween, addDays } from './date.js';
 

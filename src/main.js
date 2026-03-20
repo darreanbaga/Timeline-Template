@@ -39,7 +39,6 @@ import { showMenu, dismissMenu, getActiveMenu } from './interactions/menus.js';
 import { showConfirm, showInfo } from './interactions/dialogs.js';
 import {
   toggleRibbonDropdown,
-  dismissRibbonDropdown,
   buildZoomDropdown,
   buildLegendDropdown,
   buildFileDropdown,
@@ -164,10 +163,7 @@ document.addEventListener('keydown', (e) => {
   }
 
   // Redo: Ctrl+Y or Cmd+Y or Ctrl+Shift+Z or Cmd+Shift+Z
-  if (
-    (e.ctrlKey || e.metaKey) &&
-    (e.key.toLowerCase() === 'y' || (e.key.toLowerCase() === 'z' && e.shiftKey))
-  ) {
+  if ((e.ctrlKey || e.metaKey) && (e.key.toLowerCase() === 'y' || (e.key.toLowerCase() === 'z' && e.shiftKey))) {
     e.preventDefault();
     redo();
     return;
@@ -183,11 +179,7 @@ document.addEventListener('keydown', (e) => {
 document.addEventListener('click', (e) => {
   const activeMenu = getActiveMenu();
   if (activeMenu && !e.target.closest('.ctx-menu')) dismissMenu();
-  if (
-    !e.target.closest('.item-bar') &&
-    !e.target.closest('.item-bar-label') &&
-    !e.target.closest('.ctx-menu')
-  ) {
+  if (!e.target.closest('.item-bar') && !e.target.closest('.item-bar-label') && !e.target.closest('.ctx-menu')) {
     if (getSelectedItemId()) {
       setSelectedItemId(null);
       render();
@@ -210,7 +202,7 @@ if (STATE.isExample) {
   const btn = document.createElement('button');
   btn.className = 'btn-primary';
   btn.textContent = 'Get Started';
-  btn.onclick = () => {
+  btn.addEventListener('click', () => {
     toast.classList.add('toast-exit');
     toast.addEventListener('animationend', () => toast.remove());
     resetToDefault();
@@ -219,7 +211,7 @@ if (STATE.isExample) {
     updateDisplayModeUI();
     updateLegendToggleUI();
     render();
-  };
+  });
   toast.appendChild(btn);
   const dismissBtn = document.createElement('button');
   dismissBtn.className = 'btn-dismiss';
@@ -246,11 +238,11 @@ if (!STATE.isExample && !localStorage.getItem('timeline_tip_dismissed')) {
   const gotIt = document.createElement('button');
   gotIt.className = 'btn-primary';
   gotIt.textContent = 'Got it';
-  gotIt.onclick = () => {
+  gotIt.addEventListener('click', () => {
     localStorage.setItem('timeline_tip_dismissed', '1');
     tip.classList.add('toast-exit');
     tip.addEventListener('animationend', () => tip.remove());
-  };
+  });
   tip.appendChild(gotIt);
   document.body.appendChild(tip);
 }

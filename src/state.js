@@ -349,10 +349,10 @@ export function updateUndoRedoUI() {
 }
 
 export function updateTimelineDates() {
-  const cfg = ZOOM_CONFIG[STATE.timeline.zoomLevel || 'month'];  
-  const start = parseDate(STATE.timeline.startDate);  
+  const cfg = ZOOM_CONFIG[STATE.timeline.zoomLevel || 'month'];
+  const start = parseDate(STATE.timeline.startDate);
   const end = addDays(start, cfg.defaultDays);
-  STATE.timeline.endDate = fmt(end);  
+  STATE.timeline.endDate = fmt(end);
 }
 
 export function setState(fn, skipHistory = false) {
@@ -370,9 +370,9 @@ export function loadState() {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
-      if (parsed && parsed.timeline) STATE = parsed;  
+      if (parsed && parsed.timeline) STATE = parsed;
     } else {
-      STATE = exampleState();  
+      STATE = exampleState();
     }
   } catch (e) {
     console.error('Load failed:', e);
@@ -394,33 +394,33 @@ export function loadState() {
     STATE.legendLabels = {}; // eslint-disable-line no-restricted-syntax
   }
   if (!STATE.timeline.sidebarWidth) {
-    STATE.timeline.sidebarWidth = DEFAULT_SIDEBAR_W;  
+    STATE.timeline.sidebarWidth = DEFAULT_SIDEBAR_W;
   }
   if (!STATE.timeline.legendOrientation) {
-    STATE.timeline.legendOrientation = 'vertical';  
+    STATE.timeline.legendOrientation = 'vertical';
   }
   if (!STATE.timeline.legendAlign) {
-    STATE.timeline.legendAlign = 'right';  
+    STATE.timeline.legendAlign = 'right';
   }
   if (!STATE.timeline.displayMode) {
-    STATE.timeline.displayMode = 'timeline';  
+    STATE.timeline.displayMode = 'timeline';
   }
   // Migrate old viewMode/monthCount/weekCount to new zoomLevel
   if (STATE.timeline.viewMode && typeof STATE.timeline.zoomLevel !== 'string') {
     if (STATE.timeline.viewMode === 'week') {
-      STATE.timeline.zoomLevel = 'week';  
+      STATE.timeline.zoomLevel = 'week';
     } else {
       const mc = STATE.timeline.monthCount || 12;
-      if (mc <= 2) STATE.timeline.zoomLevel = 'week';  
-      else if (mc <= 18) STATE.timeline.zoomLevel = 'month';  
-      else STATE.timeline.zoomLevel = 'quarter';  
+      if (mc <= 2) STATE.timeline.zoomLevel = 'week';
+      else if (mc <= 18) STATE.timeline.zoomLevel = 'month';
+      else STATE.timeline.zoomLevel = 'quarter';
     }
-    delete STATE.timeline.viewMode;  
-    delete STATE.timeline.monthCount;  
-    delete STATE.timeline.weekCount;  
+    delete STATE.timeline.viewMode;
+    delete STATE.timeline.monthCount;
+    delete STATE.timeline.weekCount;
   }
   if (!STATE.timeline.zoomLevel || !ZOOM_CONFIG[STATE.timeline.zoomLevel]) {
-    STATE.timeline.zoomLevel = 'month';  
+    STATE.timeline.zoomLevel = 'month';
   }
   // Update timeline dates based on zoomLevel
   updateTimelineDates();
@@ -435,7 +435,7 @@ export function loadState() {
 
 // Used by welcome toast "Get Started" button
 export function resetToDefault() {
-  STATE = defaultState();  
+  STATE = defaultState();
   selectedItemId = null;
   saveState();
   stateHistory = [JSON.parse(JSON.stringify(STATE))];

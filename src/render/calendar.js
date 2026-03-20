@@ -53,7 +53,7 @@ export function buildCalendarView() {
 
   const prevBtn = document.createElement('button');
   prevBtn.className = 'calendar-nav-btn';
-  prevBtn.innerHTML =  
+  prevBtn.innerHTML =
     '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>';
 
   const navLabel = document.createElement('div');
@@ -61,7 +61,7 @@ export function buildCalendarView() {
 
   const nextBtn = document.createElement('button');
   nextBtn.className = 'calendar-nav-btn';
-  nextBtn.innerHTML =  
+  nextBtn.innerHTML =
     '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>';
 
   navRow.appendChild(prevBtn);
@@ -275,8 +275,7 @@ export function buildCalendarView() {
               firstDayDate.getTime() === iStart.getTime() ||
               (iStart < new Date(year, month, 1) && weekDays[entry.colStart] === 1);
             const isEnd =
-              lastDayDate.getTime() === iEnd.getTime() ||
-              (iEnd > monthEnd && weekDays[entry.colEnd] === daysInMonth);
+              lastDayDate.getTime() === iEnd.getTime() || (iEnd > monthEnd && weekDays[entry.colEnd] === daysInMonth);
 
             if (isStart && isEnd) {
               bar.classList.add('bar-start', 'bar-end');

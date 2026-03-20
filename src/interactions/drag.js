@@ -1,4 +1,4 @@
-import { getState, setState, getSelectedItemId, setSelectedItemId, getRender } from '../state.js';
+import { getState, setState, setSelectedItemId } from '../state.js';
 import { PALETTE, AUTOFOCUS_DELAY_MS, DRAG_THRESHOLD, MIN_BAR_WIDTH } from '../constants.js';
 import { fmt, parseDate, daysBetween, addDays, snapToMonday, formatDateForTooltip } from '../utils/date.js';
 import { uid } from '../utils/dom.js';
@@ -6,7 +6,6 @@ import {
   getSlideScale,
   getLaneScale,
   getLaneHeights,
-  getItemBarHeight,
   dateToX,
   xToDate,
   ITEM_BAR_H,
@@ -66,11 +65,7 @@ export function handleCreateDrag(e, ds, scale) {
     ds.ghostEl.style.left = snappedLeft + 'px';
     ds.ghostEl.style.width = Math.abs(snappedRight - snappedLeft) + 'px';
   }
-  showDragTooltip(
-    `${formatDateForTooltip(snappedStart)} - ${formatDateForTooltip(snappedEnd)}`,
-    e.clientX,
-    e.clientY,
-  );
+  showDragTooltip(`${formatDateForTooltip(snappedStart)} - ${formatDateForTooltip(snappedEnd)}`, e.clientX, e.clientY);
 }
 
 export function handleMoveDrag(e, ds, scale) {
@@ -182,7 +177,8 @@ export function startMove(e, item, tlStart, totalDays, totalWidth) {
   bar.classList.add('dragging');
 }
 
-export function startResize(e, item, type, tlStart, totalDays, totalWidth) {
+export function startResize(e, item, type, tlCtx) {
+  const { tlStart, totalDays, totalWidth } = tlCtx;
   const bar = e.target.closest('.item-bar');
   const grid = document.getElementById('timeline-grid');
   const area = document.getElementById('timeline-area');

@@ -55,11 +55,11 @@ export function buildItemBar(item, ctx) {
 
   handleL.addEventListener('pointerdown', (e) => {
     e.stopPropagation();
-    startResize(e, item, 'resize-left', tlStart, totalDays, totalWidth);
+    startResize(e, item, 'resize-left', { tlStart, totalDays, totalWidth });
   });
   handleR.addEventListener('pointerdown', (e) => {
     e.stopPropagation();
-    startResize(e, item, 'resize-right', tlStart, totalDays, totalWidth);
+    startResize(e, item, 'resize-right', { tlStart, totalDays, totalWidth });
   });
 
   bar.addEventListener('pointerdown', (e) => {

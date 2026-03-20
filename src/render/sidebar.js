@@ -1,12 +1,10 @@
 import { getState, setState, saveState, pushHistory } from '../state.js';
-import { MAX_SWIMLANES, MAX_TOTAL_ROWS, DEFAULT_SIDEBAR_W, AUTOFOCUS_DELAY_MS } from '../constants.js';
+import { MAX_TOTAL_ROWS, DEFAULT_SIDEBAR_W } from '../constants.js';
 import { getSidebarWidth, getSlideScale } from '../utils/layout.js';
-import { showMenu, dismissMenu } from '../interactions/menus.js';
-import { startRenameLaneEl, startRenameLane } from '../interactions/inline-edit.js';
+import { showMenu } from '../interactions/menus.js';
+import { startRenameLane } from '../interactions/inline-edit.js';
 import { showConfirm } from '../interactions/dialogs.js';
 import { getTotalRows } from '../utils/tracks.js';
-import { addSwimlane } from '../controls.js';
-import { uid } from '../utils/dom.js';
 import { getRender } from '../state.js';
 
 export function buildSidebarRow(lane, height) {
@@ -62,8 +60,7 @@ export function buildSidebarRow(lane, height) {
     e.stopPropagation();
     const laneItems = STATE.items.filter((it) => it.swimlaneId === lane.id);
     const itemCount = laneItems.length;
-    const deleteMsg =
-      itemCount > 0 ? `Delete '${lane.name}' and ${itemCount} item(s)?` : `Delete '${lane.name}'?`;
+    const deleteMsg = itemCount > 0 ? `Delete '${lane.name}' and ${itemCount} item(s)?` : `Delete '${lane.name}'?`;
     const currentMinRows = (STATE.swimlanes.find((l) => l.id === lane.id) || {}).minRows || 1;
     const lastRowEmpty = !STATE.items.some((it) => it.swimlaneId === lane.id && it.track >= currentMinRows - 1);
     showMenu(
@@ -149,8 +146,8 @@ export function buildSidebar(laneHeights) {
     function onMove(me) {
       const dx = (me.clientX - startX) / scale;
       const newWidth = Math.max(DEFAULT_SIDEBAR_W, Math.min(400, startWidth + dx));
-      const STATE = getState();  
-      STATE.timeline.sidebarWidth = Math.round(newWidth);  
+      const STATE = getState();
+      STATE.timeline.sidebarWidth = Math.round(newWidth);
       if (slide) {
         slide.style.setProperty('--sidebar-width', Math.round(newWidth) + 'px');
       }

@@ -31,7 +31,7 @@ export function render() {
 
   if (dm === 'calendar') {
     app.className = 'main';
-    app.innerHTML = '';  
+    app.innerHTML = '';
     app.style.display = '';
     app.appendChild(buildCalendarView());
     updateDisplayModeUI();
@@ -49,7 +49,7 @@ export function render() {
 
   app.className = 'main';
   app.style.display = '';
-  app.innerHTML = '';  
+  app.innerHTML = '';
 
   const tlStart = parseDate(STATE.timeline.startDate);
   const tlEnd = parseDate(STATE.timeline.endDate);

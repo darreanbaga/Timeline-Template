@@ -39,8 +39,7 @@ export function showMenu(items, anchorEl) {
       return;
     }
     const btn = document.createElement('button');
-    btn.className =
-      'ctx-menu-item' + (item.danger ? ' ctx-danger' : '') + (item.disabled ? ' ctx-disabled' : '');
+    btn.className = 'ctx-menu-item' + (item.danger ? ' ctx-danger' : '') + (item.disabled ? ' ctx-disabled' : '');
     btn.textContent = item.label;
     if (item.disabled) btn.disabled = true;
     btn.addEventListener('click', () => {
