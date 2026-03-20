@@ -1,0 +1,3271 @@
+import html2canvas from 'html2canvas';
+import './styles/index.css';
+
+const PALETTE = Array.from({ length: 8 }, (_, i) => `var(--palette-${i})`);
+const STORAGE_KEY = 'timeline_tmpl_v1';
+const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const MONTH_NAMES_FULL = [
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December',
+];
+
+// Layout and behavior constants (avoid magic numbers scattered in code)
+const MS_PER_DAY = 86400000;
+const MIN_BAR_WIDTH = 12;
+const DRAG_THRESHOLD = 5;
+const LABEL_PAD_H = 12;
+const BASE_FONT = 17;
+const MIN_FONT = 10;
+const MIN_LANE_SCALE = MIN_FONT / BASE_FONT;
+const DEFAULT_SIDEBAR_W = 180;
+const AUTOFOCUS_DELAY_MS = 30;
+const SAVE_DEBOUNCE_MS = 500;
+const MAX_HISTORY = 50;
+const FY_START_MONTH = 10; // November (0-indexed), FY ends October 31
+
+// Zoom-level configuration map
+const ZOOM_CONFIG = {
+  day: {
+    defaultDays: 14,
+    shiftUnit: 'day',
+    shiftAmount: 1,
+    snapStart: (d) => d,
+    topGranularity: 'month',
+    showQuarterRow: false,
+    showSubMonthRow: true,
+    subMonthMode: 'day',
+    useFullMonthNames: true,
+    monthColorMode: 'gradient',
+    dateLabel: (d) => MONTH_NAMES[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear(),
+  },
+  week: {
+    defaultDays: 56,
+    shiftUnit: 'week',
+    shiftAmount: 7,
+    snapStart: (d) => snapToMonday(d),
+    topGranularity: 'month',
+    showQuarterRow: false,
+    showSubMonthRow: true,
+    subMonthMode: 'week',
+    useFullMonthNames: true,
+    monthColorMode: 'gradient',
+    dateLabel: (d) => MONTH_NAMES[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear(),
+  },
+  month: {
+    defaultDays: 365,
+    shiftUnit: 'month',
+    shiftAmount: 1,
+    snapStart: (d) => {
+      d.setDate(1);
+      return d;
+    },
+    topGranularity: 'quarter',
+    showQuarterRow: true,
+    showSubMonthRow: false,
+    subMonthMode: null,
+    useFullMonthNames: false,
+    monthColorMode: 'alternating',
+    dateLabel: (d) => MONTH_NAMES[d.getMonth()] + ' ' + d.getFullYear(),
+  },
+  quarter: {
+    defaultDays: 730,
+    shiftUnit: 'quarter',
+    shiftAmount: 3,
+    snapStart: (d) => {
+      const fi = getFiscalInfo(d);
+      const calMonth = (FY_START_MONTH + fi.fiscalQuarter * 3) % 12;
+      const yr = calMonth >= FY_START_MONTH ? fi.fyYear : fi.fyYear + 1;
+      return new Date(yr, calMonth, 1);
+    },
+    topGranularity: 'quarter',
+    showQuarterRow: true,
+    showSubMonthRow: false,
+    subMonthMode: null,
+    useFullMonthNames: false,
+    monthColorMode: 'alternating',
+    dateLabel: (d) => {
+      const fi = getFiscalInfo(d);
+      return 'Q' + (fi.fiscalQuarter + 1) + ' FY' + String(fi.fyYear + 1).slice(2);
+    },
+  },
+};
+
+// Interpolate from eq-gold-light (#fff8e6) to eq-gold (#ffcb31), t in [0,1]
+function goldRamp(t) {
+  const r = Math.round(255 + (255 - 255) * t);
+  const g = Math.round(248 + (203 - 248) * t);
+  const b = Math.round(230 + (49 - 230) * t);
+  return `rgb(${r},${g},${b})`;
+}
+
+// ---- State ----
+function defaultState() {
+  const today = new Date();
+  const { start, end } = fiscalQuarterRange(today);
+  return {
+    timeline: {
+      startDate: fmt(start),
+      endDate: fmt(end),
+      zoomLevel: 'month',
+      title: 'New Timeline',
+      displayMode: 'timeline',
+      sidebarWidth: DEFAULT_SIDEBAR_W,
+      legendOrientation: 'vertical',
+      legendAlign: 'right',
+    },
+    swimlanes: [],
+    items: [],
+    legendLabels: {},
+  };
+}
+
+function exampleState() {
+  const laneStrategy = uid(),
+    laneCreative = uid(),
+    laneExecution = uid(),
+    laneAnalytics = uid();
+  return {
+    isExample: true,
+    timeline: {
+      startDate: '2025-11-01',
+      endDate: '2026-11-01',
+      zoomLevel: 'month',
+      title: 'Q1 Product Launch Campaign',
+      displayMode: 'timeline',
+      sidebarWidth: DEFAULT_SIDEBAR_W,
+      legendOrientation: 'horizontal',
+      legendAlign: 'right',
+    },
+    swimlanes: [
+      { id: laneStrategy, name: 'Strategy', order: 0, minRows: 3 },
+      { id: laneCreative, name: 'Creative', order: 1, minRows: 3 },
+      { id: laneExecution, name: 'Execution', order: 2, minRows: 3 },
+      { id: laneAnalytics, name: 'Analytics', order: 3, minRows: 3 },
+    ],
+    items: [
+      // Strategy
+      {
+        id: uid(),
+        swimlaneId: laneStrategy,
+        name: 'Research',
+        startDate: '2025-10-06',
+        endDate: '2025-11-21',
+        color: PALETTE[0],
+        track: 0,
+      },
+      {
+        id: uid(),
+        swimlaneId: laneStrategy,
+        name: 'Segmentation',
+        startDate: '2025-11-03',
+        endDate: '2025-12-12',
+        color: PALETTE[0],
+        track: 1,
+      },
+      {
+        id: uid(),
+        swimlaneId: laneStrategy,
+        name: 'Brief',
+        startDate: '2025-12-01',
+        endDate: '2026-01-16',
+        color: PALETTE[0],
+        track: 0,
+      },
+      {
+        id: uid(),
+        swimlaneId: laneStrategy,
+        name: 'Channels',
+        startDate: '2025-12-15',
+        endDate: '2026-02-06',
+        color: PALETTE[0],
+        track: 2,
+      },
+      {
+        id: uid(),
+        swimlaneId: laneStrategy,
+        name: 'Budget',
+        startDate: '2026-01-12',
+        endDate: '2026-02-20',
+        color: PALETTE[0],
+        track: 1,
+      },
+
+      // Creative
+      {
+        id: uid(),
+        swimlaneId: laneCreative,
+        name: 'Brand Update',
+        startDate: '2025-11-17',
+        endDate: '2026-01-09',
+        color: PALETTE[1],
+        track: 0,
+      },
+      {
+        id: uid(),
+        swimlaneId: laneCreative,
+        name: 'Ad Copy',
+        startDate: '2026-01-05',
+        endDate: '2026-02-27',
+        color: PALETTE[1],
+        track: 0,
+      },
+      {
+        id: uid(),
+        swimlaneId: laneCreative,
+        name: 'Video',
+        startDate: '2026-01-19',
+        endDate: '2026-04-10',
+        color: PALETTE[2],
+        track: 1,
+      },
+      {
+        id: uid(),
+        swimlaneId: laneCreative,
+        name: 'Landing Pages',
+        startDate: '2026-02-16',
+        endDate: '2026-04-03',
+        color: PALETTE[1],
+        track: 0,
+      },
+      {
+        id: uid(),
+        swimlaneId: laneCreative,
+        name: 'Social Assets',
+        startDate: '2026-03-09',
+        endDate: '2026-05-01',
+        color: PALETTE[2],
+        track: 2,
+      },
+
+      // Execution
+      {
+        id: uid(),
+        swimlaneId: laneExecution,
+        name: 'Paid Media',
+        startDate: '2026-03-02',
+        endDate: '2026-04-17',
+        color: PALETTE[3],
+        track: 0,
+      },
+      {
+        id: uid(),
+        swimlaneId: laneExecution,
+        name: 'Email Nurture',
+        startDate: '2026-03-16',
+        endDate: '2026-05-08',
+        color: PALETTE[4],
+        track: 1,
+      },
+      {
+        id: uid(),
+        swimlaneId: laneExecution,
+        name: 'Influencers',
+        startDate: '2026-04-06',
+        endDate: '2026-06-05',
+        color: PALETTE[3],
+        track: 2,
+      },
+      {
+        id: uid(),
+        swimlaneId: laneExecution,
+        name: 'Launch Event',
+        startDate: '2026-04-20',
+        endDate: '2026-05-22',
+        color: PALETTE[4],
+        track: 0,
+      },
+      {
+        id: uid(),
+        swimlaneId: laneExecution,
+        name: 'Retargeting',
+        startDate: '2026-05-18',
+        endDate: '2026-07-31',
+        color: PALETTE[3],
+        track: 1,
+      },
+
+      // Analytics
+      {
+        id: uid(),
+        swimlaneId: laneAnalytics,
+        name: 'Attribution Setup',
+        startDate: '2026-02-02',
+        endDate: '2026-03-20',
+        color: PALETTE[5],
+        track: 0,
+      },
+      {
+        id: uid(),
+        swimlaneId: laneAnalytics,
+        name: 'A/B Testing',
+        startDate: '2026-03-16',
+        endDate: '2026-05-01',
+        color: PALETTE[5],
+        track: 1,
+      },
+      {
+        id: uid(),
+        swimlaneId: laneAnalytics,
+        name: 'Weekly Reports',
+        startDate: '2026-04-20',
+        endDate: '2026-07-31',
+        color: PALETTE[5],
+        track: 0,
+      },
+      {
+        id: uid(),
+        swimlaneId: laneAnalytics,
+        name: 'Optimization',
+        startDate: '2026-05-25',
+        endDate: '2026-07-10',
+        color: PALETTE[5],
+        track: 2,
+      },
+      {
+        id: uid(),
+        swimlaneId: laneAnalytics,
+        name: 'Post-Mortem',
+        startDate: '2026-07-27',
+        endDate: '2026-09-11',
+        color: PALETTE[5],
+        track: 0,
+      },
+    ],
+    legendLabels: {
+      [PALETTE[0]]: 'Strategy',
+      [PALETTE[1]]: 'Copy & Design',
+      [PALETTE[2]]: 'Production',
+      [PALETTE[3]]: 'Paid Media',
+      [PALETTE[4]]: 'Owned Channels',
+      [PALETTE[5]]: 'Analytics',
+    },
+  };
+}
+
+let STATE = defaultState();
+let stateHistory = [JSON.parse(JSON.stringify(STATE))];
+let historyIndex = 0;
+
+function pushHistory(newState) {
+  if (historyIndex < stateHistory.length - 1) {
+    stateHistory = stateHistory.slice(0, historyIndex + 1);
+  }
+  stateHistory.push(JSON.parse(JSON.stringify(newState)));
+  if (stateHistory.length > MAX_HISTORY) {
+    stateHistory.shift();
+  } else {
+    historyIndex++;
+  }
+  updateUndoRedoUI();
+}
+
+function undo() {
+  if (historyIndex > 0) {
+    historyIndex--;
+    STATE = JSON.parse(JSON.stringify(stateHistory[historyIndex]));
+    assignTracks();
+    saveState();
+    render();
+    updateUndoRedoUI();
+  }
+}
+
+function redo() {
+  if (historyIndex < stateHistory.length - 1) {
+    historyIndex++;
+    STATE = JSON.parse(JSON.stringify(stateHistory[historyIndex]));
+    assignTracks();
+    saveState();
+    render();
+    updateUndoRedoUI();
+  }
+}
+
+function updateUndoRedoUI() {
+  const btnUndo = document.getElementById('btn-undo');
+  const btnRedo = document.getElementById('btn-redo');
+  if (btnUndo) btnUndo.disabled = historyIndex <= 0;
+  if (btnRedo) btnRedo.disabled = historyIndex >= stateHistory.length - 1;
+}
+
+// Shared fiscal calendar calculation for a given date.
+// Returns fiscalMonth (0=Oct..11=Sep), fiscalQuarter (0-based), fyYear.
+function getFiscalInfo(date) {
+  const month = date.getMonth();
+  const year = date.getFullYear();
+  const fiscalMonth = (month - FY_START_MONTH + 12) % 12;
+  const fiscalQuarter = Math.floor(fiscalMonth / 3);
+  const fyYear = month >= FY_START_MONTH ? year : year - 1;
+  return { fiscalMonth, fiscalQuarter, fyYear };
+}
+
+// Returns the start of the current fiscal quarter and 4 quarters later.
+function fiscalQuarterRange(today) {
+  const { fiscalQuarter, fyYear } = getFiscalInfo(today);
+  const qCalMonth = (FY_START_MONTH + fiscalQuarter * 3) % 12;
+  const qYear = qCalMonth >= FY_START_MONTH ? fyYear : fyYear + 1;
+  const start = new Date(qYear, qCalMonth, 1);
+  const end = new Date(qYear + 1, qCalMonth, 1);
+  return { start, end };
+}
+
+function fmt(d) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+function parseDate(s) {
+  if (!s || typeof s !== 'string') return new Date();
+  const [y, m, d] = s.split('-').map(Number);
+  if (isNaN(y) || isNaN(m) || isNaN(d)) return new Date();
+  return new Date(y, m - 1, d);
+}
+
+function uid() {
+  if (crypto.randomUUID) return crypto.randomUUID();
+  return Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
+}
+
+// ---- Persistence ----
+let saveTimer = null;
+
+function saveState() {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(STATE));
+    } catch (e) {
+      console.error('Save failed:', e);
+      showInfo('Could not save. Storage may be full.');
+    }
+  }, SAVE_DEBOUNCE_MS);
+}
+
+const COLOR_MIGRATION = {
+  '#4f6df5': '#5b8dbf',
+  '#e5484d': '#d4736c',
+  '#30a46c': '#5ea87a',
+  '#e38627': '#d4964a',
+  '#8b5cf6': '#9179c2',
+  '#0ea5e9': '#5ea5b8',
+  '#ec4899': '#c97ba0',
+  '#6d6e75': '#8a8580',
+};
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && parsed.timeline) STATE = parsed;
+    } else {
+      STATE = exampleState();
+    }
+  } catch (e) {
+    console.error('Load failed:', e);
+  }
+  // Migrate old palette colors and add track property
+  if (STATE.items) {
+    STATE.items.forEach((item) => {
+      const mapped = COLOR_MIGRATION[item.color];
+      if (mapped) item.color = mapped;
+      if (item.track === undefined) item.track = 0;
+    });
+  }
+  if (STATE.swimlanes) {
+    STATE.swimlanes.forEach((lane) => {
+      if (lane.minRows === undefined) lane.minRows = 1;
+    });
+  }
+  if (!STATE.legendLabels) {
+    STATE.legendLabels = {};
+  }
+  if (!STATE.timeline.sidebarWidth) {
+    STATE.timeline.sidebarWidth = DEFAULT_SIDEBAR_W;
+  }
+  if (!STATE.timeline.legendOrientation) {
+    STATE.timeline.legendOrientation = 'vertical';
+  }
+  if (!STATE.timeline.legendAlign) {
+    STATE.timeline.legendAlign = 'right';
+  }
+  if (!STATE.timeline.displayMode) {
+    STATE.timeline.displayMode = 'timeline';
+  }
+  // Migrate old viewMode/monthCount/weekCount to new zoomLevel
+  if (STATE.timeline.viewMode && typeof STATE.timeline.zoomLevel !== 'string') {
+    if (STATE.timeline.viewMode === 'week') {
+      STATE.timeline.zoomLevel = 'week';
+    } else {
+      const mc = STATE.timeline.monthCount || 12;
+      if (mc <= 2) STATE.timeline.zoomLevel = 'week';
+      else if (mc <= 18) STATE.timeline.zoomLevel = 'month';
+      else STATE.timeline.zoomLevel = 'quarter';
+    }
+    delete STATE.timeline.viewMode;
+    delete STATE.timeline.monthCount;
+    delete STATE.timeline.weekCount;
+  }
+  if (!STATE.timeline.zoomLevel || !ZOOM_CONFIG[STATE.timeline.zoomLevel]) {
+    STATE.timeline.zoomLevel = 'month';
+  }
+  // Update timeline dates based on zoomLevel
+  updateTimelineDates();
+  // Assign tracks after loading
+  assignTracks();
+
+  // Reset history to the loaded state
+  stateHistory = [JSON.parse(JSON.stringify(STATE))];
+  historyIndex = 0;
+  updateUndoRedoUI();
+}
+
+function updateTimelineDates() {
+  const cfg = ZOOM_CONFIG[STATE.timeline.zoomLevel || 'month'];
+  const start = parseDate(STATE.timeline.startDate);
+  const end = addDays(start, cfg.defaultDays);
+  STATE.timeline.endDate = fmt(end);
+}
+
+function setState(fn, skipHistory = false) {
+  fn(STATE);
+  assignTracks();
+  saveState();
+  if (!skipHistory) {
+    pushHistory(STATE);
+  }
+  render();
+}
+
+// ---- Track assignment ----
+function assignTracks() {
+  // Preserve user-set track positions. Only push items DOWN when there is
+  // an actual collision on their current track — never pack items upward.
+  STATE.swimlanes.forEach((lane) => {
+    const laneItems = STATE.items.filter((it) => it.swimlaneId === lane.id);
+    if (laneItems.length === 0) return;
+
+    // Sort by intended track first, then by start date within each track.
+    // This ensures earlier-placed items on a track claim it before later ones.
+    laneItems.sort((a, b) => {
+      if (a.track !== b.track) return a.track - b.track;
+      return parseDate(a.startDate).getTime() - parseDate(b.startDate).getTime();
+    });
+
+    // trackEnds[t] = latest end date of items already placed on track t
+    const trackEnds = {};
+
+    laneItems.forEach((item) => {
+      const itemStart = parseDate(item.startDate);
+      const itemEnd = parseDate(item.endDate);
+      let t = item.track;
+
+      // Push down only if there is a real collision on track t
+      while (trackEnds[t] && itemStart < trackEnds[t]) {
+        t++;
+      }
+
+      item.track = t;
+      if (!trackEnds[t] || itemEnd > trackEnds[t]) {
+        trackEnds[t] = itemEnd;
+      }
+    });
+  });
+}
+
+// ---- Date axis helpers ----
+function daysBetween(a, b) {
+  const utcA = Date.UTC(a.getFullYear(), a.getMonth(), a.getDate());
+  const utcB = Date.UTC(b.getFullYear(), b.getMonth(), b.getDate());
+  return Math.round((utcB - utcA) / MS_PER_DAY);
+}
+
+function addDays(d, n) {
+  const r = new Date(d);
+  r.setDate(r.getDate() + n);
+  return r;
+}
+
+function snapToMonday(date) {
+  const d = new Date(date);
+  const day = d.getDay();
+  const diff = day === 0 ? -6 : 1 - day; // Sunday = 0, Monday = 1
+  d.setDate(d.getDate() + diff);
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+function columnWidthPct(col, tlStart, totalDays) {
+  const days = daysBetween(tlStart, col.end) - daysBetween(tlStart, col.start);
+  return (days / totalDays) * 100;
+}
+
+function formatDateForTooltip(date) {
+  return `${MONTH_NAMES[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`;
+}
+
+function getQuarters(start, end) {
+  const quarters = [];
+  let cur = new Date(start);
+  while (cur < end) {
+    const fi = getFiscalInfo(cur);
+    const nextQIdx = fi.fiscalQuarter + 1;
+    const nextCalMonth = (FY_START_MONTH + nextQIdx * 3) % 12;
+    const nextFyYear = nextQIdx >= 4 ? fi.fyYear + 1 : fi.fyYear;
+    const nextYear = nextCalMonth < FY_START_MONTH ? nextFyYear + 1 : nextFyYear;
+    const next = new Date(nextYear, nextCalMonth, 1);
+    quarters.push({
+      start: new Date(cur),
+      end: next > end ? new Date(end) : next,
+      label: `Q${fi.fiscalQuarter + 1} FY${String(fi.fyYear + 1).slice(2)}`,
+    });
+    cur = next;
+  }
+  return quarters;
+}
+
+function getColumns(start, end, granularity) {
+  const generators = { day: getDays, week: getWeeks, month: getMonths, quarter: getQuarters };
+  return generators[granularity](start, end);
+}
+
+function getMonths(start, end) {
+  const months = [];
+  let cur = new Date(start.getFullYear(), start.getMonth(), 1);
+  while (cur < end) {
+    const next = new Date(cur.getFullYear(), cur.getMonth() + 1, 1);
+    months.push({
+      start: new Date(cur),
+      end: next > end ? new Date(end) : next,
+      label: MONTH_NAMES[cur.getMonth()],
+    });
+    cur = next;
+  }
+  return months;
+}
+
+function getWeeks(start, end) {
+  const weeks = [];
+  let cur = new Date(start);
+  cur = snapToMonday(cur);
+
+  let weekNum = 1;
+  while (cur < end) {
+    const next = addDays(cur, 7);
+    weeks.push({
+      start: new Date(cur),
+      end: next > end ? new Date(end) : next,
+      label: `W${weekNum}`,
+    });
+    cur = next;
+    weekNum++;
+  }
+  return weeks;
+}
+
+function getDays(start, end) {
+  const days = [];
+  let cur = new Date(start);
+  while (cur < end) {
+    const next = addDays(cur, 1);
+    days.push({
+      start: new Date(cur),
+      end: next > end ? new Date(end) : next,
+      label: String(cur.getDate()),
+    });
+    cur = next;
+  }
+  return days;
+}
+
+const SLIDE_W = 1920,
+  SLIDE_H = 1080;
+
+// Read layout constants from CSS custom properties (single source of truth)
+function cssVar(name) {
+  return parseInt(getComputedStyle(document.documentElement).getPropertyValue(name), 10);
+}
+const SLIDE_PAD = cssVar('--slide-pad');
+const CONTENT_W = SLIDE_W - SLIDE_PAD * 2;
+const CONTENT_H = SLIDE_H - SLIDE_PAD * 2;
+const TITLE_ROW_H = cssVar('--title-row-height');
+const QUARTER_ROW_H = cssVar('--quarter-row-height');
+const MONTH_ROW_H = cssVar('--month-row-height');
+const WEEK_ROW_H = cssVar('--week-row-height');
+const ITEM_BAR_H = cssVar('--item-bar-height');
+const TRACK_GAP = cssVar('--track-gap');
+const LANE_PADDING = cssVar('--lane-padding');
+
+function getSidebarWidth() {
+  return STATE.timeline.sidebarWidth || DEFAULT_SIDEBAR_W;
+}
+
+function getTimelineWidth() {
+  return CONTENT_W - getSidebarWidth();
+}
+
+function getDisplayConfig() {
+  return ZOOM_CONFIG[STATE.timeline.zoomLevel || 'month'];
+}
+
+function getHeaderHeight() {
+  const cfg = getDisplayConfig();
+  let h = TITLE_ROW_H + MONTH_ROW_H;
+  if (cfg.showQuarterRow) h += QUARTER_ROW_H;
+  if (cfg.showSubMonthRow) h += WEEK_ROW_H;
+  return h;
+}
+
+const LEGEND_RESERVE = 80; // space reserved at bottom of grid for legend overlay
+function getGridHeight() {
+  return CONTENT_H - getHeaderHeight() - LEGEND_RESERVE;
+}
+
+function getTrackCount(laneId) {
+  const lane = STATE.swimlanes.find((l) => l.id === laneId);
+  const minRows = lane && lane.minRows ? lane.minRows : 1;
+  const laneItems = STATE.items.filter((it) => it.swimlaneId === laneId);
+  if (laneItems.length === 0) return minRows;
+  const itemMax = Math.max(...laneItems.map((it) => it.track)) + 1;
+  return Math.max(itemMax, minRows);
+}
+
+function getTotalRows() {
+  return STATE.swimlanes.reduce((sum, lane) => sum + getTrackCount(lane.id), 0);
+}
+
+function getLaneHeight(laneId) {
+  const trackCount = getTrackCount(laneId);
+  return trackCount * ITEM_BAR_H + (trackCount - 1) * TRACK_GAP + LANE_PADDING * 2;
+}
+
+function getLaneScale() {
+  const raw = STATE.swimlanes.map((lane) => getLaneHeight(lane.id));
+  const total = raw.reduce((sum, h) => sum + h, 0);
+  if (total <= getGridHeight()) return 1;
+  return Math.max(getGridHeight() / total, MIN_LANE_SCALE);
+}
+
+function getLaneHeights() {
+  const raw = STATE.swimlanes.map((lane) => getLaneHeight(lane.id));
+  const scale = getLaneScale();
+  if (scale >= 1) return raw;
+  return raw.map((h) => Math.floor(h * scale));
+}
+
+function getTotalGridHeight() {
+  const heights = getLaneHeights();
+  return heights.reduce((sum, h) => sum + h, 0);
+}
+
+function getRowHeight() {
+  return getGridHeight() / Math.max(STATE.swimlanes.length, 1);
+}
+
+function getColWidth(cols) {
+  return getTimelineWidth() / Math.max(cols.length, 1);
+}
+
+// Measure rendered width of a label string using canvas (matches label CSS font)
+let _measureCanvas = null;
+function measureLabelText(text, fontPx) {
+  if (!_measureCanvas) {
+    _measureCanvas = document.createElement('canvas');
+  }
+  const ctx = _measureCanvas.getContext('2d');
+  ctx.font = `500 ${fontPx || BASE_FONT}px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`;
+  return ctx.measureText(text).width;
+}
+
+function getItemBarHeight() {
+  return Math.round(ITEM_BAR_H * getLaneScale());
+}
+
+const MAX_SWIMLANES = 8;
+const MAX_TOTAL_ROWS = 20;
+
+function getSlideScale() {
+  const slide = document.getElementById('slide');
+  if (!slide) return 1;
+  const rect = slide.getBoundingClientRect();
+  return Math.max(rect.width / SLIDE_W, 0.01);
+}
+
+function updateSlideScale() {
+  const slide = document.getElementById('slide');
+  const viewport = document.querySelector('.slide-viewport');
+  if (!slide || !viewport) return;
+
+  // Account for viewport padding (40px on each side = 80px total)
+  const padding = 80;
+  const availW = viewport.clientWidth - padding;
+  const availH = viewport.clientHeight - padding;
+
+  // Calculate scale to fit while maintaining aspect ratio
+  const scaleX = availW / SLIDE_W;
+  const scaleY = availH / SLIDE_H;
+  const scale = Math.min(scaleX, scaleY, 1);
+
+  slide.style.transform = `scale(${scale})`;
+}
+
+// Position helpers
+function dateToX(date, tlStart, totalDays, totalWidth) {
+  const d = daysBetween(tlStart, date);
+  return (d / totalDays) * totalWidth;
+}
+
+function xToDate(x, tlStart, totalDays, totalWidth) {
+  if (totalWidth === 0) return new Date(tlStart);
+  const frac = x / totalWidth;
+  const days = Math.round(frac * totalDays);
+  return addDays(tlStart, days);
+}
+
+// ---- Selection state ----
+let selectedItemId = null;
+
+// ---- Drag state ----
+let dragState = null;
+// types: 'create', 'move', 'resize-left', 'resize-right', 'reorder-lane'
+let dragTooltip = null; // DOM element for showing date during drag
+
+function showDragTooltip(text, x, y) {
+  if (!dragTooltip) {
+    dragTooltip = document.createElement('div');
+    dragTooltip.className = 'drag-tooltip';
+    document.body.appendChild(dragTooltip);
+  }
+  dragTooltip.textContent = text;
+  dragTooltip.style.left = x + 15 + 'px';
+  dragTooltip.style.top = y - 30 + 'px';
+  dragTooltip.style.display = 'block';
+}
+
+function hideDragTooltip() {
+  if (dragTooltip) {
+    dragTooltip.remove();
+    dragTooltip = null;
+  }
+}
+
+// ---- Render helpers ----
+
+function buildSidebarRow(lane, height) {
+  const row = document.createElement('div');
+  row.className = 'sidebar-row';
+  row.dataset.laneId = lane.id;
+  row.draggable = true;
+  row.style.height = height + 'px';
+
+  row.addEventListener('dragstart', (e) => {
+    e.dataTransfer.setData('text/plain', lane.id);
+    e.dataTransfer.effectAllowed = 'move';
+    row.style.opacity = '0.5';
+  });
+  row.addEventListener('dragend', () => {
+    row.style.opacity = '';
+  });
+  row.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    const rect = row.getBoundingClientRect();
+    const mid = rect.top + rect.height / 2;
+    row.classList.remove('drag-over-above', 'drag-over-below');
+    if (e.clientY < mid) row.classList.add('drag-over-above');
+    else row.classList.add('drag-over-below');
+  });
+  row.addEventListener('dragleave', () => {
+    row.classList.remove('drag-over-above', 'drag-over-below');
+  });
+  row.addEventListener('drop', (e) => {
+    e.preventDefault();
+    row.classList.remove('drag-over-above', 'drag-over-below');
+    const dragId = e.dataTransfer.getData('text/plain');
+    if (dragId === lane.id) return;
+    const rect = row.getBoundingClientRect();
+    const mid = rect.top + rect.height / 2;
+    const above = e.clientY < mid;
+    setState((s) => {
+      const fromIdx = s.swimlanes.findIndex((l) => l.id === dragId);
+      if (fromIdx === -1) return;
+      const [moved] = s.swimlanes.splice(fromIdx, 1);
+      let toIdx = s.swimlanes.findIndex((l) => l.id === lane.id);
+      if (!above) toIdx++;
+      s.swimlanes.splice(toIdx, 0, moved);
+    });
+  });
+
+  const nameEl = document.createElement('div');
+  nameEl.className = 'lane-name';
+  nameEl.textContent = lane.name;
+  nameEl.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const laneItems = STATE.items.filter((it) => it.swimlaneId === lane.id);
+    const itemCount = laneItems.length;
+    const deleteMsg =
+      itemCount > 0 ? `Delete '${lane.name}' and ${itemCount} item(s)?` : `Delete '${lane.name}'?`;
+    const currentMinRows = (STATE.swimlanes.find((l) => l.id === lane.id) || {}).minRows || 1;
+    const lastRowEmpty = !STATE.items.some((it) => it.swimlaneId === lane.id && it.track >= currentMinRows - 1);
+    showMenu(
+      [
+        { label: 'Rename', onClick: () => startRenameLane(lane.id) },
+        { separator: true },
+        {
+          label: '+ Add row',
+          disabled: getTotalRows() >= MAX_TOTAL_ROWS,
+          onClick: () => {
+            if (getTotalRows() >= MAX_TOTAL_ROWS) return;
+            setState((s) => {
+              const l = s.swimlanes.find((l) => l.id === lane.id);
+              if (l) l.minRows = (l.minRows || 1) + 1;
+            });
+          },
+        },
+        {
+          label: '- Remove row',
+          disabled: !lastRowEmpty || currentMinRows <= 1,
+          onClick: () => {
+            if (!lastRowEmpty || currentMinRows <= 1) return;
+            setState((s) => {
+              const l = s.swimlanes.find((l) => l.id === lane.id);
+              if (l) l.minRows = Math.max(1, (l.minRows || 1) - 1);
+            });
+          },
+        },
+        { separator: true },
+        {
+          label: 'Delete',
+          danger: true,
+          onClick: () => {
+            const doDelete = () =>
+              setState((s) => {
+                s.swimlanes = s.swimlanes.filter((l) => l.id !== lane.id);
+                s.items = s.items.filter((it) => it.swimlaneId !== lane.id);
+              });
+            if (itemCount > 0) {
+              showConfirm(deleteMsg, doDelete);
+            } else {
+              doDelete();
+            }
+          },
+        },
+      ],
+      nameEl,
+    );
+  });
+
+  row.appendChild(nameEl);
+  return row;
+}
+
+function buildSidebar(laneHeights) {
+  const sidebar = document.createElement('div');
+  sidebar.className = 'sidebar';
+
+  const sideHeader = document.createElement('div');
+  sideHeader.className = 'sidebar-header';
+  sidebar.appendChild(sideHeader);
+
+  const sideRows = document.createElement('div');
+  sideRows.className = 'sidebar-rows';
+  STATE.swimlanes.forEach((lane, idx) => {
+    sideRows.appendChild(buildSidebarRow(lane, laneHeights[idx]));
+  });
+  sidebar.appendChild(sideRows);
+
+  // Resize handle
+  const resizeHandle = document.createElement('div');
+  resizeHandle.className = 'sidebar-resize-handle';
+  resizeHandle.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    resizeHandle.classList.add('active');
+    const slide = document.getElementById('slide');
+    const scale = getSlideScale();
+    const startX = e.clientX;
+    const startWidth = getSidebarWidth();
+
+    function onMove(me) {
+      const dx = (me.clientX - startX) / scale;
+      const newWidth = Math.max(DEFAULT_SIDEBAR_W, Math.min(400, startWidth + dx));
+      STATE.timeline.sidebarWidth = Math.round(newWidth);
+      if (slide) {
+        slide.style.setProperty('--sidebar-width', Math.round(newWidth) + 'px');
+      }
+    }
+
+    function onUp() {
+      resizeHandle.classList.remove('active');
+      document.removeEventListener('pointermove', onMove);
+      document.removeEventListener('pointerup', onUp);
+      saveState();
+      pushHistory(STATE);
+      render();
+    }
+
+    document.addEventListener('pointermove', onMove);
+    document.addEventListener('pointerup', onUp);
+  });
+  sidebar.appendChild(resizeHandle);
+
+  return sidebar;
+}
+
+function buildItemBar(item, ctx) {
+  const { tlStart, totalDays, totalWidth, scale } = ctx;
+  const s = scale || 1;
+  const barH = Math.round(ITEM_BAR_H * s);
+  const gap = Math.round(TRACK_GAP * s);
+  const padY = Math.round(LANE_PADDING * s);
+  const itemStart = parseDate(item.startDate);
+  const itemEnd = parseDate(item.endDate);
+  const x1 = dateToX(itemStart, tlStart, totalDays, totalWidth);
+  const x2 = dateToX(itemEnd, tlStart, totalDays, totalWidth);
+  const w = Math.max(x2 - x1, MIN_BAR_WIDTH);
+  const trackY = padY + item.track * (barH + gap);
+
+  // Wrapper to hold bar + floating label
+  const wrapper = document.createElement('div');
+  wrapper.style.cssText = 'position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;';
+
+  const bar = document.createElement('div');
+  bar.className = 'item-bar' + (selectedItemId === item.id ? ' selected' : '');
+  const fontSize = Math.round(BASE_FONT * s);
+  bar.style.left = x1 + 'px';
+  bar.style.width = w + 'px';
+  bar.style.top = trackY + 'px';
+  bar.style.height = barH + 'px';
+  bar.style.fontSize = fontSize + 'px';
+  bar.style.background = item.color;
+  bar.style.setProperty('--bar-color', item.color);
+  bar.dataset.itemId = item.id;
+  bar.dataset.track = item.track;
+
+  // Hidden text for bar sizing (no visible text in bar itself)
+  const textSpan = document.createElement('span');
+  textSpan.className = 'item-bar-text';
+  textSpan.style.visibility = 'hidden';
+  textSpan.textContent = item.name || 'Untitled';
+  bar.appendChild(textSpan);
+
+  const handleL = document.createElement('div');
+  handleL.className = 'resize-handle left';
+  const handleR = document.createElement('div');
+  handleR.className = 'resize-handle right';
+  bar.appendChild(handleL);
+  bar.appendChild(handleR);
+
+  handleL.addEventListener('pointerdown', (e) => {
+    e.stopPropagation();
+    startResize(e, item, 'resize-left', tlStart, totalDays, totalWidth);
+  });
+  handleR.addEventListener('pointerdown', (e) => {
+    e.stopPropagation();
+    startResize(e, item, 'resize-right', tlStart, totalDays, totalWidth);
+  });
+
+  bar.addEventListener('pointerdown', (e) => {
+    if (e.target.classList.contains('resize-handle')) return;
+    if (e.target.tagName === 'INPUT') return;
+    e.stopPropagation();
+
+    const startX = e.clientX;
+    const startY = e.clientY;
+    let moved = false;
+
+    function onMove(me) {
+      const dx = me.clientX - startX;
+      const dy = me.clientY - startY;
+      if (!moved && Math.abs(dx) + Math.abs(dy) > DRAG_THRESHOLD) {
+        moved = true;
+        document.removeEventListener('pointermove', onMove);
+        document.removeEventListener('pointerup', onUp);
+        startMove(e, item, tlStart, totalDays, totalWidth);
+      }
+    }
+
+    function onUp() {
+      document.removeEventListener('pointermove', onMove);
+      document.removeEventListener('pointerup', onUp);
+    }
+
+    document.addEventListener('pointermove', onMove);
+    document.addEventListener('pointerup', onUp);
+  });
+  bar.addEventListener('click', (e) => {
+    if (dragState && dragState.moved) return;
+    if (e.target.tagName === 'INPUT') return;
+    e.stopPropagation();
+    selectedItemId = item.id;
+    render();
+    requestAnimationFrame(() => {
+      const newBar = document.querySelector(`.item-bar[data-item-id="${item.id}"]`);
+      if (!newBar) return;
+      showMenu(
+        [
+          {
+            colors: PALETTE,
+            selectedColor: item.color,
+            onColorClick: (color) => {
+              setState((s) => {
+                const it = s.items.find((i) => i.id === item.id);
+                if (it) it.color = color;
+              });
+            },
+          },
+          { label: 'Delete', danger: true, onClick: () => deleteItem(item.id) },
+        ],
+        newBar,
+      );
+    });
+  });
+
+  wrapper.appendChild(bar);
+
+  // Auto-positioned label — inside bar if text fits, outside (no bg) if not
+  const labelText = item.name || 'Untitled';
+  const labelPadH = LABEL_PAD_H;
+  const textPx = measureLabelText(labelText, fontSize);
+  const labelW = textPx + labelPadH;
+  const labelInset = 16;
+  const fitsInBar = labelW <= w - labelInset * 2;
+
+  const label = document.createElement('div');
+  label.className = 'item-bar-label';
+  label.dataset.itemId = item.id;
+  label.textContent = labelText;
+  label.style.fontSize = fontSize + 'px';
+  const labelH = Math.round(22 * s);
+  label.style.top = trackY + (barH - labelH) / 2 + 'px';
+
+  if (fitsInBar) {
+    label.style.left = x1 + labelInset + 'px';
+  } else {
+    label.classList.add('label-overflow');
+    // Prefer right of bar; fall back to left if it would overflow the timeline
+    const labelGap = labelInset; // match internal inset (padding + resize handle)
+    const rightPos = x2 + labelGap;
+    if (rightPos + labelW <= totalWidth) {
+      label.style.left = rightPos + 'px';
+    } else {
+      label.style.left = Math.max(0, x1 - labelGap - labelW) + 'px';
+    }
+  }
+
+  label.addEventListener('click', (e) => {
+    if (e.target.tagName === 'INPUT') return;
+    e.stopPropagation();
+    selectedItemId = item.id;
+    render();
+    const lbl = document.querySelector(`.item-bar-label[data-item-id="${item.id}"]`);
+    if (lbl) startRenameItem(item.id, lbl);
+  });
+
+  label.addEventListener('mouseenter', () => {
+    bar.classList.add('label-hovered');
+  });
+  label.addEventListener('mouseleave', () => {
+    bar.classList.remove('label-hovered');
+  });
+
+  wrapper.appendChild(label);
+  return wrapper;
+}
+
+function buildHeaderRow(items, ctx, height, styleFn, options = {}) {
+  const { tlStart, totalDays } = ctx;
+  const row = document.createElement('div');
+  row.className = 'timeline-header-row' + (options.className ? ' ' + options.className : '');
+  row.style.height = height + 'px';
+  items.forEach((item, i) => {
+    const hd = document.createElement('div');
+    hd.className = 'timeline-col-header';
+    hd.style.width = columnWidthPct(item, tlStart, totalDays) + '%';
+    hd.style.background = styleFn(item, i, items.length);
+    hd.textContent = options.labelFn ? options.labelFn(item, i) : item.label;
+    row.appendChild(hd);
+  });
+  return row;
+}
+
+function buildHeader(ctx) {
+  const { tlStart, tlEnd, totalDays, cols } = ctx;
+  const cfg = getDisplayConfig();
+  const header = document.createElement('div');
+  header.className = 'timeline-header';
+  const months = getMonths(tlStart, tlEnd);
+
+  // Title row
+  const titleRow = document.createElement('div');
+  titleRow.className = 'timeline-header-row timeline-title-row';
+  titleRow.style.height = TITLE_ROW_H + 'px';
+  const titleEl = document.createElement('div');
+  titleEl.className = 'timeline-title';
+  titleEl.textContent = STATE.timeline.title || 'New Timeline';
+  titleEl.addEventListener('click', (e) => {
+    e.stopPropagation();
+    showMenu([{ label: 'Rename', onClick: () => startRenameTitle() }], titleEl);
+  });
+  titleRow.appendChild(titleEl);
+
+  const logo = document.createElement('img');
+  logo.className = 'slide-logo';
+  logo.crossOrigin = 'anonymous';
+  logo.src =
+    'data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTE2Ij8+DQo8c3ZnIGlkPSJMYXllcl8xIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMzAuMDQgMTAwIj4NCiAgPGRlZnM+DQogICAgPHN0eWxlPi5jbHMtMXtmaWxsOiNmZmNiMzE7fS5jbHMtMntmaWxsOiM2NjY4Njg7fTwvc3R5bGU+DQogIDwvZGVmcz4NCiAgPHBhdGggY2xhc3M9ImNscy0xIiBkPSJNOC4xOSw5OUg1NC41NmM1LjYsMCwxMi44NS0yLjgsMTYuMjYtNi4yLDMtMywxMy0xMy40NiwxOS43NC0yMC41MWEyMS44MiwyMS44MiwwLDAsMCw2LjM4LTE2LjFWOC4zNkE3LjM2LDcuMzYsMCwwLDAsODkuNTgsMUg0My4wNUMzNi42MSwxLDMwLjMzLDMuNzgsMjYuODYsNy4yOGMtMywzLTEyLjg1LDEzLjQtMTkuNjMsMjAuNDFBMjEuNywyMS43LDAsMCwwLC44Myw0My43NlY5MS42NEE3LjM1LDcuMzUsMCwwLDAsOC4xOSw5OSIgLz4NCiAgPHBhdGggY2xhc3M9ImNscy0yIiBkPSJNMjIuMzcsMzUuNjl2MFoiIC8+DQogIDxwYXRoIGQ9Ik03Ny45Miw1OS45NGEyMi4wOSwyMi4wOSwwLDAsMCwyLjItMTAuMzhxMC04Ljc1LTQuMjktMTMuNDFUNjMuNDUsMzEuNXEtOC4wOSwwLTEyLjQzLDQuNjJUNDYuNjksNDkuNTFRNDYuNjksNTguMjcsNTEsNjN0MTIuNCw0LjY4SDY0bDEuNDgsMS44MWgwbC44NSwxaDBsMCwuMDYuMzYuNDRhNS4yMiw1LjIyLDAsMCwwLC41OC41N2wuNDcuMzZhOC41OSw4LjU5LDAsMCwwLDMuNzMsMS40Mkg3OGwtNi40OS03LjI2QTEzLjM3LDEzLjM3LDAsMCwwLDc3LjkyLDU5Ljk0Wk02My40MSw2MS40YTcuODMsNy44MywwLDAsMS02LjY4LTNxLTIuMjMtMy0yLjI0LTguODZjMC0zLjkzLjc2LTYuODgsMi4yNi04Ljg4YTcuODgsNy44OCwwLDAsMSw2LjctM3E4Ljg2LDAsOC44NywxMS44N1Q2My40MSw2MS40WiIgLz4NCiAgPHBhdGggZD0iTTExNS40NSw2MS4yNXYwaDBaIiAvPg0KICA8cGF0aCBkPSJNMTM1LjIsNDguNzZ2LS4yNGE1LjkzLDUuOTMsMCwwLDAsMy45My0yLjQyLDguNTcsOC41NywwLDAsMCwxLjQ3LTUuMTdxMC00LjYzLTMuMzctNi43NnQtMTAuODUtMi4xMkgxMTUuNDZWNjEuMzFhNS45MSw1LjkxLDAsMCwwLDUuOCw1Ljg1aDcuMzNxNiwwLDkuNDMtMi42OUE4LjkyLDguOTIsMCwwLDAsMTQxLjQ5LDU3LDksOSwwLDAsMCwxNDAsNTEuNTUsNy43Miw3LjcyLDAsMCwwLDEzNS4yLDQ4Ljc2Wk0xMjIuOSwzOC4xNWgzLjkyYTkuNTYsOS41NiwwLDAsMSw0LjY3Ljg3LDMuMTIsMy4xMiwwLDAsMSwxLjQ4LDIuOSwzLjUyLDMuNTIsMCwwLDEtMS4zNiwzLjEsOCw4LDAsMCwxLTQuMzguOTNIMTIyLjlabTkuMzksMjEuNjlBNy4yMiw3LjIyLDAsMCwxLDEyNy43NSw2MUgxMjIuOVY1MS44Nmg0LjYxcTYuMjYsMCw2LjI1LDQuMzdBNC4zNiw0LjM2LDAsMCwxLDEzMi4yOSw1OS44NFoiIC8+DQogIDxwYXRoIGQ9Ik0yMTcuOSw1MmwxMC42Ni0xMS42NUgyMjAuM2wtNy41Miw4LjE3LTMuMTksNC4wOGgtLjFsLjM5LTYuMVYyOS43OWgtNy4zM1Y2Ny4xNmg3LjMzVjU4LjhMMjEzLDU2LjI4bDQsNS42OCwxLjgsMi41NywwLDBhNS45Miw1LjkyLDAsMCwwLDQuODIsMi42NWg1LjUxWiIgLz4NCiAgPHBhdGggZD0iTTE5NS4zMiw0Mi4zNHEtMi40MS0yLjU0LTcuMTEtMi41M2ExMS41MywxMS41MywwLDAsMC00Ljg4LDEsNy44Miw3LjgyLDAsMCwwLTMuMDcsMi41MnYtM2gtNy4zMlY1MS42N2gwVjY3LjE2aDcuMzNWNTQuNTNjMC0zLjE3LjQ1LTUuNDQsMS4zNy02LjgxYTQuOTMsNC45MywwLDAsMSw0LjQ0LTIsMy43NiwzLjc2LDAsMCwxLDMuMjksMS40NSw3LjUyLDcuNTIsMCwwLDEsMSw0LjM2VjY3LjE2aDcuMzNWNDkuNjVRMTk3Ljc1LDQ0Ljg4LDE5NS4zMiw0Mi4zNFoiIC8+DQogIDxwYXRoIGQ9Ik0zOCwzOC4yYTUuOTMsNS45MywwLDAsMCw1Ljc0LTUuNTl2LS41NkgyNS4yNGE1LjkxLDUuOTEsMCwwLDAtNS44LDUuOVY2Ny4xNkgzOGE1LjkxLDUuOTEsMCwwLDAsNS43NC01LjU4di0uNTJIMjYuODhWNTIuNzVIMzcuMTVhNS45MSw1LjkxLDAsMCwwLDUuNzItNS41NXYtLjU1aC0xNlYzOC4yWiIgLz4NCiAgPHBhdGggZD0iTTE2NS4xOSw0Mi4xMXEtMi44OC0yLjM2LTguMjktMi4zNWEyMS45MiwyMS45MiwwLDAsMC05LjU0LDIuMDdsMS43Miw1LjI5YTE5LDE5LDAsMCwxLDcuNTQtMS45M2MyLjc4LDAsNC4xOCwxLjM2LDQuMTgsNC4wOHYxLjE4bC00LjY2LjE0cS02LC4yMS05LDIuMjRjLTIsMS4zNi0zLDMuNDYtMyw2LjMxYTguNDgsOC40OCwwLDAsMCwyLjIyLDYuMjksOC4yMiw4LjIyLDAsMCwwLDYuMDksMi4yMSwxMi4zLDEyLjMsMCwwLDAsNS4xLS45LDkuODUsOS44NSwwLDAsMCwzLjIxLTIuNTR2M2g3LjMyVjQ5LjI3UTE2OC4wNyw0NC40NywxNjUuMTksNDIuMTFaTTE2MC44LDU1LjI1aC0uMDV2Mi4yMmE1LDUsMCwwLDEtMS40OCwzLjM1LDUuNjIsNS42MiwwLDAsMS00LjA3LDEuNDdjLTIuMzcsMC0zLjU2LTEtMy41Ni0zLjFBMy42MywzLjYzLDAsMCwxLDE1My4yMSw1Niw5LDksMCwwLDEsMTU4LDU0LjgybDIuODQtLjFaIiAvPg0KPC9zdmc+';
+  logo.alt = 'EQ Bank';
+  titleRow.appendChild(logo);
+  header.appendChild(titleRow);
+
+  // Quarter row
+  if (cfg.showQuarterRow) {
+    header.appendChild(
+      buildHeaderRow(cols, ctx, QUARTER_ROW_H, (col) =>
+        goldRamp((getFiscalInfo(col.start).fiscalQuarter + 1) / 4),
+      ),
+    );
+  }
+
+  // Month row
+  const monthStyle =
+    cfg.monthColorMode === 'gradient'
+      ? (_m, i, len) => goldRamp(len === 1 ? 1 : i / (len - 1))
+      : (_m, i) => (i % 2 === 0 ? 'var(--canvas-row-even)' : 'var(--canvas-row-weekend)');
+  const monthLabel = cfg.useFullMonthNames ? (m) => MONTH_NAMES_FULL[m.start.getMonth()] : undefined;
+  header.appendChild(
+    buildHeaderRow(months, ctx, MONTH_ROW_H, monthStyle, {
+      labelFn: monthLabel,
+      className: cfg.showQuarterRow ? '' : 'timeline-month-primary',
+    }),
+  );
+
+  // Sub-month row (weeks or days)
+  if (cfg.showSubMonthRow) {
+    if (cfg.subMonthMode === 'day') {
+      header.appendChild(
+        buildHeaderRow(
+          getDays(tlStart, tlEnd),
+          ctx,
+          WEEK_ROW_H,
+          (day) => {
+            const dow = day.start.getDay();
+            return dow === 0 || dow === 6 ? 'var(--canvas-row-weekend)' : 'var(--canvas-row-even)';
+          },
+          { className: 'timeline-week-header' },
+        ),
+      );
+    } else {
+      header.appendChild(
+        buildHeaderRow(
+          getWeeks(tlStart, tlEnd),
+          ctx,
+          WEEK_ROW_H,
+          (_w, i) => (i % 2 === 0 ? 'var(--canvas-row-even)' : 'var(--canvas-row-weekend)'),
+          { className: 'timeline-week-header' },
+        ),
+      );
+    }
+  }
+
+  return header;
+}
+
+function buildGrid(ctx, laneHeights) {
+  const { tlStart, tlEnd, totalDays, totalWidth } = ctx;
+  const grid = document.createElement('div');
+  grid.className = 'timeline-grid';
+  grid.id = 'timeline-grid';
+  grid.style.width = '100%';
+
+  // Gridlines anchored to quarter boundaries
+  const quarters = getQuarters(tlStart, tlEnd);
+  quarters.forEach((q, i) => {
+    if (i === 0) return;
+    const pct = (daysBetween(tlStart, q.start) / totalDays) * 100;
+    const line = document.createElement('div');
+    line.className = 'gridline';
+    line.style.left = pct + '%';
+    grid.appendChild(line);
+  });
+
+  // Today line
+  const todayDate = new Date();
+  todayDate.setHours(0, 0, 0, 0);
+  if (todayDate >= tlStart && todayDate <= tlEnd) {
+    const pct = (daysBetween(tlStart, todayDate) / totalDays) * 100;
+    const todayLine = document.createElement('div');
+    todayLine.className = 'today-line';
+    todayLine.style.left = pct + '%';
+    grid.appendChild(todayLine);
+  }
+
+  // Rows with items
+  STATE.swimlanes.forEach((lane, laneIdx) => {
+    const row = document.createElement('div');
+    row.className = 'timeline-grid-row';
+    row.dataset.laneId = lane.id;
+    row.dataset.laneIdx = laneIdx;
+    row.style.height = laneHeights[laneIdx] + 'px';
+
+    STATE.items
+      .filter((it) => it.swimlaneId === lane.id)
+      .forEach((item) => {
+        row.appendChild(buildItemBar(item, ctx));
+      });
+
+    grid.appendChild(row);
+  });
+
+  return grid;
+}
+
+function buildLegend() {
+  const usedColors = new Set(STATE.items.map((it) => it.color));
+  if (usedColors.size === 0) return null;
+
+  const legend = document.createElement('div');
+  const orientation = STATE.timeline.legendOrientation || 'vertical';
+  const align = STATE.timeline.legendAlign || 'right';
+  legend.className =
+    'timeline-legend legend-align-' + align + (orientation === 'horizontal' ? ' legend-horizontal' : '');
+
+  PALETTE.forEach((color) => {
+    if (!usedColors.has(color)) return;
+    const itemEl = document.createElement('div');
+    itemEl.className = 'legend-item';
+
+    const colorDot = document.createElement('div');
+    colorDot.className = 'legend-color';
+    colorDot.style.background = color;
+
+    const labelEl = document.createElement('div');
+    labelEl.className = 'legend-label';
+    labelEl.textContent = STATE.legendLabels[color] || 'Category';
+    labelEl.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const labelName = STATE.legendLabels[color] || 'Category';
+      showMenu([{ label: 'Rename', onClick: () => startRenameLegend(color, labelEl) }], labelEl);
+    });
+
+    itemEl.appendChild(colorDot);
+    itemEl.appendChild(labelEl);
+    legend.appendChild(itemEl);
+  });
+
+  return legend;
+}
+
+function buildTimelineArea(ctx, laneHeights) {
+  const { tlStart, totalDays, totalWidth } = ctx;
+  const tlArea = document.createElement('div');
+  tlArea.className = 'timeline-area';
+  tlArea.id = 'timeline-area';
+
+  tlArea.appendChild(buildHeader(ctx));
+
+  const grid = buildGrid(ctx, laneHeights);
+
+  // Click-drag to create on grid
+  grid.addEventListener('pointerdown', (e) => {
+    if (e.target.closest('.item-bar') || e.target.closest('.item-bar-label')) return;
+    if (e.button !== 0) return;
+    const targetRow = e.target.closest('.timeline-grid-row');
+    if (!targetRow) return;
+    const laneIdx = parseInt(targetRow.dataset.laneIdx, 10);
+    if (isNaN(laneIdx) || laneIdx < 0 || laneIdx >= STATE.swimlanes.length) return;
+    const scale = getSlideScale();
+    const gridRect = grid.getBoundingClientRect();
+    const x = (e.clientX - gridRect.left) / scale;
+
+    const startDate = xToDate(x, tlStart, totalDays, totalWidth);
+
+    dragState = {
+      type: 'create',
+      laneIdx,
+      startX: x,
+      currentX: x,
+      startDate,
+      tlStart,
+      totalDays,
+      totalWidth,
+      gridEl: grid,
+      areaEl: tlArea,
+      ghostEl: null,
+      row: grid.querySelectorAll('.timeline-grid-row')[laneIdx],
+    };
+
+    const ghost = document.createElement('div');
+    ghost.className = 'ghost-bar';
+    ghost.style.height = getItemBarHeight() + 'px';
+    ghost.style.left = x + 'px';
+    ghost.style.width = '0px';
+    dragState.row.appendChild(ghost);
+    dragState.ghostEl = ghost;
+  });
+
+  tlArea.appendChild(grid);
+
+  const legend = buildLegend();
+  if (legend) tlArea.appendChild(legend);
+
+  return tlArea;
+}
+
+// ---- Calendar View ----
+function buildCalendarView() {
+  const view = document.createElement('div');
+  view.className = 'calendar-view';
+
+  // Title row
+  const titleRow = document.createElement('div');
+  titleRow.className = 'calendar-title-row';
+  const titleEl = document.createElement('div');
+  titleEl.className = 'timeline-title';
+  titleEl.textContent = STATE.timeline.title || 'New Timeline';
+  titleEl.addEventListener('click', (e) => {
+    e.stopPropagation();
+    showMenu([{ label: 'Rename', onClick: () => startRenameTitle() }], titleEl);
+  });
+  titleRow.appendChild(titleEl);
+
+  const logo = document.createElement('img');
+  logo.className = 'slide-logo';
+  logo.crossOrigin = 'anonymous';
+  logo.src =
+    'data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTE2Ij8+DQo8c3ZnIGlkPSJMYXllcl8xIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMzAuMDQgMTAwIj4NCiAgPGRlZnM+DQogICAgPHN0eWxlPi5jbHMtMXtmaWxsOiNmZmNiMzE7fS5jbHMtMntmaWxsOiM2NjY4Njg7fTwvc3R5bGU+DQogIDwvZGVmcz4NCiAgPHBhdGggY2xhc3M9ImNscy0xIiBkPSJNOC4xOSw5OUg1NC41NmM1LjYsMCwxMi44NS0yLjgsMTYuMjYtNi4yLDMtMywxMy0xMy40NiwxOS43NC0yMC41MWEyMS44MiwyMS44MiwwLDAsMCw2LjM4LTE2LjFWOC4zNkE3LjM2LDcuMzYsMCwwLDAsODkuNTgsMUg0My4wNUMzNi42MSwxLDMwLjMzLDMuNzgsMjYuODYsNy4yOGMtMywzLTEyLjg1LDEzLjQtMTkuNjMsMjAuNDFBMjEuNywyMS43LDAsMCwwLC44Myw0My43NlY5MS42NEE3LjM1LDcuMzUsMCwwLDAsOC4xOSw5OSIgLz4NCiAgPHBhdGggY2xhc3M9ImNscy0yIiBkPSJNMjIuMzcsMzUuNjl2MFoiIC8+DQogIDxwYXRoIGQ9Ik03Ny45Miw1OS45NGEyMi4wOSwyMi4wOSwwLDAsMCwyLjItMTAuMzhxMC04Ljc1LTQuMjktMTMuNDFUNjMuNDUsMzEuNXEtOC4wOSwwLTEyLjQzLDQuNjJUNDYuNjksNDkuNTFRNDYuNjksNTguMjcsNTEsNjN0MTIuNCw0LjY4SDY0bDEuNDgsMS44MWgwbC44NSwxaDBsMCwuMDYuMzYuNDRhNS4yMiw1LjIyLDAsMCwwLC41OC41N2wuNDcuMzZhOC41OSw4LjU5LDAsMCwwLDMuNzMsMS40Mkg3OGwtNi40OS03LjI2QTEzLjM3LDEzLjM3LDAsMCwwLDc3LjkyLDU5Ljk0Wk02My40MSw2MS40YTcuODMsNy44MywwLDAsMS02LjY4LTNxLTIuMjMtMy0yLjI0LTguODZjMC0zLjkzLjc2LTYuODgsMi4yNi04Ljg4YTcuODgsNy44OCwwLDAsMSw2LjctM3E4Ljg2LDAsOC44NywxMS44N1Q2My40MSw2MS40WiIgLz4NCiAgPHBhdGggZD0iTTExNS40NSw2MS4yNXYwaDBaIiAvPg0KICA8cGF0aCBkPSJNMTM1LjIsNDguNzZ2LS4yNGE1LjkzLDUuOTMsMCwwLDAsMy45My0yLjQyLDguNTcsOC41NywwLDAsMCwxLjQ3LTUuMTdxMC00LjYzLTMuMzctNi43NnQtMTAuODUtMi4xMkgxMTUuNDZWNjEuMzFhNS45MSw1LjkxLDAsMCwwLDUuOCw1Ljg1aDcuMzNxNiwwLDkuNDMtMi42OUE4LjkyLDguOTIsMCwwLDAsMTQxLjQ5LDU3LDksOSwwLDAsMCwxNDAsNTEuNTUsNy43Miw3LjcyLDAsMCwwLDEzNS4yLDQ4Ljc2Wk0xMjIuOSwzOC4xNWgzLjkyYTkuNTYsOS41NiwwLDAsMSw0LjY3Ljg3LDMuMTIsMy4xMiwwLDAsMSwxLjQ4LDIuOSwzLjUyLDMuNTIsMCwwLDEtMS4zNiwzLjEsOCw4LDAsMCwxLTQuMzguOTNIMTIyLjlabTkuMzksMjEuNjlBNy4yMiw3LjIyLDAsMCwxLDEyNy43NSw2MUgxMjIuOVY1MS44Nmg0LjYxcTYuMjYsMCw2LjI1LDQuMzdBNC4zNiw0LjM2LDAsMCwxLDEzMi4yOSw1OS44NFoiIC8+DQogIDxwYXRoIGQ9Ik0yMTcuOSw1MmwxMC42Ni0xMS42NUgyMjAuM2wtNy41Miw4LjE3LTMuMTksNC4wOGgtLjFsLjM5LTYuMVYyOS43OWgtNy4zM1Y2Ny4xNmg3LjMzVjU4LjhMMjEzLDU2LjI4bDQsNS42OCwxLjgsMi41NywwLDBhNS45Miw1LjkyLDAsMCwwLDQuODIsMi42NWg1LjUxWiIgLz4NCiAgPHBhdGggZD0iTTE5NS4zMiw0Mi4zNHEtMi40MS0yLjU0LTcuMTEtMi41M2ExMS41MywxMS41MywwLDAsMC00Ljg4LDEsNy44Miw3LjgyLDAsMCwwLTMuMDcsMi41MnYtM2gtNy4zMlY1MS42N2gwVjY3LjE2aDcuMzNWNTQuNTNjMC0zLjE3LjQ1LTUuNDQsMS4zNy02LjgxYTQuOTMsNC45MywwLDAsMSw0LjQ0LTIsMy43NiwzLjc2LDAsMCwxLDMuMjksMS40NSw3LjUyLDcuNTIsMCwwLDEsMSw0LjM2VjY3LjE2aDcuMzNWNDkuNjVRMTk3Ljc1LDQ0Ljg4LDE5NS4zMiw0Mi4zNFoiIC8+DQogIDxwYXRoIGQ9Ik0zOCwzOC4yYTUuOTMsNS45MywwLDAsMCw1Ljc0LTUuNTl2LS41NkgyNS4yNGE1LjkxLDUuOTEsMCwwLDAtNS44LDUuOVY2Ny4xNkgzOGE1LjkxLDUuOTEsMCwwLDAsNS43NC01LjU4di0uNTJIMjYuODhWNTIuNzVIMzcuMTVhNS45MSw1LjkxLDAsMCwwLDUuNzItNS41NXYtLjU1aC0xNlYzOC4yWiIgLz4NCiAgPHBhdGggZD0iTTE2NS4xOSw0Mi4xMXEtMi44OC0yLjM2LTguMjktMi4zNWEyMS45MiwyMS45MiwwLDAsMC05LjU0LDIuMDdsMS43Miw1LjI5YTE5LDE5LDAsMCwxLDcuNTQtMS45M2MyLjc4LDAsNC4xOCwxLjM2LDQuMTgsNC4wOHYxLjE4bC00LjY2LjE0cS02LC4yMS05LDIuMjRjLTIsMS4zNi0zLDMuNDYtMyw2LjMxYTguNDgsOC40OCwwLDAsMCwyLjIyLDYuMjksOC4yMiw4LjIyLDAsMCwwLDYuMDksMi4yMSwxMi4zLDEyLjMsMCwwLDAsNS4xLS45LDkuODUsOS44NSwwLDAsMCwzLjIxLTIuNTR2M2g3LjMyVjQ5LjI3UTE2OC4wNyw0NC40NywxNjUuMTksNDIuMTFaTTE2MC44LDU1LjI1aC0uMDV2Mi4yMmE1LDUsMCwwLDEtMS40OCwzLjM1LDUuNjIsNS42MiwwLDAsMS00LjA3LDEuNDdjLTIuMzcsMC0zLjU2LTEtMy41Ni0zLjFBMy42MywzLjYzLDAsMCwxLDE1My4yMSw1Niw5LDksMCwwLDEsMTU4LDU0LjgybDIuODQtLjFaIiAvPg0KPC9zdmc+';
+  logo.alt = 'EQ Bank';
+  titleRow.appendChild(logo);
+  view.appendChild(titleRow);
+
+  // Determine month range from state
+  const tlStart = parseDate(STATE.timeline.startDate);
+  const tlEnd = parseDate(STATE.timeline.endDate);
+  const months = [];
+  const cur = new Date(tlStart.getFullYear(), tlStart.getMonth(), 1);
+  while (cur < tlEnd) {
+    months.push(new Date(cur));
+    cur.setMonth(cur.getMonth() + 1);
+  }
+  if (months.length === 0) months.push(new Date(tlStart.getFullYear(), tlStart.getMonth(), 1));
+
+  // Navigation row
+  const navRow = document.createElement('div');
+  navRow.className = 'calendar-nav-row';
+
+  const prevBtn = document.createElement('button');
+  prevBtn.className = 'calendar-nav-btn';
+  prevBtn.innerHTML =
+    '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>';
+
+  const navLabel = document.createElement('div');
+  navLabel.className = 'calendar-nav-label';
+
+  const nextBtn = document.createElement('button');
+  nextBtn.className = 'calendar-nav-btn';
+  nextBtn.innerHTML =
+    '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>';
+
+  navRow.appendChild(prevBtn);
+  navRow.appendChild(navLabel);
+  navRow.appendChild(nextBtn);
+
+  const calTodayBtn = document.createElement('button');
+  calTodayBtn.className = 'calendar-today-btn';
+  calTodayBtn.textContent = 'Today';
+  calTodayBtn.addEventListener('click', function () {
+    const now = new Date();
+    for (let i = 0; i < months.length; i++) {
+      if (months[i].getFullYear() === now.getFullYear() && months[i].getMonth() === now.getMonth()) {
+        slidesContainer.scrollLeft = i * slidesContainer.clientWidth;
+        return;
+      }
+    }
+    showInfo('Current month is outside the timeline range.');
+  });
+  navRow.appendChild(calTodayBtn);
+
+  view.appendChild(navRow);
+
+  // Slides container
+  const slidesContainer = document.createElement('div');
+  slidesContainer.className = 'calendar-slides-container';
+
+  const today = new Date();
+  const todayStr = fmt(today);
+  const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+  // Build a slide for each month
+  months.forEach((monthDate) => {
+    const slide = document.createElement('div');
+    slide.className = 'calendar-slide';
+    slide.style.background = goldRamp(monthDate.getMonth() % 2 === 0 ? 0.03 : 0.08);
+
+    const year = monthDate.getFullYear();
+    const month = monthDate.getMonth();
+    const firstDay = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+    // Weekday labels
+    const weekdayRow = document.createElement('div');
+    weekdayRow.className = 'calendar-weekday-row';
+    WEEKDAYS.forEach((d) => {
+      const cell = document.createElement('div');
+      cell.textContent = d;
+      weekdayRow.appendChild(cell);
+    });
+    slide.appendChild(weekdayRow);
+
+    // Items active during this month
+    const monthStart = new Date(year, month, 1);
+    const monthEnd = new Date(year, month + 1, 0, 23, 59, 59);
+    const activeItems = STATE.items.filter((it) => {
+      const iStart = parseDate(it.startDate);
+      const iEnd = parseDate(it.endDate);
+      return iStart <= monthEnd && iEnd >= monthStart;
+    });
+
+    // Build weeks structure: each week is an array of 7 day numbers (0 = empty)
+    const weeks = [];
+    let week = new Array(7).fill(0);
+    // Leading empty cells
+    for (let d = 1; d <= daysInMonth; d++) {
+      const dayOfWeek = new Date(year, month, d).getDay();
+      if (d === 1) {
+        week = new Array(7).fill(0);
+      }
+      week[dayOfWeek] = d;
+      if (dayOfWeek === 6 || d === daysInMonth) {
+        weeks.push(week);
+        week = new Array(7).fill(0);
+      }
+    }
+
+    // Assign items to tracks within weeks for bar layout
+    // For each week, determine which items are active and assign vertical slots
+    const weeksContainer = document.createElement('div');
+    weeksContainer.className = 'calendar-weeks-container';
+
+    weeks.forEach((weekDays) => {
+      // Find the date range for this week within the month
+      const weekStart = weekDays.find((d) => d > 0);
+      const weekEnd = weekDays
+        .slice()
+        .reverse()
+        .find((d) => d > 0);
+      if (!weekStart) return;
+
+      const weekStartDate = new Date(year, month, weekStart);
+      const weekEndDate = new Date(year, month, weekEnd, 23, 59, 59);
+
+      // Day number row
+      const dayRow = document.createElement('div');
+      dayRow.className = 'calendar-week-row';
+      for (let col = 0; col < 7; col++) {
+        const dayEl = document.createElement('div');
+        dayEl.className = 'calendar-day';
+        if (weekDays[col] === 0) {
+          dayEl.classList.add('outside');
+        } else {
+          const dateStr = fmt(new Date(year, month, weekDays[col]));
+          if (dateStr === todayStr) dayEl.classList.add('today');
+          const num = document.createElement('div');
+          num.className = 'calendar-day-num';
+          num.textContent = weekDays[col];
+          dayEl.appendChild(num);
+          (function (dayDate) {
+            dayEl.addEventListener('click', function (e) {
+              e.stopPropagation();
+              addItem(dayDate);
+            });
+          })(new Date(year, month, weekDays[col]));
+        }
+        dayRow.appendChild(dayEl);
+      }
+      weeksContainer.appendChild(dayRow);
+
+      // Find items active in this week
+      const weekItems = activeItems.filter((it) => {
+        const iStart = parseDate(it.startDate);
+        const iEnd = parseDate(it.endDate);
+        return iStart <= weekEndDate && iEnd >= weekStartDate;
+      });
+
+      if (weekItems.length > 0) {
+        // Sort items: longer items first, then by start date
+        weekItems.sort((a, b) => {
+          const aDays = daysBetween(parseDate(a.startDate), parseDate(a.endDate));
+          const bDays = daysBetween(parseDate(b.startDate), parseDate(b.endDate));
+          if (bDays !== aDays) return bDays - aDays;
+          return a.startDate.localeCompare(b.startDate);
+        });
+
+        // Assign tracks (vertical slots) to avoid overlaps
+        const tracks = []; // tracks[i] = array of items on track i
+        const itemTrackMap = new Map();
+
+        weekItems.forEach((item) => {
+          const iStart = parseDate(item.startDate);
+          const iEnd = parseDate(item.endDate);
+          // Determine column range in this week
+          let colStart = 0;
+          let colEnd = 6;
+          for (let c = 0; c < 7; c++) {
+            if (weekDays[c] > 0) {
+              const cd = new Date(year, month, weekDays[c]);
+              if (cd >= iStart && colStart === 0 && c > 0 && weekDays[c - 1] === 0) colStart = c;
+              if (cd < iStart) colStart = c + 1;
+              if (cd <= iEnd) colEnd = c;
+            }
+          }
+          // Clamp to actual day cells
+          const firstCol = weekDays.findIndex((d) => d > 0);
+          const lastCol =
+            weekDays.length -
+            1 -
+            weekDays
+              .slice()
+              .reverse()
+              .findIndex((d) => d > 0);
+          colStart = Math.max(colStart, firstCol);
+          colEnd = Math.min(colEnd, lastCol);
+
+          // Find available track
+          let placed = false;
+          for (let t = 0; t < tracks.length; t++) {
+            const conflict = tracks[t].some((entry) => {
+              return !(colEnd < entry.colStart || colStart > entry.colEnd);
+            });
+            if (!conflict) {
+              tracks[t].push({ item, colStart, colEnd });
+              itemTrackMap.set(item.id, t);
+              placed = true;
+              break;
+            }
+          }
+          if (!placed) {
+            tracks.push([{ item, colStart, colEnd }]);
+            itemTrackMap.set(item.id, tracks.length - 1);
+          }
+        });
+
+        // Render item bar rows (one row per track)
+        const maxTracks = Math.min(tracks.length, 4);
+        for (let t = 0; t < maxTracks; t++) {
+          const barRow = document.createElement('div');
+          barRow.className = 'calendar-item-bars-row';
+
+          // Fill the 7 columns - place bars spanning the right columns
+          const entries = tracks[t];
+          // Sort by column start
+          entries.sort((a, b) => a.colStart - b.colStart);
+
+          let currentCol = 0;
+          entries.forEach((entry) => {
+            // Add spacer cells for gap before this bar
+            if (entry.colStart > currentCol) {
+              const spacer = document.createElement('div');
+              spacer.className = 'calendar-item-bar-spacer';
+              spacer.style.gridColumn = currentCol + 1 + ' / ' + (entry.colStart + 1);
+              barRow.appendChild(spacer);
+            }
+
+            const bar = document.createElement('div');
+            bar.className = 'calendar-item-bar';
+            bar.dataset.itemId = entry.item.id;
+            bar.style.gridColumn = entry.colStart + 1 + ' / ' + (entry.colEnd + 2);
+            bar.style.background = entry.item.color;
+            bar.title =
+              (entry.item.name || 'Untitled') + ' (' + entry.item.startDate + ' to ' + entry.item.endDate + ')';
+
+            // Determine if this is start/end/mid of a multi-week bar
+            const iStart = parseDate(entry.item.startDate);
+            const iEnd = parseDate(entry.item.endDate);
+            const firstDayDate = new Date(year, month, weekDays[entry.colStart]);
+            const lastDayDate = new Date(year, month, weekDays[entry.colEnd]);
+
+            const isStart =
+              firstDayDate.getTime() === iStart.getTime() ||
+              (iStart < new Date(year, month, 1) && weekDays[entry.colStart] === 1);
+            const isEnd =
+              lastDayDate.getTime() === iEnd.getTime() ||
+              (iEnd > monthEnd && weekDays[entry.colEnd] === daysInMonth);
+
+            if (isStart && isEnd) {
+              bar.classList.add('bar-start', 'bar-end');
+            } else if (isStart) {
+              bar.classList.add('bar-start');
+              bar.style.borderTopRightRadius = '0';
+              bar.style.borderBottomRightRadius = '0';
+              bar.style.marginRight = '0';
+            } else if (isEnd) {
+              bar.classList.add('bar-end');
+              bar.style.borderTopLeftRadius = '0';
+              bar.style.borderBottomLeftRadius = '0';
+              bar.style.marginLeft = '0';
+            } else {
+              bar.classList.add('bar-mid');
+              bar.style.marginLeft = '0';
+              bar.style.marginRight = '0';
+            }
+
+            bar.textContent = entry.item.name || 'Untitled';
+            (function (item, barEl) {
+              barEl.addEventListener('click', function (e) {
+                e.stopPropagation();
+                showMenu(
+                  [
+                    {
+                      colors: PALETTE,
+                      selectedColor: item.color,
+                      onColorClick: function (color) {
+                        setState(function (s) {
+                          const it = s.items.find(function (i) {
+                            return i.id === item.id;
+                          });
+                          if (it) it.color = color;
+                        });
+                      },
+                    },
+                    {
+                      label: 'Rename',
+                      onClick: function () {
+                        startInlineEdit(barEl, item.name || '', function (val) {
+                          setState(function (s) {
+                            const it = s.items.find(function (i) {
+                              return i.id === item.id;
+                            });
+                            if (it) it.name = val;
+                          });
+                        });
+                      },
+                    },
+                    {
+                      label: 'Delete',
+                      danger: true,
+                      onClick: function () {
+                        deleteItem(item.id);
+                      },
+                    },
+                  ],
+                  barEl,
+                );
+              });
+            })(entry.item, bar);
+            barRow.appendChild(bar);
+
+            currentCol = entry.colEnd + 1;
+          });
+
+          weeksContainer.appendChild(barRow);
+        }
+
+        // Show overflow indicator if more tracks than displayed
+        if (tracks.length > maxTracks) {
+          const hiddenItemsMap = new Map();
+          for (let t = maxTracks; t < tracks.length; t++) {
+            tracks[t].forEach(function (entry) {
+              if (!hiddenItemsMap.has(entry.item.id)) {
+                hiddenItemsMap.set(entry.item.id, entry.item);
+              }
+            });
+          }
+          const hiddenItems = Array.from(hiddenItemsMap.values());
+          const overflow = document.createElement('div');
+          overflow.className = 'calendar-overflow-indicator';
+          overflow.textContent = '+' + hiddenItems.length + ' more';
+          overflow.addEventListener('click', function (e) {
+            e.stopPropagation();
+            showCalendarPopover(hiddenItems, overflow, 'Hidden items');
+          });
+          weeksContainer.appendChild(overflow);
+        }
+      }
+    });
+
+    slide.appendChild(weeksContainer);
+    slidesContainer.appendChild(slide);
+  });
+
+  view.appendChild(slidesContainer);
+
+  // Update nav label based on visible slide
+  function updateNavLabel() {
+    if (months.length === 0) return;
+    const slideWidth = slidesContainer.clientWidth;
+    if (slideWidth === 0) return;
+    const idx = Math.round(slidesContainer.scrollLeft / slideWidth);
+    const clampedIdx = Math.max(0, Math.min(idx, months.length - 1));
+    const m = months[clampedIdx];
+    navLabel.textContent = MONTH_NAMES_FULL[m.getMonth()] + ' ' + m.getFullYear();
+  }
+
+  // Scroll to a month that contains today or start with first slide
+  let initialIdx = 0;
+  for (let i = 0; i < months.length; i++) {
+    if (months[i].getFullYear() === today.getFullYear() && months[i].getMonth() === today.getMonth()) {
+      initialIdx = i;
+      break;
+    }
+  }
+
+  // After DOM is attached, scroll to initial month
+  requestAnimationFrame(() => {
+    slidesContainer.scrollLeft = initialIdx * slidesContainer.clientWidth;
+    updateNavLabel();
+  });
+
+  slidesContainer.addEventListener('scroll', updateNavLabel);
+
+  prevBtn.addEventListener('click', () => {
+    const slideWidth = slidesContainer.clientWidth;
+    const currentIdx = Math.round(slidesContainer.scrollLeft / slideWidth);
+    if (currentIdx > 0) {
+      slidesContainer.scrollLeft = (currentIdx - 1) * slideWidth;
+    }
+  });
+
+  nextBtn.addEventListener('click', () => {
+    const slideWidth = slidesContainer.clientWidth;
+    const currentIdx = Math.round(slidesContainer.scrollLeft / slideWidth);
+    if (currentIdx < months.length - 1) {
+      slidesContainer.scrollLeft = (currentIdx + 1) * slideWidth;
+    }
+  });
+
+  updateNavLabel();
+
+  // Legend
+  const legend = buildLegend();
+  if (legend) {
+    legend.style.position = 'absolute';
+    legend.style.bottom = '12px';
+    view.style.position = 'relative';
+    view.appendChild(legend);
+  }
+
+  return view;
+}
+
+// ---- Render ----
+function render() {
+  if (dragState) return;
+  dismissCalendarPopover();
+  const app = document.getElementById('app');
+  const slide = document.getElementById('slide');
+  const dm = STATE.timeline.displayMode || 'timeline';
+
+  if (dm === 'calendar') {
+    app.className = 'main';
+    app.innerHTML = '';
+    app.style.display = '';
+    app.appendChild(buildCalendarView());
+    updateDisplayModeUI();
+    updateSlideScale();
+    return;
+  }
+
+  const rowHeight = getRowHeight();
+  if (slide) {
+    slide.style.setProperty('--row-height', rowHeight + 'px');
+    slide.style.setProperty('--item-bar-height', ITEM_BAR_H + 'px');
+    slide.style.setProperty('--sidebar-width', getSidebarWidth() + 'px');
+    slide.style.setProperty('--header-height', getHeaderHeight() + 'px');
+  }
+
+  app.className = 'main';
+  app.style.display = '';
+  app.innerHTML = '';
+
+  const tlStart = parseDate(STATE.timeline.startDate);
+  const tlEnd = parseDate(STATE.timeline.endDate);
+  const totalDays = Math.max(daysBetween(tlStart, tlEnd), 1);
+  const cfg = getDisplayConfig();
+  const cols = getColumns(tlStart, tlEnd, cfg.topGranularity);
+  const totalWidth = getTimelineWidth();
+  const laneHeights = getLaneHeights();
+  const scale = getLaneScale();
+  const ctx = { tlStart, tlEnd, totalDays, cols, totalWidth, scale };
+
+  app.appendChild(buildSidebar(laneHeights));
+  app.appendChild(buildTimelineArea(ctx, laneHeights));
+
+  updateZoomLabel();
+  updateStartDateDisplay();
+  updateDisplayModeUI();
+  updateSlideScale();
+
+  const addBtn = document.getElementById('btn-add');
+  if (addBtn) addBtn.disabled = getTotalRows() >= MAX_TOTAL_ROWS;
+}
+
+// ---- Inline edit utility ----
+function startInlineEdit(el, currentValue, onSave, options = {}) {
+  const { placeholder, autoSize } = options;
+  const input = document.createElement('input');
+  input.value = currentValue;
+  if (placeholder) input.placeholder = placeholder;
+  el.textContent = '';
+
+  let sizer = null;
+  if (autoSize) {
+    sizer = document.createElement('span');
+    sizer.style.cssText =
+      'position:absolute;visibility:hidden;white-space:pre;font:inherit;pointer-events:none;';
+    el.appendChild(sizer);
+    const resizeInput = () => {
+      sizer.textContent = input.value || input.placeholder || '';
+      input.style.width = sizer.offsetWidth + 'px';
+    };
+    el.appendChild(input);
+    resizeInput();
+    input.addEventListener('input', resizeInput);
+  } else {
+    el.appendChild(input);
+  }
+
+  input.focus();
+  input.setSelectionRange(input.value.length, input.value.length);
+
+  let finished = false;
+  const finish = () => {
+    if (finished) return;
+    finished = true;
+    onSave(input.value.trim());
+  };
+
+  input.addEventListener('blur', finish);
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') input.blur();
+    if (e.key === 'Escape') {
+      input.value = currentValue;
+      input.blur();
+    }
+  });
+  input.addEventListener('pointerdown', (e) => e.stopPropagation());
+}
+
+// ---- Legend Rename ops ----
+function startRenameLegend(color, textEl) {
+  const currentName = STATE.legendLabels[color] || 'Category';
+  startInlineEdit(
+    textEl,
+    currentName === 'Category' ? '' : currentName,
+    (val) => {
+      setState((s) => {
+        if (val) {
+          s.legendLabels[color] = val;
+        } else {
+          delete s.legendLabels[color];
+        }
+      });
+    },
+    { placeholder: 'Category', autoSize: true },
+  );
+}
+
+// ---- Title ops ----
+function startRenameTitle() {
+  const titleEl = document.querySelector('.timeline-title');
+  if (!titleEl) return;
+  startInlineEdit(titleEl, STATE.timeline.title || 'New Timeline', (val) => {
+    setState((s) => {
+      s.timeline.title = val || 'New Timeline';
+    });
+  });
+}
+
+// ---- Item rename ----
+function startRenameItem(itemId, textEl) {
+  const item = STATE.items.find((it) => it.id === itemId);
+  if (!item) return;
+  textEl.style.background = 'transparent';
+  startInlineEdit(textEl, item.name || '', (val) => {
+    setState((s) => {
+      const it = s.items.find((i) => i.id === itemId);
+      if (it) it.name = val;
+    });
+  });
+}
+
+// ---- Track helpers ----
+function findFreeTrack(laneId, startDateStr, endDateStr, items) {
+  const src = items || STATE.items;
+  const laneItems = src.filter((it) => it.swimlaneId === laneId);
+  const itemStart = parseDate(startDateStr);
+  const itemEnd = parseDate(endDateStr);
+  // Check total row budget before allowing a new track
+  const currentTotal = getTotalRows();
+  const currentLaneTracks = getTrackCount(laneId);
+  for (let t = 0; ; t++) {
+    const conflict = laneItems.some(
+      (it) => it.track === t && parseDate(it.startDate) < itemEnd && parseDate(it.endDate) > itemStart,
+    );
+    if (!conflict) {
+      // If this track would create a new row, check the budget
+      if (t >= currentLaneTracks && currentTotal >= MAX_TOTAL_ROWS) return -1;
+      return t;
+    }
+  }
+}
+
+// ---- Swimlane ops ----
+let _addLaneTimer = null;
+function addSwimlane() {
+  if (STATE.swimlanes.length >= MAX_SWIMLANES || getTotalRows() >= MAX_TOTAL_ROWS) return;
+  const newId = uid();
+  setState((s) => {
+    s.swimlanes.push({ id: newId, name: 'New Group', order: s.swimlanes.length, minRows: 1 });
+  });
+  // Auto-focus rename on the new lane (cancel any pending autofocus)
+  if (_addLaneTimer) clearTimeout(_addLaneTimer);
+  _addLaneTimer = setTimeout(() => {
+    _addLaneTimer = null;
+    const row = document.querySelector(`.sidebar-row[data-lane-id="${newId}"]`);
+    if (row) {
+      const nameEl = row.querySelector('.lane-name');
+      if (nameEl) startRenameLaneEl(nameEl, newId);
+    }
+  }, AUTOFOCUS_DELAY_MS);
+}
+
+function startRenameLane(laneId) {
+  const row = document.querySelector(`.sidebar-row[data-lane-id="${laneId}"]`);
+  if (!row) return;
+  const nameEl = row.querySelector('.lane-name');
+  startRenameLaneEl(nameEl, laneId);
+}
+
+function startRenameLaneEl(nameEl, laneId) {
+  const lane = STATE.swimlanes.find((l) => l.id === laneId);
+  if (!lane) return;
+  startInlineEdit(nameEl, lane.name, (val) => {
+    setState((s) => {
+      const l = s.swimlanes.find((l) => l.id === laneId);
+      if (l) l.name = val || 'Untitled';
+    });
+  });
+}
+
+// ---- Context menu ----
+let activeMenu = null;
+
+function dismissMenu() {
+  if (activeMenu) {
+    activeMenu.classList.add('ctx-exit');
+    const el = activeMenu;
+    activeMenu = null;
+    setTimeout(() => el.remove(), 100);
+  }
+}
+
+// ---- Calendar popover ----
+let activeCalendarPopover = null;
+function dismissCalendarPopover() {
+  if (activeCalendarPopover) {
+    activeCalendarPopover.remove();
+    activeCalendarPopover = null;
+  }
+}
+function showCalendarPopover(items, anchorEl, title) {
+  dismissCalendarPopover();
+  const pop = document.createElement('div');
+  pop.className = 'calendar-popover';
+  if (title) {
+    const h = document.createElement('div');
+    h.className = 'calendar-popover-title';
+    h.textContent = title;
+    pop.appendChild(h);
+  }
+  items.forEach(function (it) {
+    const row = document.createElement('div');
+    row.className = 'calendar-popover-item';
+    const swatch = document.createElement('div');
+    swatch.className = 'calendar-popover-swatch';
+    swatch.style.background = it.color;
+    row.appendChild(swatch);
+    const nameEl = document.createElement('span');
+    nameEl.textContent = it.name || 'Untitled';
+    row.appendChild(nameEl);
+    const dates = document.createElement('span');
+    dates.className = 'calendar-popover-dates';
+    dates.textContent = it.startDate + ' \u2013 ' + it.endDate;
+    row.appendChild(dates);
+    pop.appendChild(row);
+  });
+  document.body.appendChild(pop);
+  const rect = anchorEl.getBoundingClientRect();
+  let top = rect.bottom + 4;
+  let left = rect.left;
+  const popRect = pop.getBoundingClientRect();
+  if (top + popRect.height > window.innerHeight) top = rect.top - popRect.height - 4;
+  if (left + popRect.width > window.innerWidth) left = window.innerWidth - popRect.width - 8;
+  if (left < 4) left = 4;
+  pop.style.top = top + 'px';
+  pop.style.left = left + 'px';
+  activeCalendarPopover = pop;
+  setTimeout(function () {
+    document.addEventListener('click', dismissCalendarPopover, { once: true });
+  }, 0);
+}
+
+function showMenu(items, anchorEl) {
+  dismissMenu();
+  const menu = document.createElement('div');
+  menu.className = 'ctx-menu';
+
+  items.forEach((item) => {
+    if (item.separator) {
+      const sep = document.createElement('div');
+      sep.className = 'ctx-menu-separator';
+      menu.appendChild(sep);
+      return;
+    }
+    if (item.colors) {
+      const row = document.createElement('div');
+      row.className = 'ctx-menu-colors';
+      item.colors.forEach((color) => {
+        const sw = document.createElement('div');
+        sw.className = 'ctx-menu-swatch' + (item.selectedColor === color ? ' selected' : '');
+        sw.style.background = color;
+        sw.addEventListener('click', () => {
+          dismissMenu();
+          if (item.onColorClick) item.onColorClick(color);
+        });
+        row.appendChild(sw);
+      });
+      menu.appendChild(row);
+      return;
+    }
+    const btn = document.createElement('button');
+    btn.className =
+      'ctx-menu-item' + (item.danger ? ' ctx-danger' : '') + (item.disabled ? ' ctx-disabled' : '');
+    btn.textContent = item.label;
+    if (item.disabled) btn.disabled = true;
+    btn.addEventListener('click', () => {
+      if (item.disabled) return;
+      dismissMenu();
+      if (item.onClick) item.onClick();
+    });
+    menu.appendChild(btn);
+  });
+
+  menu.style.visibility = 'hidden';
+  menu.style.top = '0';
+  menu.style.left = '0';
+  document.body.appendChild(menu);
+
+  const rect = anchorEl.getBoundingClientRect();
+  const mw = menu.offsetWidth;
+  const mh = menu.offsetHeight;
+  const margin = 4;
+  let top = rect.bottom + margin;
+  if (top + mh > window.innerHeight - 8) top = rect.top - mh - margin;
+  let left = rect.left;
+  if (left + mw > window.innerWidth - 8) left = window.innerWidth - mw - 8;
+  if (left < 8) left = 8;
+  menu.style.top = top + 'px';
+  menu.style.left = left + 'px';
+  menu.style.visibility = '';
+  activeMenu = menu;
+}
+
+// ---- Confirm dialog ----
+function showInfo(message) {
+  const overlay = document.createElement('div');
+  overlay.className = 'confirm-overlay';
+  const box = document.createElement('div');
+  box.className = 'confirm-box';
+  const p = document.createElement('p');
+  p.textContent = message;
+  box.appendChild(p);
+  const actions = document.createElement('div');
+  actions.className = 'confirm-actions';
+  actions.innerHTML = '<button class="btn-cancel">OK</button>';
+  box.appendChild(actions);
+  overlay.appendChild(box);
+  document.body.appendChild(overlay);
+  box.querySelector('.btn-cancel').onclick = () => overlay.remove();
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) overlay.remove();
+  });
+}
+
+function showConfirm(message, onConfirm) {
+  const overlay = document.createElement('div');
+  overlay.className = 'confirm-overlay';
+  const box = document.createElement('div');
+  box.className = 'confirm-box';
+  const p = document.createElement('p');
+  p.textContent = message;
+  box.appendChild(p);
+  const actions = document.createElement('div');
+  actions.className = 'confirm-actions';
+  actions.innerHTML = '<button class="btn-cancel">Cancel</button><button class="btn-danger">Delete</button>';
+  box.appendChild(actions);
+  overlay.appendChild(box);
+  document.body.appendChild(overlay);
+
+  box.querySelector('.btn-cancel').onclick = () => overlay.remove();
+  box.querySelector('.btn-danger').onclick = () => {
+    overlay.remove();
+    onConfirm();
+  };
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) overlay.remove();
+  });
+}
+
+// ---- Drag handlers (strategy pattern) ----
+function handleCreateDrag(e, ds, scale) {
+  const gridRect = ds.gridEl.getBoundingClientRect();
+  const x = (e.clientX - gridRect.left) / scale;
+  ds.currentX = x;
+
+  const left = Math.min(ds.startX, x);
+  const right = Math.max(ds.startX, x);
+  const snappedStart = snapToMonday(xToDate(left, ds.tlStart, ds.totalDays, ds.totalWidth));
+  const snappedEnd = snapToMonday(xToDate(right, ds.tlStart, ds.totalDays, ds.totalWidth));
+
+  const snappedLeft = dateToX(snappedStart, ds.tlStart, ds.totalDays, ds.totalWidth);
+  const snappedRight = dateToX(snappedEnd, ds.tlStart, ds.totalDays, ds.totalWidth);
+
+  if (ds.ghostEl) {
+    ds.ghostEl.style.left = snappedLeft + 'px';
+    ds.ghostEl.style.width = Math.abs(snappedRight - snappedLeft) + 'px';
+  }
+  showDragTooltip(
+    `${formatDateForTooltip(snappedStart)} - ${formatDateForTooltip(snappedEnd)}`,
+    e.clientX,
+    e.clientY,
+  );
+}
+
+function handleMoveDrag(e, ds, scale) {
+  ds.moved = true;
+  const gridRect = ds.gridEl.getBoundingClientRect();
+  const x = (e.clientX - gridRect.left) / scale;
+  const y = (e.clientY - gridRect.top) / scale;
+  const dx = x - ds.startMouseX;
+  const dy = y - ds.startMouseY;
+
+  ds.barEl.style.transform = `translate(${dx}px, calc(-2px + ${dy}px))`;
+
+  const rawLeft = ds.origLeft + dx;
+  const snappedStartDate = snapToMonday(xToDate(rawLeft, ds.tlStart, ds.totalDays, ds.totalWidth));
+  ds.newStartDate = snappedStartDate;
+  showDragTooltip(formatDateForTooltip(snappedStartDate), e.clientX, e.clientY);
+
+  const ls = getLaneScale();
+  const scaledBarH = Math.round(ITEM_BAR_H * ls);
+  const scaledGap = Math.round(TRACK_GAP * ls);
+  const scaledPad = Math.round(LANE_PADDING * ls);
+  const baseLaneHeights = getLaneHeights();
+  const EXTRA = scaledBarH + scaledGap;
+  // Expand the previously-hovered lane so the cursor can reach a new track slot
+  const prevLaneIdx = ds.currentLaneIdx ?? 0;
+  const effectiveHeights = baseLaneHeights.map((h, i) => (i === prevLaneIdx ? h + EXTRA : h));
+
+  let cumulativeY = 0;
+  let newLaneIdx = baseLaneHeights.length - 1;
+  let newTrack = 0;
+
+  for (let i = 0; i < effectiveHeights.length; i++) {
+    if (y < cumulativeY + effectiveHeights[i]) {
+      newLaneIdx = i;
+      const trackY = y - cumulativeY - scaledPad;
+      newTrack = Math.max(0, Math.floor(trackY / (scaledBarH + scaledGap)));
+      break;
+    }
+    cumulativeY += effectiveHeights[i];
+  }
+
+  ds.currentLaneIdx = newLaneIdx;
+  ds.currentTrack = newTrack;
+
+  const rows = ds.gridEl.querySelectorAll('.timeline-grid-row');
+  rows.forEach((r, i) => {
+    r.classList.remove('drag-over-active');
+    r.style.height = baseLaneHeights[i] + 'px';
+  });
+  if (rows[newLaneIdx]) {
+    rows[newLaneIdx].classList.add('drag-over-active');
+    rows[newLaneIdx].style.height = baseLaneHeights[newLaneIdx] + EXTRA + 'px';
+  }
+}
+
+function handleResizeDrag(e, ds, scale) {
+  ds.moved = true;
+  const gridRect = ds.gridEl.getBoundingClientRect();
+  const x = (e.clientX - gridRect.left) / scale;
+  const rawDate = xToDate(x, ds.tlStart, ds.totalDays, ds.totalWidth);
+  const snappedX = dateToX(snapToMonday(rawDate), ds.tlStart, ds.totalDays, ds.totalWidth);
+
+  if (ds.type === 'resize-left') {
+    const newLeft = Math.min(snappedX, ds.origRight - MIN_BAR_WIDTH);
+    ds.barEl.style.left = newLeft + 'px';
+    ds.barEl.style.width = ds.origRight - newLeft + 'px';
+    ds.newStartDate = snapToMonday(xToDate(newLeft, ds.tlStart, ds.totalDays, ds.totalWidth));
+    showDragTooltip(formatDateForTooltip(ds.newStartDate), e.clientX, e.clientY);
+  } else {
+    const newRight = Math.max(snappedX, ds.origLeft + MIN_BAR_WIDTH);
+    ds.barEl.style.width = newRight - ds.origLeft + 'px';
+    ds.newEndDate = snapToMonday(xToDate(newRight, ds.tlStart, ds.totalDays, ds.totalWidth));
+    showDragTooltip(formatDateForTooltip(ds.newEndDate), e.clientX, e.clientY);
+  }
+}
+
+const dragHandlers = {
+  create: handleCreateDrag,
+  move: handleMoveDrag,
+  'resize-left': handleResizeDrag,
+  'resize-right': handleResizeDrag,
+};
+
+document.addEventListener('pointermove', (e) => {
+  if (!dragState) return;
+  const handler = dragHandlers[dragState.type];
+  if (handler) handler(e, dragState, getSlideScale());
+});
+
+document.addEventListener('pointerup', (e) => {
+  if (!dragState) return;
+  const ds = dragState;
+  dragState = null;
+  hideDragTooltip();
+
+  // Check if dragged then clear transform & clean up active highlight
+  if (ds.barEl) {
+    ds.barEl.classList.remove('dragging');
+    ds.barEl.style.transform = ''; // Reset the free drag transform
+  }
+  document.querySelectorAll('.drag-over-active').forEach((r) => r.classList.remove('drag-over-active'));
+  document.querySelectorAll('.timeline-grid-row').forEach((r) => (r.style.height = ''));
+
+  if (ds.type === 'create') {
+    if (ds.ghostEl) ds.ghostEl.remove();
+    const width = Math.abs(ds.currentX - ds.startX);
+    if (width < DRAG_THRESHOLD) return; // too small, ignore
+
+    const left = Math.min(ds.startX, ds.currentX);
+    const right = Math.max(ds.startX, ds.currentX);
+    const rawStartDate = xToDate(left, ds.tlStart, ds.totalDays, ds.totalWidth);
+    const rawEndDate = xToDate(right, ds.tlStart, ds.totalDays, ds.totalWidth);
+
+    // Snap to weeks
+    const startDate = snapToMonday(rawStartDate);
+    const endDate = snapToMonday(rawEndDate);
+
+    // Ensure at least 1 week
+    if (daysBetween(startDate, endDate) < 7) {
+      endDate.setDate(endDate.getDate() + 7);
+    }
+
+    const lane = STATE.swimlanes[ds.laneIdx];
+    if (!lane) return;
+
+    const track = findFreeTrack(lane.id, fmt(startDate), fmt(endDate));
+    if (track === -1) return; // lane full
+
+    const newItem = {
+      id: uid(),
+      swimlaneId: lane.id,
+      name: '',
+      startDate: fmt(startDate),
+      endDate: fmt(endDate),
+      color: PALETTE[STATE.items.length % PALETTE.length],
+      track,
+    };
+
+    selectedItemId = newItem.id;
+    setState((s) => {
+      s.items.push(newItem);
+    });
+    // Auto-trigger rename on the new drag-created item
+    setTimeout(() => {
+      const lbl = document.querySelector(`.item-bar-label[data-item-id="${newItem.id}"]`);
+      if (lbl) startRenameItem(newItem.id, lbl);
+    }, AUTOFOCUS_DELAY_MS);
+  } else if (ds.type === 'move' && ds.moved) {
+    // Use the snapped start date from dragState (calculated during mousemove)
+    const newStartDate = ds.newStartDate;
+    const origStart = parseDate(ds.item.startDate);
+    const origEnd = parseDate(ds.item.endDate);
+    const duration = daysBetween(origStart, origEnd);
+    const newEndDate = addDays(newStartDate, duration);
+
+    const newLane = STATE.swimlanes[ds.currentLaneIdx];
+
+    setState((s) => {
+      const it = s.items.find((i) => i.id === ds.item.id);
+      if (it) {
+        it.startDate = fmt(newStartDate);
+        it.endDate = fmt(newEndDate);
+        if (newLane) it.swimlaneId = newLane.id;
+        if (ds.currentTrack !== undefined) it.track = ds.currentTrack;
+      }
+    });
+  } else if ((ds.type === 'resize-left' || ds.type === 'resize-right') && ds.moved) {
+    setState((s) => {
+      const it = s.items.find((i) => i.id === ds.item.id);
+      if (!it) return;
+      if (ds.type === 'resize-left' && ds.newStartDate) {
+        it.startDate = fmt(ds.newStartDate);
+      } else if (ds.type === 'resize-right' && ds.newEndDate) {
+        it.endDate = fmt(ds.newEndDate);
+      }
+      // Ensure start < end with 7-day minimum (matches drag-create minimum)
+      const rs = parseDate(it.startDate),
+        re = parseDate(it.endDate);
+      if (rs >= re || daysBetween(rs, re) < 7) {
+        if (ds.type === 'resize-left') {
+          it.startDate = fmt(addDays(re, -7));
+        } else {
+          it.endDate = fmt(addDays(rs, 7));
+        }
+      }
+    });
+  }
+});
+
+function startMove(e, item, tlStart, totalDays, totalWidth) {
+  const bar = e.target.closest('.item-bar');
+  if (!bar) return;
+
+  const grid = document.getElementById('timeline-grid');
+  const area = document.getElementById('timeline-area');
+  const scale = getSlideScale();
+  const gridRect = grid.getBoundingClientRect();
+
+  dragState = {
+    type: 'move',
+    item,
+    barEl: bar,
+    gridEl: grid,
+    areaEl: area,
+    startMouseX: (e.clientX - gridRect.left) / scale,
+    startMouseY: (e.clientY - gridRect.top) / scale,
+    origLeft: parseFloat(bar.style.left),
+    currentLaneIdx: STATE.swimlanes.findIndex((l) => l.id === item.swimlaneId),
+    tlStart,
+    totalDays,
+    totalWidth,
+    moved: false,
+  };
+  bar.classList.add('dragging');
+}
+
+function startResize(e, item, type, tlStart, totalDays, totalWidth) {
+  const bar = e.target.closest('.item-bar');
+  const grid = document.getElementById('timeline-grid');
+  const area = document.getElementById('timeline-area');
+
+  dragState = {
+    type,
+    item,
+    barEl: bar,
+    gridEl: grid,
+    areaEl: area,
+    origLeft: parseFloat(bar.style.left),
+    origRight: parseFloat(bar.style.left) + parseFloat(bar.style.width),
+    tlStart,
+    totalDays,
+    totalWidth,
+    moved: false,
+    newStartDate: null,
+    newEndDate: null,
+  };
+}
+
+// ---- Item delete ----
+function deleteItem(itemId) {
+  if (selectedItemId === itemId) selectedItemId = null;
+  setState((s) => {
+    s.items = s.items.filter((it) => it.id !== itemId);
+  });
+}
+
+document.addEventListener('keydown', (e) => {
+  // Only trigger global shortcuts if not typing in an input
+  if (document.activeElement.tagName === 'INPUT') {
+    // Input bindings are handled elsewhere (like esc/enter)
+    return;
+  }
+
+  // Undo: Ctrl+Z or Cmd+Z
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z' && !e.shiftKey) {
+    e.preventDefault();
+    undo();
+    return;
+  }
+
+  // Redo: Ctrl+Y or Cmd+Y or Ctrl+Shift+Z or Cmd+Shift+Z
+  if (
+    (e.ctrlKey || e.metaKey) &&
+    (e.key.toLowerCase() === 'y' || (e.key.toLowerCase() === 'z' && e.shiftKey))
+  ) {
+    e.preventDefault();
+    redo();
+    return;
+  }
+
+  // Delete item
+  if (selectedItemId && (e.key === 'Delete' || e.key === 'Backspace')) {
+    deleteItem(selectedItemId);
+  }
+});
+
+// ---- Control sidebar events ----
+document.getElementById('btn-undo').addEventListener('click', undo);
+document.getElementById('btn-redo').addEventListener('click', redo);
+document.getElementById('btn-add').addEventListener('click', function (e) {
+  e.stopPropagation();
+  showMenu(
+    [
+      { label: 'Add Group', onClick: addSwimlane },
+      { label: 'Add Initiative', onClick: addItem },
+    ],
+    this,
+  );
+});
+
+// Zoom label update
+function updateZoomLabel() {
+  const label = document.getElementById('zoom-label');
+  if (!label) return;
+  const names = { day: 'Days', week: 'Weeks', month: 'Months', quarter: 'Quarters' };
+  label.textContent = names[STATE.timeline.zoomLevel || 'month'];
+}
+
+// Timeline start date stepper
+function updateStartDateDisplay() {
+  const label = document.getElementById('start-date-label');
+  if (!label) return;
+  const cfg = ZOOM_CONFIG[STATE.timeline.zoomLevel || 'month'];
+  label.textContent = cfg.dateLabel(parseDate(STATE.timeline.startDate));
+}
+
+function shiftStartDate(delta) {
+  const cfg = ZOOM_CONFIG[STATE.timeline.zoomLevel || 'month'];
+  setState((s) => {
+    const d = parseDate(s.timeline.startDate);
+    if (cfg.shiftUnit === 'day') {
+      d.setDate(d.getDate() + delta);
+    } else if (cfg.shiftUnit === 'week') {
+      d.setDate(d.getDate() + delta * 7);
+      const day = d.getDay();
+      const diff = day === 0 ? -6 : 1 - day;
+      d.setDate(d.getDate() + diff);
+    } else if (cfg.shiftUnit === 'month') {
+      d.setMonth(d.getMonth() + delta);
+      d.setDate(1);
+    } else if (cfg.shiftUnit === 'quarter') {
+      d.setMonth(d.getMonth() + delta * 3);
+      d.setDate(1);
+    }
+    s.timeline.startDate = fmt(d);
+    updateTimelineDates();
+  });
+}
+
+function setZoomLevel(level) {
+  if (STATE.timeline.zoomLevel === level) return;
+  setState((s) => {
+    s.timeline.zoomLevel = level;
+    const cfg = ZOOM_CONFIG[level];
+    const d = parseDate(s.timeline.startDate);
+    s.timeline.startDate = fmt(cfg.snapStart(new Date(d)));
+    updateTimelineDates();
+  });
+}
+
+function jumpToToday() {
+  setState((s) => {
+    const cfg = ZOOM_CONFIG[s.timeline.zoomLevel || 'month'];
+    const today = new Date();
+    const offsetDays = Math.round(cfg.defaultDays * 0.1);
+    const start = addDays(today, -offsetDays);
+    s.timeline.startDate = fmt(cfg.snapStart(new Date(start)));
+    updateTimelineDates();
+  });
+}
+
+function autoFit() {
+  if (!STATE.items.length) {
+    showInfo('Add items first.');
+    return;
+  }
+  let minDate = Infinity,
+    maxDate = -Infinity;
+  STATE.items.forEach((item) => {
+    const s = parseDate(item.startDate).getTime();
+    const e = parseDate(item.endDate).getTime();
+    if (s < minDate) minDate = s;
+    if (e > maxDate) maxDate = e;
+  });
+  const rangeMs = maxDate - minDate;
+  const bufferMs = Math.max(rangeMs * 0.05, 7 * 86400000);
+  const bufferedStart = new Date(minDate - bufferMs);
+  const bufferedEnd = new Date(maxDate + bufferMs);
+  const totalDays = daysBetween(bufferedStart, bufferedEnd);
+
+  let bestZoom;
+  if (totalDays <= 21) bestZoom = 'day';
+  else if (totalDays <= 90) bestZoom = 'week';
+  else if (totalDays <= 548) bestZoom = 'month';
+  else bestZoom = 'quarter';
+
+  setState((s) => {
+    s.timeline.zoomLevel = bestZoom;
+    const cfg = ZOOM_CONFIG[bestZoom];
+    s.timeline.startDate = fmt(cfg.snapStart(new Date(bufferedStart)));
+    s.timeline.endDate = fmt(bufferedEnd);
+  });
+}
+
+// Zoom dropdown
+const zoomDropdownEl = document.getElementById('zoom-dropdown');
+
+function buildZoomDropdown(container) {
+  container.innerHTML = '';
+  const currentZoom = STATE.timeline.zoomLevel || 'month';
+  [
+    { label: 'Days', value: 'day' },
+    { label: 'Weeks', value: 'week' },
+    { label: 'Months', value: 'month' },
+    { label: 'Quarters', value: 'quarter' },
+  ].forEach((opt) => {
+    const btn = document.createElement('button');
+    btn.className = 'ribbon-dropdown-item';
+    const check = document.createElement('span');
+    check.className = 'check';
+    if (currentZoom === opt.value) check.appendChild(makeCheckmark());
+    btn.appendChild(check);
+    btn.appendChild(document.createTextNode(opt.label));
+    btn.addEventListener('click', () => {
+      setZoomLevel(opt.value);
+      dismissRibbonDropdown();
+    });
+    container.appendChild(btn);
+  });
+}
+
+document.getElementById('btn-zoom-dropdown').addEventListener('click', () => {
+  toggleRibbonDropdown(zoomDropdownEl, buildZoomDropdown);
+});
+
+// Date picker for start date
+const startDatePicker = document.getElementById('start-date-picker');
+document.getElementById('start-date-label').addEventListener('click', () => {
+  startDatePicker.value = STATE.timeline.startDate;
+  if (startDatePicker.showPicker) {
+    startDatePicker.showPicker();
+  } else {
+    startDatePicker.click();
+  }
+});
+startDatePicker.addEventListener('change', () => {
+  const val = startDatePicker.value;
+  if (!val) return;
+  setState((s) => {
+    const d = parseDate(val);
+    const cfg = ZOOM_CONFIG[s.timeline.zoomLevel || 'month'];
+    s.timeline.startDate = fmt(cfg.snapStart(new Date(d)));
+    updateTimelineDates();
+  });
+});
+
+document.getElementById('btn-start-prev').addEventListener('click', () => shiftStartDate(-1));
+document.getElementById('btn-start-next').addEventListener('click', () => shiftStartDate(1));
+document.getElementById('btn-today').addEventListener('click', jumpToToday);
+document.getElementById('btn-autofit').addEventListener('click', autoFit);
+
+// Display mode toggle (Timeline / Calendar)
+function updateDisplayModeUI() {
+  const dm = STATE.timeline.displayMode || 'timeline';
+  const btnTimeline = document.getElementById('btn-display-timeline');
+  const btnCalendar = document.getElementById('btn-display-calendar');
+  btnTimeline.classList.toggle('btn-active', dm === 'timeline');
+  btnCalendar.classList.toggle('btn-active', dm === 'calendar');
+
+  // Hide timeline-specific controls in calendar mode
+  const timelineControls = document.getElementById('section-timeline-controls');
+  if (timelineControls) {
+    timelineControls.style.display = dm === 'calendar' ? 'none' : '';
+  }
+  // Also hide the divider before it
+  const prev = timelineControls && timelineControls.previousElementSibling;
+  if (prev && prev.classList.contains('control-section-divider')) {
+    prev.style.display = dm === 'calendar' ? 'none' : '';
+  }
+}
+
+function setDisplayMode(mode) {
+  if (STATE.timeline.displayMode === mode) return;
+  setState((s) => {
+    s.timeline.displayMode = mode;
+  });
+}
+
+document.getElementById('btn-display-timeline').addEventListener('click', () => setDisplayMode('timeline'));
+document.getElementById('btn-display-calendar').addEventListener('click', () => setDisplayMode('calendar'));
+
+function addItem(overrideStartDate) {
+  if (STATE.swimlanes.length === 0) {
+    showInfo('Please add a group first.');
+    return;
+  }
+
+  // Clamp start date to visible timeline range
+  const tlStart = parseDate(STATE.timeline.startDate);
+  const tlEnd = parseDate(STATE.timeline.endDate);
+  let startDate;
+  if (overrideStartDate) {
+    startDate = overrideStartDate;
+  } else {
+    startDate = snapToMonday(new Date());
+    if (startDate < tlStart || startDate >= tlEnd) startDate = snapToMonday(tlStart);
+  }
+  let endDate = addDays(startDate, overrideStartDate ? 7 : 28);
+  if (endDate > tlEnd) endDate = tlEnd;
+  if (daysBetween(startDate, endDate) < 1) endDate = addDays(startDate, 7);
+
+  // Find the first lane with a free track (not always the first lane)
+  let targetLaneId = null;
+  let targetTrack = -1;
+  for (const lane of STATE.swimlanes) {
+    const t = findFreeTrack(lane.id, fmt(startDate), fmt(endDate));
+    if (t !== -1) {
+      targetLaneId = lane.id;
+      targetTrack = t;
+      break;
+    }
+  }
+  if (targetTrack === -1) {
+    showInfo('No space available. Remove items or add rows first.');
+    return;
+  }
+
+  let newItemId;
+  setState((s) => {
+    const newItem = {
+      id: uid(),
+      swimlaneId: targetLaneId,
+      name: 'New Initiative',
+      startDate: fmt(startDate),
+      endDate: fmt(endDate),
+      color: PALETTE[s.items.length % PALETTE.length],
+      track: targetTrack,
+    };
+    s.items.push(newItem);
+    selectedItemId = newItem.id;
+    newItemId = newItem.id;
+  });
+
+  // In calendar mode, scroll to the item's month and highlight it
+  if ((STATE.timeline.displayMode || 'timeline') === 'calendar') {
+    requestAnimationFrame(function () {
+      const container = document.querySelector('.calendar-slides-container');
+      if (!container) return;
+      const slides = container.querySelectorAll('.calendar-slide');
+      const targetMonth = startDate.getMonth();
+      const targetYear = startDate.getFullYear();
+      const calStart = parseDate(STATE.timeline.startDate);
+      const cur = new Date(calStart.getFullYear(), calStart.getMonth(), 1);
+      for (let i = 0; i < slides.length; i++) {
+        if (cur.getFullYear() === targetYear && cur.getMonth() === targetMonth) {
+          container.scrollLeft = i * container.clientWidth;
+          break;
+        }
+        cur.setMonth(cur.getMonth() + 1);
+      }
+      // Highlight the new bar
+      const bars = container.querySelectorAll('.calendar-item-bar');
+      bars.forEach(function (b) {
+        if (b.dataset.itemId === newItemId) {
+          b.classList.add('bar-new');
+        }
+      });
+    });
+  }
+}
+
+function exportCSV() {
+  const laneMap = {};
+  STATE.swimlanes.forEach((l) => {
+    laneMap[l.id] = l.name;
+  });
+  const escape = (v) => '"' + String(v).replace(/"/g, '""') + '"';
+  const paletteIndex = (color) => {
+    const m = String(color).match(/--palette-(\d)/);
+    return m ? m[1] : '0';
+  };
+  const rows = [['Group', 'Initiative', 'Start Date', 'End Date', 'Color'].map(escape).join(',')];
+  STATE.items.forEach((item) => {
+    rows.push(
+      [
+        escape(laneMap[item.swimlaneId] || ''),
+        escape(item.name || ''),
+        escape(item.startDate),
+        escape(item.endDate),
+        escape(paletteIndex(item.color)),
+      ].join(','),
+    );
+  });
+  const blob = new Blob([rows.join('\n')], { type: 'text/csv' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'timeline.csv';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function importCSV() {
+  const fileInput = document.getElementById('csv-file-input');
+  fileInput.value = '';
+  fileInput.click();
+}
+
+document.getElementById('csv-file-input').addEventListener('change', function (e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  if (!file.name.toLowerCase().endsWith('.csv')) {
+    showInfo('Please select a CSV file.');
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = function (evt) {
+    const text = evt.target.result.trim();
+    if (!text) {
+      showInfo('The file is empty.');
+      return;
+    }
+    const lines = text.split(/\r?\n/);
+    // Validate header
+    const header = lines[0]
+      .replace(/"/g, '')
+      .split(',')
+      .map((h) => h.trim());
+    if (
+      header.length < 4 ||
+      header[0] !== 'Group' ||
+      header[1] !== 'Initiative' ||
+      header[2] !== 'Start Date' ||
+      header[3] !== 'End Date'
+    ) {
+      showInfo('Invalid CSV format. Expected columns: Group, Initiative, Start Date, End Date');
+      return;
+    }
+    const hasColor = header.length >= 5 && header[4] === 'Color';
+    const dataRows = lines.slice(1).filter((l) => l.trim());
+    if (dataRows.length === 0) {
+      showInfo('The CSV file has no data rows.');
+      return;
+    }
+    // Parse rows
+    const parseCSVRow = (row) => {
+      const result = [];
+      let current = '';
+      let inQuotes = false;
+      for (let i = 0; i < row.length; i++) {
+        const ch = row[i];
+        if (inQuotes) {
+          if (ch === '"' && row[i + 1] === '"') {
+            current += '"';
+            i++;
+          } else if (ch === '"') {
+            inQuotes = false;
+          } else {
+            current += ch;
+          }
+        } else {
+          if (ch === '"') {
+            inQuotes = true;
+          } else if (ch === ',') {
+            result.push(current.trim());
+            current = '';
+          } else {
+            current += ch;
+          }
+        }
+      }
+      result.push(current.trim());
+      return result;
+    };
+    const dateRe = /^\d{4}-\d{2}-\d{2}$/;
+    const newItems = [];
+    const errors = [];
+    dataRows.forEach((row, i) => {
+      const cols = parseCSVRow(row);
+      if (cols.length < 4) {
+        errors.push('Row ' + (i + 2) + ': not enough columns');
+        return;
+      }
+      const group = cols[0],
+        name = cols[1],
+        startDate = cols[2],
+        endDate = cols[3];
+      if (!name) {
+        errors.push('Row ' + (i + 2) + ': missing initiative name');
+        return;
+      }
+      if (!dateRe.test(startDate) || !dateRe.test(endDate)) {
+        errors.push('Row ' + (i + 2) + ': invalid date format (expected YYYY-MM-DD)');
+        return;
+      }
+      if (new Date(endDate) <= new Date(startDate)) {
+        errors.push('Row ' + (i + 2) + ': end date must be after start date');
+        return;
+      }
+      let colorIdx = 0;
+      if (hasColor && cols[4] !== undefined && cols[4] !== '') {
+        const parsed = parseInt(cols[4], 10);
+        if (!isNaN(parsed) && parsed >= 0 && parsed < PALETTE.length) colorIdx = parsed;
+      }
+      newItems.push({ group, name, startDate, endDate, colorIdx });
+    });
+    if (newItems.length === 0) {
+      showInfo('No valid rows found.\n' + errors.join('\n'));
+      return;
+    }
+    setState((s) => {
+      const laneByName = {};
+      s.swimlanes.forEach((l) => {
+        laneByName[l.name.toLowerCase()] = l;
+      });
+      let maxOrder = Math.max(0, ...s.swimlanes.map((l) => l.order));
+      newItems.forEach((row) => {
+        let lane = laneByName[row.group.toLowerCase()];
+        if (!lane) {
+          lane = { id: uid(), name: row.group || 'Imported', order: ++maxOrder, minRows: 1 };
+          s.swimlanes.push(lane);
+          laneByName[lane.name.toLowerCase()] = lane;
+        }
+        s.items.push({
+          id: uid(),
+          swimlaneId: lane.id,
+          name: row.name,
+          startDate: row.startDate,
+          endDate: row.endDate,
+          color: PALETTE[row.colorIdx || 0],
+          track: 0,
+        });
+      });
+    });
+    let msg = 'Imported ' + newItems.length + ' initiative' + (newItems.length === 1 ? '' : 's') + '.';
+    if (errors.length) msg += '\n' + errors.length + ' row(s) skipped:\n' + errors.join('\n');
+    showInfo(msg);
+  };
+  reader.readAsText(file);
+});
+
+// ── Ribbon dropdown system ───────────────────────────────
+let activeRibbonDropdown = null;
+
+function dismissRibbonDropdown() {
+  if (!activeRibbonDropdown) return;
+  const dd = activeRibbonDropdown;
+  activeRibbonDropdown = null;
+  dd.classList.add('ribbon-dropdown-exit');
+  dd.addEventListener(
+    'animationend',
+    () => {
+      dd.style.display = 'none';
+      dd.classList.remove('ribbon-dropdown-exit');
+    },
+    { once: true },
+  );
+}
+
+function toggleRibbonDropdown(dropdownEl, buildFn) {
+  if (activeRibbonDropdown === dropdownEl) {
+    dismissRibbonDropdown();
+    return;
+  }
+  dismissRibbonDropdown();
+  buildFn(dropdownEl);
+  dropdownEl.style.display = '';
+  activeRibbonDropdown = dropdownEl;
+}
+
+document.addEventListener('mousedown', (e) => {
+  if (activeRibbonDropdown && !e.target.closest('.ribbon-dropdown-wrapper')) {
+    dismissRibbonDropdown();
+  }
+});
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && activeRibbonDropdown) {
+    dismissRibbonDropdown();
+  }
+});
+
+function makeCheckmark() {
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('width', '14');
+  svg.setAttribute('height', '14');
+  svg.setAttribute('viewBox', '0 0 24 24');
+  svg.setAttribute('fill', 'none');
+  svg.setAttribute('stroke', 'currentColor');
+  svg.setAttribute('stroke-width', '2.5');
+  svg.setAttribute('stroke-linecap', 'round');
+  svg.setAttribute('stroke-linejoin', 'round');
+  const pl = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
+  pl.setAttribute('points', '20 6 9 17 4 12');
+  svg.appendChild(pl);
+  return svg;
+}
+
+// Legend dropdown
+const legendDropdownEl = document.getElementById('legend-dropdown');
+
+function buildLegendDropdown(container) {
+  container.innerHTML = '';
+  const isHorizontal = STATE.timeline.legendOrientation === 'horizontal';
+  const currentAlign = STATE.timeline.legendAlign || 'right';
+
+  [
+    { label: 'Vertical', value: 'vertical', active: !isHorizontal },
+    { label: 'Horizontal', value: 'horizontal', active: isHorizontal },
+  ].forEach((opt) => {
+    const btn = document.createElement('button');
+    btn.className = 'ribbon-dropdown-item';
+    const check = document.createElement('span');
+    check.className = 'check';
+    if (opt.active) check.appendChild(makeCheckmark());
+    btn.appendChild(check);
+    btn.appendChild(document.createTextNode(opt.label));
+    btn.addEventListener('click', () => {
+      setState((s) => {
+        s.timeline.legendOrientation = opt.value;
+      });
+      buildLegendDropdown(container);
+    });
+    container.appendChild(btn);
+  });
+
+  const sep = document.createElement('div');
+  sep.className = 'ribbon-dropdown-separator';
+  container.appendChild(sep);
+
+  [
+    { label: 'Align left', value: 'left' },
+    { label: 'Align center', value: 'center' },
+    { label: 'Align right', value: 'right' },
+  ].forEach((opt) => {
+    const btn = document.createElement('button');
+    btn.className = 'ribbon-dropdown-item';
+    const check = document.createElement('span');
+    check.className = 'check';
+    if (currentAlign === opt.value) check.appendChild(makeCheckmark());
+    btn.appendChild(check);
+    btn.appendChild(document.createTextNode(opt.label));
+    btn.addEventListener('click', () => {
+      setState((s) => {
+        s.timeline.legendAlign = opt.value;
+      });
+      buildLegendDropdown(container);
+    });
+    container.appendChild(btn);
+  });
+}
+
+document.getElementById('btn-legend-dropdown').addEventListener('click', () => {
+  toggleRibbonDropdown(legendDropdownEl, buildLegendDropdown);
+});
+
+function updateLegendToggleUI() {
+  // No-op: legend state is now reflected inside the dropdown when opened
+}
+
+// File dropdown
+const fileDropdownEl = document.getElementById('file-dropdown');
+
+function buildFileDropdown(container) {
+  container.innerHTML = '';
+  const items = [
+    {
+      label: 'Import CSV...',
+      action: () => {
+        dismissRibbonDropdown();
+        importCSV();
+      },
+    },
+    { separator: true },
+    {
+      label: 'Export as PNG',
+      action: () => {
+        dismissRibbonDropdown();
+        exportPNG();
+      },
+    },
+    {
+      label: 'Export as CSV',
+      action: () => {
+        dismissRibbonDropdown();
+        exportCSV();
+      },
+    },
+  ];
+  items.forEach((item) => {
+    if (item.separator) {
+      const sep = document.createElement('div');
+      sep.className = 'ribbon-dropdown-separator';
+      container.appendChild(sep);
+      return;
+    }
+    const btn = document.createElement('button');
+    btn.className = 'ribbon-dropdown-item';
+    btn.textContent = item.label;
+    btn.addEventListener('click', item.action);
+    container.appendChild(btn);
+  });
+}
+
+document.getElementById('btn-file-dropdown').addEventListener('click', () => {
+  toggleRibbonDropdown(fileDropdownEl, buildFileDropdown);
+});
+
+document.getElementById('btn-reset').addEventListener('click', () => {
+  showConfirm('Delete all groups and initiatives?', () => {
+    setState((s) => {
+      s.swimlanes = [{ id: uid(), name: 'New Group', order: 0, minRows: 1 }];
+      s.items = [];
+      s.legendLabels = {};
+    });
+    selectedItemId = null;
+  });
+});
+
+// Deselect on click outside
+document.addEventListener('click', (e) => {
+  if (activeMenu && !e.target.closest('.ctx-menu')) dismissMenu();
+  if (
+    !e.target.closest('.item-bar') &&
+    !e.target.closest('.item-bar-label') &&
+    !e.target.closest('.ctx-menu')
+  ) {
+    if (selectedItemId) {
+      selectedItemId = null;
+      render();
+    }
+  }
+});
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') dismissMenu();
+});
+
+// ---- PNG Export ----
+async function exportPNG() {
+  const slide = document.getElementById('slide');
+  const savedTransform = slide.style.transform;
+  slide.style.transform = 'none';
+  try {
+    const canvas = await html2canvas(slide, { scale: 2, useCORS: true });
+    canvas.toBlob((blob) => {
+      if (!blob) {
+        showInfo('Export failed.');
+        return;
+      }
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'timeline.png';
+      a.click();
+      URL.revokeObjectURL(a.href);
+    }, 'image/png');
+  } catch (err) {
+    console.error('Export failed:', err);
+    showInfo('Export failed. See console for details.');
+  } finally {
+    slide.style.transform = savedTransform;
+  }
+}
+
+// ---- Init ----
+loadState();
+updateZoomLabel();
+updateStartDateDisplay();
+updateDisplayModeUI();
+updateLegendToggleUI();
+render();
+window.addEventListener('resize', updateSlideScale);
+
+// Show welcome toast on first visit (example data loaded)
+if (STATE.isExample) {
+  const toast = document.createElement('div');
+  toast.className = 'welcome-toast';
+  const p = document.createElement('span');
+  p.textContent = 'This is a sample timeline.';
+  toast.appendChild(p);
+  const btn = document.createElement('button');
+  btn.className = 'btn-primary';
+  btn.textContent = 'Get Started';
+  btn.onclick = () => {
+    toast.classList.add('toast-exit');
+    toast.addEventListener('animationend', () => toast.remove());
+    STATE = defaultState();
+    selectedItemId = null;
+    saveState();
+    stateHistory = [JSON.parse(JSON.stringify(STATE))];
+    historyIndex = 0;
+    updateUndoRedoUI();
+    updateZoomLabel();
+    updateStartDateDisplay();
+    updateDisplayModeUI();
+    updateLegendToggleUI();
+    render();
+  };
+  toast.appendChild(btn);
+  const dismissBtn = document.createElement('button');
+  dismissBtn.className = 'btn-dismiss';
+  dismissBtn.innerHTML = '&times;';
+  dismissBtn.title = 'Dismiss';
+  dismissBtn.addEventListener('click', function () {
+    toast.classList.add('toast-exit');
+    toast.addEventListener('animationend', function () {
+      toast.remove();
+    });
+  });
+  toast.appendChild(dismissBtn);
+  document.body.appendChild(toast);
+}
+
+// Show save-tip toast on first real session
+if (!STATE.isExample && !localStorage.getItem('timeline_tip_dismissed')) {
+  const tip = document.createElement('div');
+  tip.className = 'welcome-toast';
+  const span = document.createElement('span');
+  span.textContent =
+    'Your work saves automatically in this browser, but clearing your cache will erase it. Export CSV regularly to keep an offline backup.';
+  tip.appendChild(span);
+  const gotIt = document.createElement('button');
+  gotIt.className = 'btn-primary';
+  gotIt.textContent = 'Got it';
+  gotIt.onclick = () => {
+    localStorage.setItem('timeline_tip_dismissed', '1');
+    tip.classList.add('toast-exit');
+    tip.addEventListener('animationend', () => tip.remove());
+  };
+  tip.appendChild(gotIt);
+  document.body.appendChild(tip);
+}
+
+// Nudge user before closing tab if they have real data
+window.addEventListener('beforeunload', (e) => {
+  if (!STATE.isExample && STATE.items.length > 0) {
+    e.preventDefault();
+    e.returnValue = '';
+  }
+});

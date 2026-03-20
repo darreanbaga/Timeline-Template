@@ -1,0 +1,294 @@
+/* Control Ribbon */
+.control-ribbon {
+  --ribbon-btn-bg: rgba(255, 255, 255, 0.08);
+  --ribbon-btn-border: rgba(255, 255, 255, 0.15);
+  --ribbon-btn-bg-hover: rgba(255, 255, 255, 0.15);
+  --ribbon-btn-border-hover: rgba(255, 255, 255, 0.3);
+  --ribbon-divider: rgba(255, 255, 255, 0.15);
+  --ribbon-label-color: rgba(255, 255, 255, 0.5);
+
+  width: 100%;
+  background: var(--eq-dark);
+  border-bottom: none;
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  justify-content: center;
+  padding: var(--space-150) var(--space-200);
+  gap: var(--space-200);
+  flex-shrink: 0;
+}
+
+.control-section {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  gap: var(--space-100);
+  flex: 0 0 auto;
+}
+
+.ribbon-label {
+  font-size: var(--font-size-heading-xxsmall);
+  font-weight: var(--font-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--ribbon-label-color);
+  white-space: nowrap;
+}
+
+.section-content {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: var(--space-050);
+  flex: 1;
+}
+
+.control-ribbon button svg {
+  flex-shrink: 0;
+}
+
+.control-ribbon button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-050);
+  min-width: auto;
+  height: 32px;
+  padding: 0 var(--space-150);
+  border: var(--border-width) solid var(--ribbon-btn-border);
+  border-radius: var(--radius-medium);
+  background: var(--ribbon-btn-bg);
+  color: var(--_N0);
+  cursor: pointer;
+  font-family: var(--font-family-body);
+  font-size: var(--font-size-body-medium);
+  font-weight: var(--font-weight-medium);
+  transition: all 150ms var(--ease);
+  white-space: nowrap;
+}
+
+.control-ribbon button:hover:not(:disabled) {
+  border-color: var(--ribbon-btn-border-hover);
+  background: var(--ribbon-btn-bg-hover);
+}
+
+.control-ribbon button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.control-ribbon button.btn-active {
+  background: var(--_N0);
+  border-color: var(--_N0);
+  color: var(--eq-dark);
+}
+
+.control-ribbon button.btn-active:hover:not(:disabled) {
+  background: var(--_N200);
+  border-color: var(--_N0);
+  color: var(--eq-dark);
+}
+
+.control-ribbon button.btn-primary {
+  background: var(--eq-purple);
+  border-color: rgba(81, 59, 252, 0.5);
+}
+
+.control-ribbon button.btn-primary:hover:not(:disabled) {
+  background: var(--eq-purple-hover);
+  border-color: var(--eq-purple);
+}
+
+.control-ribbon button.btn-icon-only {
+  min-width: 32px;
+  width: 32px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.control-section-divider {
+  width: var(--border-width);
+  background: var(--ribbon-divider);
+  align-self: stretch;
+  flex-shrink: 0;
+}
+
+.control-ribbon button.btn-danger {
+  background: var(--color-bg-danger-subtle);
+  border-color: var(--color-border-danger-subtle);
+  color: var(--_R300);
+}
+
+.control-ribbon button.btn-danger:hover:not(:disabled) {
+  background: var(--color-bg-danger-bold);
+  border-color: var(--color-bg-danger-bold);
+  color: var(--_N0);
+}
+
+/* ── Responsive toolbar ───────────────────────────────────── */
+@media (max-width: 1200px) {
+  .control-ribbon button .btn-label,
+  .control-ribbon button .chevron-down {
+    display: none;
+  }
+  .control-ribbon button:not(.btn-icon-only) {
+    padding: 0;
+    min-width: 32px;
+    width: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .ribbon-label {
+    display: none;
+  }
+  .control-ribbon {
+    gap: var(--space-150);
+    padding: var(--space-150);
+  }
+}
+
+@media (max-width: 1000px) {
+  .control-ribbon {
+    gap: var(--space-100);
+    padding: var(--space-100) var(--space-150);
+  }
+}
+
+
+.chevron-stepper {
+  display: flex;
+  align-items: center;
+  gap: var(--space-050);
+}
+
+.chevron-stepper .stepper-label {
+  color: var(--_N0);
+  font-size: var(--font-size-body-medium);
+  font-weight: var(--font-weight-medium);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  min-width: 64px;
+  text-align: center;
+  user-select: none;
+}
+
+.control-ribbon .chevron-stepper button {
+  min-width: 32px;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.display-mode-toggle {
+  display: flex;
+  gap: 2px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: var(--radius-medium);
+  padding: 2px;
+}
+
+.display-mode-toggle button {
+  border: none;
+  background: transparent;
+  border-radius: calc(var(--radius-medium) - 2px);
+}
+
+.display-mode-toggle button:hover:not(:disabled):not(.btn-active) {
+  border: none;
+  background: var(--ribbon-btn-bg-hover);
+}
+
+.display-mode-toggle button.btn-active {
+  border: none;
+}
+
+
+/* ── Ribbon dropdowns ──────────────────────────────────── */
+.ribbon-dropdown-wrapper {
+  position: relative;
+}
+
+.ribbon-dropdown-trigger svg.chevron-down {
+  margin-left: var(--space-050);
+  opacity: 0.6;
+}
+
+.ribbon-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  background: var(--elevation-surface-overlay);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-medium);
+  box-shadow: var(--elevation-shadow-overlay);
+  z-index: 3000;
+  min-width: 160px;
+  padding: var(--space-050) 0;
+  animation: ctx-enter 120ms var(--ease) forwards;
+}
+
+.ribbon-dropdown.ribbon-dropdown-exit {
+  animation: ctx-exit 100ms var(--ease) forwards;
+}
+
+.ribbon-dropdown button.ribbon-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-100);
+  width: 100%;
+  height: auto;
+  min-width: auto;
+  padding: var(--space-100) var(--space-150);
+  font-size: var(--font-size-body);
+  font-family: var(--font-family-body);
+  font-weight: var(--font-weight-regular);
+  color: var(--color-text);
+  background: none;
+  border: none;
+  border-radius: 0;
+  cursor: pointer;
+  text-align: left;
+  transition: background 80ms;
+  box-sizing: border-box;
+  white-space: nowrap;
+  transform: none;
+}
+
+.ribbon-dropdown button.ribbon-dropdown-item:hover {
+  background: var(--color-bg-neutral-subtle-hovered);
+  border-color: transparent;
+  transform: none;
+}
+
+.ribbon-dropdown-item .check {
+  width: 14px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ribbon-dropdown-separator {
+  height: 1px;
+  background: var(--color-border);
+  margin: var(--space-050) 0;
+}
+
+
+.stepper-label-clickable {
+  cursor: pointer;
+  border-bottom: 1px dashed var(--color-border);
+}
+
+.stepper-label-clickable:hover {
+  color: var(--eq-purple);
+  border-bottom-color: var(--eq-purple);
+}
