@@ -15,12 +15,13 @@ Example: after adding a new modal, render it with zero items, one item, and many
 
 When a bug is reported — e.g., "this button is misaligned" — do not immediately add `margin-left` to that button.
 Diagnostic process:
+
 1. Reproduce the issue and confirm the exact symptoms.
 2. Identify the layer where it originates: data (wrong value), logic (wrong branch), layout (wrong flex/grid setup), or styling (wrong token or override).
 3. Trace upward: is the parent container's layout wrong? Is a standard wrapper missing? Is the spacing system being bypassed with a hardcoded value?
 4. Fix at the originating layer, not at the symptom.
 5. After fixing, verify siblings and related components were not broken by the change.
-Example: a misaligned button may be caused by the parent using `align-items: baseline` instead of `center`. Fixing the parent fixes all children; patching one button hides the problem for the rest.
+   Example: a misaligned button may be caused by the parent using `align-items: baseline` instead of `center`. Fixing the parent fixes all children; patching one button hides the problem for the rest.
 
 ## Defensive implementation
 
@@ -33,6 +34,7 @@ Example: before writing a new `formatDate()` helper, search for existing date fo
 ## Completion checklist
 
 Before reporting any task as done, confirm every item:
+
 - [ ] Linter passes (`npm run session-check` or equivalent).
 - [ ] Visual review done (see protocol above). If skipped, state why.
 - [ ] No hardcoded color, spacing, or font values — use design tokens (`var(--*)`).
@@ -40,4 +42,4 @@ Before reporting any task as done, confirm every item:
 - [ ] No `console.log` statements unless they are intentional debug utilities.
 - [ ] The change does not break adjacent functionality — test the surrounding UI, not just the changed element.
 - [ ] If state shape changed, localStorage migration logic is in place.
-Do not skip items because the task felt small. Small changes break things too.
+      Do not skip items because the task felt small. Small changes break things too.
