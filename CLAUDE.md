@@ -4,21 +4,65 @@ Interactive browser-based timeline/Gantt-chart tool for planning and visualizing
 
 ## Tech Stack
 
-- **Single-file app**: Everything lives in `index.html` (HTML + CSS + JS)
-- **Vanilla JS**: No frameworks — plain DOM manipulation with a custom `setState`/`render` cycle
-- **CSS custom properties**: Atlassian-inspired design-token system (palette, semantic, component layers)
-- **html2canvas**: PNG export; bundled inline as a minified IIFE
-- **Deployment**: Static site on Vercel (`vercel.json` → `@vercel/static`)
+- **Vite** — dev server with HMR and production bundler
+- **ES modules** — ~23 focused JS modules in `src/`
+- **Vanilla JS** — no frameworks — plain DOM manipulation with a custom `setState`/`render` cycle
+- **CSS custom properties** — Atlassian-inspired design-token system (palette, semantic, component layers)
+- **html2canvas** — PNG export; installed from npm
+- **Deployment** — Vite build to `dist/`, static hosting on Vercel
+
+## File Structure
+
+```
+index.html                    — minimal HTML shell (~280 lines)
+src/
+  main.js                     — entry point: init, event wiring, toasts
+  state.js                    — STATE holder, setState, undo/redo, persistence
+  constants.js                — PALETTE, STORAGE_KEY, ZOOM_CONFIG, sizing constants
+  controls.js                 — toolbar actions, navigation, UI updaters
+  utils/
+    date.js                   — fmt, parseDate, daysBetween, fiscal helpers
+    dom.js                    — uid, cssVar, measureLabelText, makeCheckmark
+    layout.js                 — getSidebarWidth, dateToX, xToDate, scale helpers
+    tracks.js                 — assignTracks, findFreeTrack, getTrackCount
+  render/
+    render.js                 — main render() function
+    header.js                 — buildHeader, buildHeaderRow
+    sidebar.js                — buildSidebar, buildSidebarRow
+    grid.js                   — buildGrid, buildTimelineArea
+    item-bar.js               — buildItemBar
+    legend.js                 — buildLegend
+    calendar.js               — buildCalendarView
+    logo.js                   — base64 SVG logo export
+  interactions/
+    drag.js                   — drag state, startMove, startResize, handlers
+    menus.js                  — showMenu, dismissMenu, calendar popover
+    dialogs.js                — showConfirm, showInfo
+    inline-edit.js            — inline rename functions
+    dropdowns.js              — ribbon dropdown builders
+  io/
+    csv.js                    — exportCSV, importCSV, parseCSVRow
+    png.js                    — exportPNG (uses html2canvas)
+  styles/
+    index.css                 — imports all CSS files
+    fonts.css                 — @font-face (base64 Inter)
+    tokens.css                — design tokens + palette
+    layout.css                — slide, viewport, sidebar layout
+    components.css            — item bars, headers, legend, menus, modals
+    ribbon.css                — control ribbon toolbar
+    calendar.css              — calendar view styles
+    animations.css            — keyframes, transitions
+```
 
 ## Critical Rules (apply to every change)
 
-1. **Single-file constraint** — all application code stays in `index.html`. Do not split into separate `.js` or `.css` files.
-2. **No frameworks** — do not introduce React, Vue, Preact, or any UI library. Use vanilla DOM APIs only.
-3. **State via `setState()`** — all data mutations go through `setState(mutator)`, which deep-clones, applies the mutator, saves to localStorage, pushes undo history, and calls `render()`. Never mutate `STATE` directly.
-4. **`render()` is the single source of DOM truth** — after any state change, `render()` rebuilds the timeline. Keep it idempotent.
-5. **Design tokens over raw values** — use `var(--token-name)` for all colors, spacing, and typography. Never hard-code hex/rgb values in new code.
-6. **Preserve export fidelity** — any visual change must look correct in both the live view and the html2canvas PNG export.
-7. **localStorage contract** — the storage key is `timeline_tmpl_v1`. Do not change the schema without migration logic.
+1. **No frameworks** — do not introduce React, Vue, Preact, or any UI library. Use vanilla DOM APIs only.
+2. **State via `setState()`** — all data mutations go through `setState(mutator)`, which deep-clones, applies the mutator, saves to localStorage, pushes undo history, and calls `render()`. Never mutate `STATE` directly.
+3. **`render()` is the single source of DOM truth** — after any state change, `render()` rebuilds the timeline. Keep it idempotent.
+4. **Design tokens over raw values** — use `var(--token-name)` for all colors, spacing, and typography. Never hard-code hex/rgb values in new code.
+5. **Preserve export fidelity** — any visual change must look correct in both the live view and the html2canvas PNG export.
+6. **localStorage contract** — the storage key is `timeline_tmpl_v1`. Do not change the schema without migration logic.
+7. **Module boundaries** — keep modules focused. State access goes through `getState()`/`setState()` from `state.js`. The render callback is registered via `registerRenderFn()` to avoid circular imports.
 
 ## Agent behavior
 

@@ -5,21 +5,48 @@
 ## File Structure
 
 ```
-index.html          — entire application (HTML + <style> + <script>)
-vercel.json         — static deployment config
+index.html              — minimal HTML shell (control ribbon markup + <script type="module" src="/src/main.js">)
+src/
+  main.js               — entry point: imports, init, event wiring, toasts
+  state.js              — STATE, setState, undo/redo, save/load, history
+  constants.js          — PALETTE, STORAGE_KEY, ZOOM_CONFIG, sizing constants
+  controls.js           — toolbar actions (zoom, navigate, add/delete, display mode)
+  utils/                — pure utility functions
+  render/               — DOM builder modules (render, header, sidebar, grid, item-bar, legend, calendar)
+  interactions/         — user interaction handlers (drag, menus, dialogs, inline-edit, dropdowns)
+  io/                   — import/export (csv, png)
+  styles/               — CSS split into tokens, layout, components, ribbon, calendar, animations, fonts
 ```
 
-Everything is in one file. The `<style>` block holds all CSS (design tokens + component styles). The `<script>` block contains a bundled `html2canvas` IIFE followed by the application IIFE.
+## Module Dependency Overview
 
-## Application IIFE Layout (inside `<script>`)
+```
+main.js
+  ├── state.js          (registerRenderFn, loadState, setState, undo, redo)
+  ├── controls.js       (shiftStartDate, setZoomLevel, addItem, deleteItem, ...)
+  ├── render/render.js  (render)
+  ├── interactions/*    (menus, dropdowns, dialogs)
+  └── io/*              (csv, png)
 
-1. **Constants** — `PALETTE`, `STORAGE_KEY`, `MONTH_NAMES`, sizing constants (`MIN_BAR_WIDTH`, `DRAG_THRESHOLD`, etc.)
-2. **Utility functions** — `uid()`, date helpers (`parseDate`, `fmt`, `addDays`, `daysBetween`), `fiscalQuarterRange()`
-3. **State management** — `defaultState()`, `exampleState()`, `setState()`, `pushHistory()`, `undo()`, `redo()`
-4. **Rendering** — `render()` rebuilds the entire timeline DOM; `updateSlideScale()` handles responsive fit
-5. **Interactions** — drag-to-move (`startMove`), drag-to-resize (`startResize`), context menus, inline editing
-6. **Import/Export** — `exportCSV()`, `importCSV()`, `exportPNG()` (via html2canvas)
-7. **Init** — `loadState()`, event listener wiring, welcome/tip toasts
+state.js
+  ├── constants.js
+  ├── utils/tracks.js   (assignTracks — called inside setState)
+  └── interactions/dialogs.js (dynamic import for showInfo)
+  NOTE: does NOT import render.js — uses registerRenderFn callback
+
+render/render.js
+  ├── render/header.js, sidebar.js, grid.js, item-bar.js, legend.js, calendar.js
+  ├── state.js          (getState, getSelectedItemId)
+  └── utils/*           (layout, date, dom)
+```
+
+### Circular Dependency Resolution
+
+The main cycle is `setState → render → builders → setState` (via callbacks). It's broken by:
+
+- `state.js` exports `registerRenderFn(fn)` instead of importing `render.js`
+- `main.js` calls `registerRenderFn(render)` at startup
+- Similarly, `registerAssignTracksFn` and `registerShowInfoFn` break other cycles
 
 ## State Shape (`STATE`)
 
@@ -27,9 +54,10 @@ Everything is in one file. The `<style>` block holds all CSS (design tokens + co
 {
   timeline: {
     startDate: "YYYY-MM-DD",   // left edge of the visible range
-    endDate: "YYYY-MM-DD",     // computed from startDate + monthCount
-    monthCount: 12,             // how many months to display (1–24)
+    endDate: "YYYY-MM-DD",     // computed from startDate + zoom config
     title: "string",
+    zoomLevel: "day" | "week" | "month" | "quarter",
+    displayMode: "timeline" | "calendar",
     legendOrientation: "vertical" | "horizontal",
     legendAlign: "left" | "center" | "right",
     sidebarWidth: 180           // px width of the group-name sidebar
@@ -53,6 +81,22 @@ Everything is in one file. The `<style>` block holds all CSS (design tokens + co
 - `track` is the row within a swimlane (0-indexed) for stacking overlapping bars.
 - `color` stores a CSS custom-property reference like `var(--palette-0)`, not a raw color.
 - `legendLabels` maps palette colors to user-defined legend text.
+
+## State Access Pattern
+
+Shared mutable state lives in `state.js` with getter/setter exports:
+
+```js
+import { getState, setState, getSelectedItemId, setSelectedItemId } from './state.js';
+
+// Read state
+const STATE = getState();
+
+// Mutate state (triggers save + render)
+setState(s => {
+  s.items.push({ ... });
+});
+```
 
 ## Persistence
 

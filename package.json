@@ -4,6 +4,9 @@
   "description": "Interactive browser-based timeline/Gantt-chart tool",
   "type": "module",
   "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write \"**/*.{html,css,js,json,md}\"",
@@ -33,6 +36,10 @@
     "eslint-plugin-html": "^8.1.4",
     "husky": "^9.1.7",
     "lint-staged": "^16.3.3",
-    "prettier": "^3.8.1"
+    "prettier": "^3.8.1",
+    "vite": "^8.0.1"
+  },
+  "dependencies": {
+    "html2canvas": "^1.4.1"
   }
 }

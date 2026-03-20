@@ -5,32 +5,34 @@
 ## Deployment
 
 - **Platform**: Vercel (static hosting)
-- **Config**: `vercel.json` uses `@vercel/static` for all files
-- **No build step** — the repo is served as-is. `index.html` is the entry point.
+- **Config**: `vercel.json` — `buildCommand: "npm run build"`, `outputDirectory: "dist"`
+- **Build tool**: Vite bundles `src/` modules + CSS into optimized output in `dist/`
 - Pushing to the main branch triggers a Vercel deployment automatically.
 
 ## Local Development
 
-1. Serve the project root with any static server:
-   ```bash
-   npx serve .
-   # or
-   python3 -m http.server 8000
-   ```
-2. Open `http://localhost:<port>/` in a browser.
-3. There is no hot-reload — refresh the page after editing `index.html`.
+```bash
+npm install          # install dependencies (first time)
+npm run dev          # start Vite dev server with HMR
+```
+
+Open the URL shown by Vite (usually `http://localhost:5173/`). Changes to JS and CSS files hot-reload automatically.
+
+Other commands:
+
+| Command                 | What it does                                          |
+| ----------------------- | ----------------------------------------------------- |
+| `npm run dev`           | Start Vite dev server with hot module replacement     |
+| `npm run build`         | Production build to `dist/`                           |
+| `npm run preview`       | Serve the production build locally                    |
+| `npm run lint`          | Check JS for errors and convention violations         |
+| `npm run lint:fix`      | Auto-fix what ESLint can                              |
+| `npm run format`        | Run Prettier on all HTML, CSS, JS, JSON, and MD files |
+| `npm run session-check` | ESLint + Prettier check (used before committing)      |
 
 ## Linting & Formatting
 
-Run `npm install` once to set up dev dependencies, then:
-
-| Command            | What it does                                          |
-| ------------------ | ----------------------------------------------------- |
-| `npm run lint`     | Check JS for errors and convention violations         |
-| `npm run lint:fix` | Auto-fix what ESLint can (e.g. `var` → `const`)       |
-| `npm run format`   | Run Prettier on all HTML, CSS, JS, JSON, and MD files |
-
-ESLint extracts `<script>` blocks from `index.html` via `eslint-plugin-html`. The vendored html2canvas block is skipped with `/* eslint-disable */`.
+ESLint is configured in `eslint.config.js` targeting `src/**/*.js` files as ES modules.
 
 **Baseline**: 0 errors, warnings only. Keep it that way — do not merge new errors.
 
@@ -58,14 +60,15 @@ No automated test suite exists. Manual verification checklist:
 
 ## Git Conventions
 
-- All application changes are to `index.html` — keep diffs focused.
-- Commit messages should describe the user-visible change (e.g., "Add legend alignment toggle" not "Update index.html").
+- Commit messages should describe the user-visible change (e.g., "Add legend alignment toggle" not "Update main.js").
+- Keep modules focused — each file should have a single responsibility.
 
 ## Dependencies
 
 | Dependency  | Version | How included                                   |
 | ----------- | ------- | ---------------------------------------------- |
-| html2canvas | 1.4.1   | Inline minified IIFE in `<script>`             |
-| Inter font  | —       | Base64-encoded woff2 in `<style>` `@font-face` |
+| html2canvas | 1.4.1   | npm package, imported in `src/io/png.js`       |
+| Inter font  | —       | Base64-encoded woff2 in `src/styles/fonts.css` |
+| Vite        | 8.x     | Dev dependency, bundler                        |
 
-Dev tooling (ESLint, Prettier) is in `package.json` — these are dev-only and not shipped. To update html2canvas, replace the minified block between the `html2canvas` comment markers.
+Dev tooling (ESLint, Prettier, Husky) is in `package.json` — these are dev-only and not shipped.
